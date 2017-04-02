@@ -86,7 +86,9 @@ def dlg_opt_editor(title, keys_info, path_to_json='settings/user.json'):
         if kformat=='json' \
         or isinstance(kv, dict) or isinstance(kv, list):
             return json.dumps(kv)
-        if kformat in ('enum_i', 'enum_s') and dct is not None:
+        if kformat=='enum_i' and dct is not None:
+            return dct.get(kv, str(kv))
+        if kformat=='enum_s' and dct is not None:
             return dct.get(str(kv), str(kv))
         return str(kv)
        #def to_str
@@ -147,21 +149,22 @@ def dlg_opt_editor(title, keys_info, path_to_json='settings/user.json'):
                     for (knm, fdcv) in k2fdcvt.items()
                     if  cond=='' or cond.upper() in knm.upper() ]
         fl_k2i  = {knm:ikey for (ikey, (knm,kf,kset,kv,kdct)) in enumerate(fl_kfsvt)}
-        ind_sel = fl_k2i[key_sel]       if key_sel in fl_k2i            else \
-                  0                     if fl_k2i                       else \
+        ind_sel = fl_k2i[key_sel]       if key_sel in fl_k2i                else \
+                  0                     if fl_k2i                           else \
                   -1
-        key_sel = fl_kfsvt[ind_sel][0]  if ind_sel!=-1                  else ''
-        frm_sel = k2fdcvt[key_sel]['f'] if key_sel                      else ''
-        dct_sel = k2fdcvt[key_sel]['t'] if key_sel                      else None
-        dvl_sel = k2fdcvt[key_sel]['d'] if key_sel                      else None
-        val_sel = k2fdcvt[key_sel]['v'] if key_sel                      else None
-        cmt_sel = k2fdcvt[key_sel]['c'] if key_sel                      else ''
-        var_sel = dct_sel.values()      if frm_sel in ('enum_i', 'enum_s')    else None
+        key_sel = fl_kfsvt[ind_sel][0]  if ind_sel!=-1                      else ''
+        frm_sel = k2fdcvt[key_sel]['f'] if key_sel                          else ''
+        dct_sel = k2fdcvt[key_sel]['t'] if key_sel                          else None
+        dvl_sel = k2fdcvt[key_sel]['d'] if key_sel                          else None
+        val_sel = k2fdcvt[key_sel]['v'] if key_sel                          else None
+        cmt_sel = k2fdcvt[key_sel]['c'] if key_sel                          else ''
+        var_sel = [f('{}: {}', k, v) for (k,v) in dct_sel.items()] \
+                                        if frm_sel in ('enum_i', 'enum_s')  else None
         sel_sel = list(dct_sel.keys()).index(val_sel) \
                                         if frm_sel in ('enum_i', 'enum_s') and \
-                                           val_sel in dct_sel.keys()    else -1
+                                           val_sel in dct_sel.keys()        else -1
         
-        itms    = (zip([_('Key'), _('Format'), _(' '), _('Value')], map(str, COL_WS))
+        itms    = (zip([_('Key'), _('Type'),   _(' '), _('Value')], map(str, COL_WS))
                   ,    [ ( knm,      kf,          kset,   to_str(kv, kf, kdct)) for
                          ( knm,      kf,          kset,          kv,     kdct ) in fl_kfsvt]
                   )
@@ -244,7 +247,7 @@ def dlg_opt_editor(title, keys_info, path_to_json='settings/user.json'):
             pass;                   LOG and log('?? cust',())
             custs   = app.dlg_input_ex(6, _('Customization')
                 , _('Width of Key     (min 150)')  , str(stores.get('cust.wd_k', 200))
-                , _('Width of Format  (min 100)')  , str(stores.get('cust.wd_f',  50))
+                , _('Width of Type    (min 100)')  , str(stores.get('cust.wd_f',  50))
                 , _('Width of !       (min  30)')  , str(stores.get('cust.wd_s',  20))
                 , _('Width of Value   (min 250)')  , str(stores.get('cust.wd_v', 450))
                 , _('Heght of Table   (min 200)')  , str(stores.get('cust.ht_t', 100))
@@ -273,7 +276,7 @@ def dlg_opt_editor(title, keys_info, path_to_json='settings/user.json'):
                     good    = False
                     app.msg_status(_('Uncorrect value'))
                 if not good:
-                    new_val = app.dlg_input(f(_('Value for "{}" (format "{}")'), key_sel, k2fdcvt[key_sel]['f']), new_val)
+                    new_val = app.dlg_input(f(_('Value for "{}" (type "{}")'), key_sel, k2fdcvt[key_sel]['f']), new_val)
                     if new_val is None:
                         break#while not good
                 #while not good
