@@ -31,7 +31,7 @@ CFG_JSON    = app.app_path(app.APP_DIR_SETTINGS)+os.sep+'cuda_options_editor.jso
 
 class Command:
     def dlg_cuda_opts(self):
-        pass;                   LOG and log('ok',())
+        pass;                  #LOG and log('ok',())
         pass;                  #dlg_opt_editor('CudaText options', '')
         pass;                  #return 
 #       cuda_opts   = apx.get_def_setting_dir()+os.sep+'default_options.json'
@@ -46,7 +46,7 @@ def dlg_opt_editor(title, keys_info, path_to_json='settings/user.json'):
             title       (str)   Dialog title
             keys_info   (list)  Info for each key as dict
                                     key:    (str)
-                                    format: (str)   bool|int|str|float|i_s|s_s|json
+                                    format: (str)   bool|int|str|float|enum_i|enum_s|json
                                     comment:(str)
                                             (str list)
                                     def_val: 
@@ -61,21 +61,19 @@ def dlg_opt_editor(title, keys_info, path_to_json='settings/user.json'):
                     ,dict(key='key-flo' ,format='float' ,def_val=1.23            ,comment= 'smth')
                     ,dict(key='key-aflo'                ,def_val=1.23            ,comment= 'smth')
                     ,dict(key='key-file',format='file'  ,def_val=''              ,comment= 'smth')
-                    ,dict(key='key-i_s' ,format='i_s'   ,def_val=1               ,comment= 'smth',   dct={0:'000', 1:'111', 2:'222'})
-                    ,dict(key='key-s_s' ,format='s_s'   ,def_val='b'             ,comment= 'smth',   dct=[('a','AA'), ('b','BB'), ('c','CC')])
+                    ,dict(key='key-en_i',format='enum_i',def_val=1               ,comment= 'smth',   dct={0:'000', 1:'111', 2:'222'})
+                    ,dict(key='key-en_s',format='enum_s',def_val='b'             ,comment= 'smth',   dct=[('a','AA'), ('b','BB'), ('c','CC')])
                     ,dict(key='key-json',format='json'  ,def_val={'x':{'a':1}}   ,comment= 'Style')
                     ]
         path_to_json=os.path.dirname(__file__)+os.sep+'test.json'
 
     if 0==len(keys_info):
         return app.msg_status(_('Empty keys_info'))
-    COL_WS      = [200, 50, 20, 450]                # Widths of listview columns 
-    CMNT_H      = 100                               # Height of Comment memo
-    LST_W, LST_H= sum(COL_WS)+20 \
-                , 200-5                             # Listview sizes
-    DLG_W, DLG_H= 5+LST_W+5+80+5 \
-                , 5+20+30+LST_H+5+30+5+CMNT_H+5+3   # Dialog sizes
-    
+
+    stores      = json.loads(open(CFG_JSON).read(), object_pairs_hook=OrdDict) \
+                    if os.path.exists(CFG_JSON) and os.path.getsize(CFG_JSON) != 0 else \
+                  OrdDict()
+
     def frm_of_val(val):
         if isinstance(val, bool):   return 'bool'
         if isinstance(val, int):    return 'int'
@@ -88,7 +86,7 @@ def dlg_opt_editor(title, keys_info, path_to_json='settings/user.json'):
         if kformat=='json' \
         or isinstance(kv, dict) or isinstance(kv, list):
             return json.dumps(kv)
-        if kformat in ('i_s', 's_s') and dct is not None:
+        if kformat in ('enum_i', 'enum_s') and dct is not None:
             return dct.get(str(kv), str(kv))
         return str(kv)
        #def to_str
@@ -105,10 +103,10 @@ def dlg_opt_editor(title, keys_info, path_to_json='settings/user.json'):
         if kformat=='json' \
         or isinstance(kv, dict) or isinstance(kv, list):
             return json.loads(strv, object_pairs_hook=OrdDict)
-        if kformat in ('i_s', 's_s') and dct is not None:
+        if kformat in ('enum_i', 'enum_s') and dct is not None:
             ind = list(dct.values()).index(strv)
             ans = list(dct.keys())[ind]
-            return int(ans) if kformat=='i_s' else ans 
+            return int(ans) if kformat=='enum_i' else ans 
         return strv
        #def from_str
 
@@ -130,6 +128,16 @@ def dlg_opt_editor(title, keys_info, path_to_json='settings/user.json'):
     cond    = ''
     fid     = 'lvls'
     while True: #NOTE: json_props
+        COL_WS      = [stores.get('cust.wd_k', 200)
+                      ,stores.get('cust.wd_f', 50)
+                      ,stores.get('cust.wd_s', 20)
+                      ,stores.get('cust.wd_v', 450)]         # Widths of listview columns 
+        CMNT_H      =  stores.get('cust.ht_c', 100)          # Height of Comment memo
+        LST_W, LST_H= sum(COL_WS)+20 \
+                    ,  stores.get('cust.ht_t', 200)-5        # Listview sizes
+        DLG_W, DLG_H= 5+LST_W+5+80+5 \
+                    , 5+20+30+LST_H+5+30+5+CMNT_H+5+3   # Dialog sizes
+    
         fl_kfsvt= [ (knm
                     ,fdcv['f']
                     ,'!' if fdcv['d']!=fdcv['v'] else ''
@@ -148,9 +156,9 @@ def dlg_opt_editor(title, keys_info, path_to_json='settings/user.json'):
         dvl_sel = k2fdcvt[key_sel]['d'] if key_sel                      else None
         val_sel = k2fdcvt[key_sel]['v'] if key_sel                      else None
         cmt_sel = k2fdcvt[key_sel]['c'] if key_sel                      else ''
-        var_sel = dct_sel.values()      if frm_sel in ('i_s', 's_s')    else None
+        var_sel = dct_sel.values()      if frm_sel in ('enum_i', 'enum_s')    else None
         sel_sel = list(dct_sel.keys()).index(val_sel) \
-                                        if frm_sel in ('i_s', 's_s') and \
+                                        if frm_sel in ('enum_i', 'enum_s') and \
                                            val_sel in dct_sel.keys()    else -1
         
         itms    = (zip([_('Key'), _('Format'), _(' '), _('Value')], map(str, COL_WS))
@@ -188,7 +196,7 @@ def dlg_opt_editor(title, keys_info, path_to_json='settings/user.json'):
                  +[dict(cid='brow',tp='bt'  ,tid='kved' ,l=DLG_W-5-80-35,w=30           ,cap=_('&...') ,hint=_('Browse file')       )] # &.
                  +[dict(cid='setv',tp='bt'  ,tid='kved' ,l=DLG_W-5-80   ,w=80           ,cap=_('&Set')                              )] # &s
             )
-            +([] if frm_sel not in ('i_s', 's_s') or not key_sel else []
+            +([] if frm_sel not in ('enum_i', 'enum_s') or not key_sel else []
                  +[dict(           tp='lb'  ,tid='kvcb' ,l=l_val-100-5  ,w=100          ,cap=_('>&Value:')                          )] # &v 
                  +[dict(cid='kvcb',tp='cb-ro',t=65+LST_H,l=l_val,w=COL_WS[-1]+20,items=var_sel                              ,act='1')] #
             )
@@ -211,16 +219,18 @@ def dlg_opt_editor(title, keys_info, path_to_json='settings/user.json'):
             vals.update(
                     dict(kved=to_str(val_sel, frm_sel, dct_sel)     if key_sel else ''
                         ))
-        if frm_sel in ('i_s', 's_s') and key_sel:
+        if frm_sel in ('enum_i', 'enum_s') and key_sel:
             vals.update(
                     dict(kvcb=sel_sel                               if key_sel else False
                         ))
 
-        aid, vals, fid, chds = dlg_wrapper(title, DLG_W, DLG_H, cnts, vals, focus_cid=fid)
+        aid, vals, fid, chds = dlg_wrapper(f('{} ({})', title, VERSION_V), DLG_W, DLG_H, cnts, vals, focus_cid=fid)
         if aid is None or aid=='-':  return
 
-        if aid=='fltr' and fid=='kved':
+        if aid=='fltr' and fid=='kved':     # Подмена умолчательной кнопки по активному редактору
             aid = 'setv'
+
+        pass;                       LOG and log('aid={}',(aid))
 
         fid     = 'lvls'
         cond    = vals['ckey']
@@ -229,8 +239,25 @@ def dlg_opt_editor(title, keys_info, path_to_json='settings/user.json'):
         key_sel = fl_kfsvt[ind_sel][0]
         pass;                  #LOG and log('cond={}',(cond))
 
-        if aid=='setd':
-            k2fdcvt[key_sel]['v'] = k2fdcvt[key_sel]['d']
+            
+        if aid=='cust':
+            pass;                   LOG and log('?? cust',())
+            custs   = app.dlg_input_ex(6, _('Customization')
+                , _('Width of Key     (min 150)')  , str(stores.get('cust.wd_k', 200))
+                , _('Width of Format  (min 100)')  , str(stores.get('cust.wd_f',  50))
+                , _('Width of !       (min  30)')  , str(stores.get('cust.wd_s',  20))
+                , _('Width of Value   (min 250)')  , str(stores.get('cust.wd_v', 450))
+                , _('Heght of Table   (min 200)')  , str(stores.get('cust.ht_t', 100))
+                , _('Heght of Comment (min  50)')  , str(stores.get('cust.ht_c', 200))
+                )
+            if custs is None:   continue#while
+            stores['cust.wd_k']  = max(150, int(custs[0]))
+            stores['cust.wd_f']  = max(100, int(custs[1]))
+            stores['cust.wd_s']  = max( 30, int(custs[2]))
+            stores['cust.wd_v']  = max(250, int(custs[3]))
+            stores['cust.ht_c']  = max(200, int(custs[4]))
+            stores['cust.ht_c']  = max( 50, int(custs[5]))
+            open(CFG_JSON, 'w').write(json.dumps(stores, indent=4))
             
         if aid=='kvbl':
             k2fdcvt[key_sel]['v'] = not k2fdcvt[key_sel]['v']
@@ -274,6 +301,8 @@ ToDo
 [ ][kv-kv][02apr17] ? Tags list and "tag" attr into kinfo
 [ ][kv-kv][02apr17] ? Delimeter row in table
 [ ][kv-kv][02apr17] "Need restart" in Comments
-[ ][kv-kv][02apr17] ? Calc Format by Def_val
+[+][kv-kv][02apr17] ? Calc Format by Def_val
 [ ][kv-kv][02apr17] int_mm for min+max
+[+][kv-kv][02apr17] VERS in Title
+[+][at-kv][02apr17] 'enum' вместо 'enum_i' 
 '''

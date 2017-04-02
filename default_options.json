@@ -13,7 +13,7 @@
         "comment": "Editor font quality",
         "key": "font_quality",
         "def_val": 0,
-        "format": "i_s",
+        "format": "enum_i",
         "dct":[
           [0, "Default"],
           [1, "Draft"],
@@ -90,7 +90,7 @@
         "comment": "Non-text files",
         "key": "ui_non_text",
         "def_val": 0,
-        "format": "i_s",
+        "format": "enum_i",
         "dct":[ [0, "prompt"],
                 [1, "open"],
                 [2, "don't open"]]
@@ -175,7 +175,7 @@
         "comment": "Style of folding",
         "key": "fold_style",
         "def_val": 1,
-        "format": "i_s",
+        "format": "enum_i",
         "dct":[
               [0, "if fold-hint empty: [...] from fold-pos, else hint"],
               [1, "if fold-hint empty: [line...] from fold-pos, else hint"],
@@ -276,7 +276,7 @@
         "comment": "Style of folding icons",
         "key": "gutter_fold_icons",
         "def_val": 0,
-        "format": "i_s",
+        "format": "enum_i",
         "dct":[ [0, "plus/minus"],
                 [1, "triangles"]]
     },
@@ -299,7 +299,7 @@
         "comment": "Numbers style",
         "key": "numbers_style",
         "def_val": 0,
-        "format": "i_s",
+        "format": "enum_i",
         "dct":[[0, "all lines"],
                [1, "none"],
                [2, "each 10th line"],
@@ -320,7 +320,7 @@
                     "(vert lines lefter of {..} blocks)"],
         "key": "staples_style",
         "def_val": 1,
-        "format": "i_s",
+        "format": "enum_i",
         "dct":[
           [0, "don't show"],
           [1, "normal lines"],
@@ -460,7 +460,7 @@
         "comment": "Wrap mode",
         "key": "wrap_mode",
         "def_val": 0,
-        "format": "i_s",
+        "format": "enum_i",
         "dct":[
               [0, "off (faster)"],
               [1, "wrap at editor edge (changed on window resize)"],
@@ -512,7 +512,7 @@
         "comment": "Caret shape, normal state",
         "key": "caret_shape",
         "def_val": 1,
-        "format": "i_s",
+        "format": "enum_i",
         "dct":[
              [ 0, "Full"],
              [ 1, "VertPixels1"],
@@ -547,7 +547,7 @@
         "comment": "Caret shape, overwrite mode (Ins key: insert/overwrite)",
         "key": "caret_shape_ovr",
         "def_val": 0,
-        "format": "i_s",
+        "format": "enum_i",
         "dct":[
              [ 0, "Full"],
              [ 1, "VertPixels1"],
@@ -582,7 +582,7 @@
         "comment": "Caret shape, read-only mode",
         "key": "caret_shape_ro",
         "def_val": 13,
-        "format": "i_s",
+        "format": "enum_i",
         "dct":[
              [ 0, "Full"],
              [ 1, "VertPixels1"],
@@ -617,7 +617,7 @@
         "comment": "Caret pos after pasting column-block",
         "key": "caret_after_paste_column",
         "def_val": 5,
-        "format": "i_s",
+        "format": "enum_i",
         "dct":[
               [0, "no change"],
               [1, "left-bottom"],
@@ -646,7 +646,7 @@
         "comment": "Find current selection next/prev: case-sensitive state",
         "key": "find_sel_case",
         "def_val": 2,
-        "format": "i_s",
+        "format": "enum_i",
         "dct":[
               [0, "case-sens off"],
               [1, "case-sens on"],
@@ -710,7 +710,7 @@
         "comment": "Show \"x\" buttons on tabs",
         "key": "ui_tab_show_x",
         "def_val": 1,
-        "format": "i_s",
+        "format": "enum_i",
         "dct":[
           [0, "dont show"],
           [1, "for all tabs"],
@@ -841,7 +841,7 @@
                     "End-of-lines"],
         "key": "newdoc_eol",
         "def_val": 1,
-        "format": "i_s",
+        "format": "enum_i",
         "dct":[
           [1, "Win "],
           [2, "Unix"],
@@ -857,7 +857,7 @@
         "comment": "Auto-indent kind",
         "key": "indent_kind",
         "def_val": 0,
-        "format": "i_s",
+        "format": "enum_i",
         "dct":[
               [0, "indent like in prev line"],
               [1, "by spaces"],
@@ -921,7 +921,7 @@
         "comment": "Call Goto-Definition command, by click with modifier key",
         "key": "mouse_goto_definition",
         "def_val": "a",
-        "format": "s_s",
+        "format": "enum_s",
         "dct":[
               ["", "disabled"],
               ["a", "by Alt+click"],
@@ -965,7 +965,7 @@
         "comment": "Keys PageUp/PageDown page size",
         "key": "key_page_size",
         "def_val": 1,
-        "format": "i_s",
+        "format": "enum_i",
         "dct":[
           [0, "full height"],
           [1, "full minus 1"],
