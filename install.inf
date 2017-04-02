@@ -1,0 +1,12 @@
+[info]
+title=Options editor
+desc=View and change options from user.json
+type=cudatext-plugin
+subdir=cuda_options_editor
+homepage=https://github.com/kvichans/cuda_options_editor
+
+[item10]
+section=commands
+caption=Options editor...
+method=dlg_cuda_opts
+;menu=0
