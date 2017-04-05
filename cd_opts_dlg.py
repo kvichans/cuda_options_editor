@@ -2,7 +2,7 @@
 Authors:
     Andrey Kvichansky    (kvichans on github.com)
 Version:
-    '1.0.3 2017-04-04'
+    '1.1.0 2017-04-05'
 ToDo: (see end of file)
 '''
 
@@ -24,7 +24,7 @@ _   = get_translation(__file__) # I18N
 VERSION     = re.split('Version:', __doc__)[1].split("'")[1]
 VERSION_V,  \
 VERSION_D   = VERSION.split(' ')
-MIN_API_VER = '1.0.168'
+#MIN_API_VER = '1.0.168'
 MAX_HIST    = apx.get_opt('ui_max_history_edits', 20)
 CFG_JSON    = app.app_path(app.APP_DIR_SETTINGS)+os.sep+'cuda_options_editor.json'
 
@@ -35,12 +35,24 @@ class Command:
         pass;                  #dlg_opt_editor('CudaText options', '')
         pass;                  #return 
 #       cuda_opts   = apx.get_def_setting_dir()+os.sep+'default_options.json'
-        cuda_opts   = os.path.dirname(__file__)+os.sep+'default_options.json'
-        dlg_opt_editor('CudaText options', json.loads(open(cuda_opts).read()))
+#       cuda_opts   = os.path.dirname(__file__)+os.sep+'default_options.json'
+#       dlg_opt_editor('CudaText options', json.loads(open(cuda_opts).read()))
+        dlg_opt_editor('CudaText options'
+        , keys_info=None
+#       , path_raw_keys_info=apx.get_def_setting_dir()          +os.sep+'kv-default_tmp.json'
+        , path_raw_keys_info=apx.get_def_setting_dir()          +os.sep+'default.json'
+#       , path_raw_keys_info=apx.get_def_setting_dir()          +os.sep+'kv-default.json'
+        , path_svd_keys_info=app.app_path(app.APP_DIR_SETTINGS) +os.sep+'default_keys_info.json'
+        )
        #def dlg_cuda_opts
    #class Command
 
-def dlg_opt_editor(title, keys_info, path_to_json='settings/user.json', subset=''):
+def dlg_opt_editor(title, keys_info=None
+        , path_to_json='settings/user.json'
+        , path_raw_keys_info=''
+        , path_svd_keys_info=''
+        , subset='def.'
+        ):
     """ Editor for any json data.
         Params 
             title       (str)   Dialog title
@@ -53,6 +65,29 @@ def dlg_opt_editor(title, keys_info, path_to_json='settings/user.json', subset='
                                     dct:    (dict)
                                             (pairs list)
     """
+    if not keys_info:
+        if not os.path.isfile(path_raw_keys_info):
+            return app.msg_status(_('No sourse for key-info'))
+        # If ready json exists - use ready
+        # Else - parse raw (and save as ready)
+
+        mtime_raw   = os.path.getmtime(path_raw_keys_info)
+        mtime_svd   = os.path.getmtime(path_svd_keys_info) if os.path.exists(path_svd_keys_info) else 0
+        if 'use ready'!='use ready' and mtime_raw < mtime_svd:
+            # Use ready
+            keys_info   = json.loads(open(path_svd_keys_info, encoding='utf8').read(), object_pairs_hook=OrdDict)
+            app.msg_status(f(_('Load key-info ({}) from "{}"'),len(keys_info),path_svd_keys_info))
+        else:
+            # Parse raw
+            keys_info   = parse_raw_keys_info(path_raw_keys_info)
+            if not keys_info:
+                return app.msg_status(_('Bad sourse for key-info'))
+            if path_svd_keys_info:
+                # Save as ready
+                open(path_svd_keys_info,'w').write(json.dumps(keys_info, indent=4))
+                app.msg_status(_('Update key-info at '+path_svd_keys_info))
+        pass;                  #return
+            
     if -1== 1:  # Test data
         keys_info = [dict(key='key-bool',format='bool'  ,def_val=False           ,comment= 'smth')
                     ,dict(key='key-int' ,format='int'   ,def_val=123             ,comment= 'smth\nsmth')
@@ -145,7 +180,8 @@ def dlg_opt_editor(title, keys_info, path_to_json='settings/user.json', subset='
         return all(map(lambda c:c in text, cnd_s.split()))
        #def test_cond
 
-    chap_l  = [' '] + list({kinfo.get('chapter', '') for  kinfo in keys_info if kinfo.get('chapter', '')})
+    chap_l  = list({kinfo.get('chapter', '') for  kinfo in keys_info if kinfo.get('chapter', '')})
+    chap_l  = [' '] + sorted(chap_l)
     chap_vl = [len(['' for kinfo in keys_info if chp==kinfo.get('chapter', '')]) for chp in chap_l if chp!=' ']
     chap_vl = [''] + [f(' ({})', str(chp)) for chp in chap_vl]
     tag_set = set()
@@ -274,10 +310,10 @@ def dlg_opt_editor(title, keys_info, path_to_json='settings/user.json', subset='
                  +[dict(           tp='lb'  ,t=5        ,l=COL_WS[0]+160,r=DLG_W-10-80  ,cap=_('T&ags:')                            )] # &a
                  +[dict(cid='tags',tp='cb-ro',t=25      ,l=COL_WS[0]+160,r=DLG_W-10-80  ,items=tags_hl                      ,act='1')] #
                  +[dict(cid='?tgs',tp='bt'  ,tid='tags' ,l=DLG_W-5-80   ,w=80           ,cap=_('Tag&s…')    ,hint=_('Choose tags')  )] # &s
-                 +[dict(cid='-tgs',tp='bt'  ,t=55       ,l=DLG_W-5-80   ,w=80           ,cap=_('Clea&r')    ,hint=_('Clear tags')   )] # &r
+                 +[dict(cid='-tgs',tp='bt'  ,t=57       ,l=DLG_W-5-80   ,w=80           ,cap=_('Clea&r')    ,hint=_('Clear tags')   )] # &r
             )
                 # Table
-                 +[dict(cid='lvls',tp='lvw' ,t=55       ,l=5 ,h=LST_H   ,w=LST_W        ,items=itms             ,grid='1'   ,act='1')] #
+                 +[dict(cid='lvls',tp='lvw' ,t=57       ,l=5 ,h=LST_H   ,w=LST_W        ,items=itms             ,grid='1'   ,act='1')] #
             # Editors for value
             +([] if not as_bool else []
                  +[dict(           tp='lb'  ,tid='kvbl' ,l=l_val-100-5  ,w=100          ,cap=_('>&Value:')                          )] # &v 
@@ -439,6 +475,83 @@ def dlg_opt_editor(title, keys_info, path_to_json='settings/user.json', subset='
        #while
    #def dlg_opt_editor
 
+def parse_raw_keys_info(path_to_raw):
+    pass;                       LOG and log('path_to_raw={}',(path_to_raw))
+    #NOTE: parse_raw
+    kinfs    = []
+    lines   = open(path_to_raw, encoding='utf8').readlines()
+    l       = '\n'
+    
+    reTags  = re.compile(r' *\((#\w+,?)+\)')
+    reN2S   = re.compile(r' *(\d+): *(.+)')
+    reS2S   = re.compile(r' *"(\w+)": *(.+)')
+    def parse_cmnt(cmnt, frm):  
+        tags= set()
+        mt  = reTags.search(cmnt)
+        while mt:
+            tags_s  = mt.group(0)
+            cmnt    = cmnt.replace(tags_s, '')
+            mt      = reTags.search(cmnt)
+            tags   |= set(tags_s.strip(' ()').replace('#', '').split(','))
+        dctN= [[int(m.group(1)), m.group(2)] for m in reN2S.finditer(cmnt)]
+        dctS= [[    m.group(1) , m.group(2)] for m in reN2S.finditer(cmnt)]
+        frm,\
+        dct = ('enum_i', dctN)    if dctN else \
+              ('enum_s', dctS)    if dctS else \
+              (frm     , []  )
+        return cmnt, frm, dct, list(tags)
+       #def parse_cmnt
+    
+    reChap  = re.compile(r' *//\[Section: +(.+)\]')
+    reCmnt  = re.compile(r' *//(.+)')
+    reKeyDV = re.compile(r' *"(\w+)" *: *(.+)')
+    reFontNm= re.compile(r'font\w*_name')
+    chap    = ''
+    ref_cmnt= ''    # Full comment to add to '... smth'
+    cmnt    = ''
+    for line in lines:
+        if False:pass
+        elif    reChap.match(line):
+            mt= reChap.match(line)
+            chap    = mt.group(1)
+            cmnt    = ''
+        elif    reCmnt.match(line):
+            mt= reCmnt.match(line)
+            cmnt   += l+mt.group(1)
+        elif    reKeyDV.match(line):
+            cmnt    = cmnt.strip(l)
+            mt= reKeyDV.match(line)
+            key     = mt.group(1)
+            dval_s  = mt.group(2).rstrip(',')
+            frm,dval= ('int',  int(dval_s)  )   if dval_s.isdigit()                     else \
+                      ('float',float(dval_s))   if dval_s.isdecimal()                   else \
+                      ('bool', True         )   if dval_s=='true'                       else \
+                      ('bool', False        )   if dval_s=='false'                      else \
+                      ('font', dval_s[1:-1] )   if reFontNm.search(key)                 else \
+                      ('str',  dval_s[1:-1] )   if dval_s[0]=='"' and dval_s[-1]=='"'   else \
+                      ('unk',  dval_s       )
+            
+            ref_cmnt= ref_cmnt                                      if cmnt.startswith('...') else cmnt
+            kinf    = OrdDict()
+            kinfs  += [kinf]
+            kinf['key']         = key
+            kinf['def_val']     = dval
+            cmnt,frm,dct,tags   = parse_cmnt(ref_cmnt+l+cmnt[3:]    if cmnt.startswith('...') else cmnt, frm)
+            kinf['comment']     = cmnt
+            if frm in ('enum_i','enum_s','font'):
+                kinf['format']  = frm
+            if dct:
+                kinf['dct']     = dct
+            if chap:
+                kinf['chapter'] = chap
+            if tags:
+                kinf['tags']    = tags
+            cmnt    = ''
+       #for line
+    
+    return kinfs
+   #def parse_raw_keys_info
+
 def index_1(cllc, val, defans=-1):
     return cllc.index(val) if val in cllc else defans
 
@@ -467,4 +580,5 @@ ToDo
 [ ][kv-kv][04apr17] Testing for update user.json
 [+][kv-kv][04apr17] Restore Sec and Tags
 [ ][kv-kv][04apr17] ro-combo hitory for Tags
+[ ][kv-kv][05apr17] Add "default" to fonts if def_val=="default"
 '''

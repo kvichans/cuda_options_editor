@@ -1,5 +1,5 @@
 [info]
-title=Options editor
+title=Options Editor
 desc=View and change options from user.json
 type=cudatext-plugin
 subdir=cuda_options_editor
