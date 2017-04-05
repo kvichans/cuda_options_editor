@@ -500,7 +500,8 @@ def parse_raw_keys_info(path_to_raw):
     def jsstr(s):
         return s[1:-1].replace(r'\"','"').replace(r'\\','\\')
     
-    reChap  = re.compile(r' *//\[Section: +(.+)\]')
+    reChap1 = re.compile(r' *//\[Section: +(.+)\]')
+    reChap2 = re.compile(r' *//\[(.+)\]')
     reCmnt  = re.compile(r' *//(.+)')
     reKeyDV = re.compile(r' *"(\w+)" *: *(.+)')
     reFontNm= re.compile(r'font\w*_name')
@@ -509,8 +510,12 @@ def parse_raw_keys_info(path_to_raw):
     cmnt    = ''
     for line in lines:
         if False:pass
-        elif    reChap.match(line):
-            mt= reChap.match(line)
+        elif    reChap1.match(line):
+            mt= reChap1.match(line)
+            chap    = mt.group(1)
+            cmnt    = ''
+        elif    reChap2.match(line):
+            mt= reChap2.match(line)
             chap    = mt.group(1)
             cmnt    = ''
         elif    reCmnt.match(line):
