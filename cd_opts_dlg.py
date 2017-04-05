@@ -2,7 +2,7 @@
 Authors:
     Andrey Kvichansky    (kvichans on github.com)
 Version:
-    '1.1.0 2017-04-05'
+    '1.1.1 2017-04-05'
 ToDo: (see end of file)
 '''
 
@@ -39,7 +39,6 @@ class Command:
 #       dlg_opt_editor('CudaText options', json.loads(open(cuda_opts).read()))
         dlg_opt_editor('CudaText options'
         , keys_info=None
-#       , path_raw_keys_info=apx.get_def_setting_dir()          +os.sep+'kv-default_tmp.json'
         , path_raw_keys_info=apx.get_def_setting_dir()          +os.sep+'default.json'
 #       , path_raw_keys_info=apx.get_def_setting_dir()          +os.sep+'kv-default.json'
         , path_svd_keys_info=app.app_path(app.APP_DIR_SETTINGS) +os.sep+'default_keys_info.json'
@@ -110,10 +109,7 @@ def dlg_opt_editor(title, keys_info=None
               [font 
                 for font in app.app_proc(app.PROC_ENUM_FONTS, '')
                 if not font.startswith('@')] 
-    if 'cut fonts'!='cut fonts':
-        font_l  = font_l[:2]
-    pass;                   LOG#and log('font_l={}',(font_l))
-
+    font_l  = ['default'] + font_l
     stores      = json.loads(open(CFG_JSON).read(), object_pairs_hook=OrdDict) \
                     if os.path.exists(CFG_JSON) and os.path.getsize(CFG_JSON) != 0 else \
                   OrdDict()
@@ -476,7 +472,7 @@ def dlg_opt_editor(title, keys_info=None
    #def dlg_opt_editor
 
 def parse_raw_keys_info(path_to_raw):
-    pass;                       LOG and log('path_to_raw={}',(path_to_raw))
+    pass;                      #LOG and log('path_to_raw={}',(path_to_raw))
     #NOTE: parse_raw
     kinfs    = []
     lines   = open(path_to_raw, encoding='utf8').readlines()
@@ -490,9 +486,9 @@ def parse_raw_keys_info(path_to_raw):
         mt  = reTags.search(cmnt)
         while mt:
             tags_s  = mt.group(0)
+            tags   |= set(tags_s.strip(' ()').replace('#', '').split(','))
             cmnt    = cmnt.replace(tags_s, '')
             mt      = reTags.search(cmnt)
-            tags   |= set(tags_s.strip(' ()').replace('#', '').split(','))
         dctN= [[int(m.group(1)), m.group(2)] for m in reN2S.finditer(cmnt)]
         dctS= [[    m.group(1) , m.group(2)] for m in reN2S.finditer(cmnt)]
         frm,\
@@ -501,6 +497,8 @@ def parse_raw_keys_info(path_to_raw):
               (frm     , []  )
         return cmnt, frm, dct, list(tags)
        #def parse_cmnt
+    def jsstr(s):
+        return s[1:-1].replace(r'\"','"').replace(r'\\','\\')
     
     reChap  = re.compile(r' *//\[Section: +(.+)\]')
     reCmnt  = re.compile(r' *//(.+)')
@@ -519,16 +517,16 @@ def parse_raw_keys_info(path_to_raw):
             mt= reCmnt.match(line)
             cmnt   += l+mt.group(1)
         elif    reKeyDV.match(line):
-            cmnt    = cmnt.strip(l)
             mt= reKeyDV.match(line)
             key     = mt.group(1)
             dval_s  = mt.group(2).rstrip(',')
+            cmnt    = cmnt.strip(l)
             frm,dval= ('int',  int(dval_s)  )   if dval_s.isdigit()                     else \
                       ('float',float(dval_s))   if dval_s.isdecimal()                   else \
                       ('bool', True         )   if dval_s=='true'                       else \
                       ('bool', False        )   if dval_s=='false'                      else \
                       ('font', dval_s[1:-1] )   if reFontNm.search(key)                 else \
-                      ('str',  dval_s[1:-1] )   if dval_s[0]=='"' and dval_s[-1]=='"'   else \
+                      ('str',  jsstr(dval_s))   if dval_s[0]=='"' and dval_s[-1]=='"'   else \
                       ('unk',  dval_s       )
             
             ref_cmnt= ref_cmnt                                      if cmnt.startswith('...') else cmnt
@@ -548,7 +546,6 @@ def parse_raw_keys_info(path_to_raw):
                 kinf['tags']    = tags
             cmnt    = ''
        #for line
-    
     return kinfs
    #def parse_raw_keys_info
 
