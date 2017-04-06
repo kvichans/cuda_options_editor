@@ -2,7 +2,7 @@
 Authors:
     Andrey Kvichansky    (kvichans on github.com)
 Version:
-    '1.1.1 2017-04-05'
+    '1.1.2 2017-04-06'
 ToDo: (see end of file)
 '''
 
@@ -291,8 +291,16 @@ def dlg_opt_editor(title, keys_info=None
         as_char = key_sel and (frm_sel in ('int', 'float', 'str', 'json')   or frm_sel=='font' and not font_l)
         as_enum = key_sel and (frm_sel in ('enum_i', 'enum_s')              or frm_sel=='font' and     font_l)
         as_file = key_sel and  frm_sel in ('file')
+        pvw_font= '' \
+                    if not font_l                                                                           else    \
+                  f('{},{}', val_sel, k2fdcvt[key_sel.replace('font_name', 'font_size')]['v'])                      \
+                    if frm_sel=='font' and val_sel!='default'                                               else    \
+                  f('{},{}',          k2fdcvt[key_sel.replace('font_size', 'font_name')]['v'], val_sel)             \
+                    if frm_sel=='int' and 'font_size' in key_sel                                            else    \
+                  ''
+        pass;                   LOG and log('pvw_font={}',(pvw_font))
         cnts    =([]
-                # Filter
+            # Filter
                  +[dict(cid='fltr',tp='bt'  ,t=0        ,l=0            ,w=0            ,cap=''                 ,def_bt='1'         )] # 
                  +[dict(           tp='lb'  ,t=5        ,l=5+2          ,w=COL_WS[0]    ,cap=_('&Filter:')  ,hint=fltr_h            )] # &k
                  +[dict(cid='cond',tp='cb'  ,t=25       ,l=5+2          ,w=COL_WS[0]    ,items=cond_hl                              )] #
@@ -308,7 +316,7 @@ def dlg_opt_editor(title, keys_info=None
                  +[dict(cid='?tgs',tp='bt'  ,tid='tags' ,l=DLG_W-5-80   ,w=80           ,cap=_('Tag&s…')    ,hint=_('Choose tags')  )] # &s
                  +[dict(cid='-tgs',tp='bt'  ,t=57       ,l=DLG_W-5-80   ,w=80           ,cap=_('Clea&r')    ,hint=_('Clear tags')   )] # &r
             )
-                # Table
+            # Table of keys
                  +[dict(cid='lvls',tp='lvw' ,t=57       ,l=5 ,h=LST_H   ,w=LST_W        ,items=itms             ,grid='1'   ,act='1')] #
             # Editors for value
             +([] if not as_bool else []
@@ -330,12 +338,16 @@ def dlg_opt_editor(title, keys_info=None
                  +[dict(           tp='lb'  ,tid='kvcb' ,l=l_val-100-5  ,w=100          ,cap=_('>&Value:')                          )] # &v 
                  +[dict(cid='kvcb',tp='cb-ro',t=65+LST_H,l=l_val+5      ,w=COL_WS[-1]+15,items=var_sel                      ,act='1')] #
             )
-                # View def-value
+            # View def-value
                  +[dict(           tp='lb'  ,tid='dfvl' ,l=l_val-100-5  ,w=100          ,cap=_('>Default value:')                   )] # 
                  +[dict(cid='dfvl',tp='ed'  ,t=93+LST_H ,l=l_val+5      ,w=COL_WS[-1]+15                        ,ro_mono_brd='1,0,1')] #
-                 +[dict(cid='setd',tp='bt'  ,tid='dfvl' ,l=DLG_W-5-80   ,w=80           ,cap=_('Reset')                             )] # 
-                # View commnent
+                 +[dict(cid='setd',tp='bt'  ,tid='dfvl' ,l=DLG_W-5-80   ,w=80           ,cap=_('Reset')     ,en=(dvl_sel!=val_sel)  )] # 
+            # View commnent (with tested font)
+            +([]  
                  +[dict(cid='cmnt',tp='memo',t=125+LST_H,l=5 ,h=CMNT_H-3,w=LST_W                                ,ro_mono_brd='1,1,1')] #
+              if not (pvw_font) else []
+                 +[dict(cid='cmnt',tp='memo',t=125+LST_H,l=5 ,h=CMNT_H-3,w=LST_W        ,font=pvw_font          ,ro_mono_brd='1,0,1')] #
+            )
 
                  +[dict(cid='cust',tp='bt'  ,t=150      ,l=DLG_W-5-80   ,w=80           ,cap=_('Ad&just…')                          )] # &j
 #                +[dict(cid='?'   ,tp='bt'  ,t=DLG_H-65 ,l=DLG_W-5-80   ,w=80           ,cap=_('&Help…')                            )] # &h
@@ -435,7 +447,13 @@ def dlg_opt_editor(title, keys_info=None
         key_sel = fl_kfsvt[ind_sel][0]
         pass;                  #LOG and log('cond_s={}',(cond_s))
 
+        if aid=='setd' and dvl_sel!=val_sel:
+            # Reset def value
+            k2fdcvt[key_sel]['v'] = dvl_sel
+            # Update json file
+            apx.set_opt(key_sel, dvl_sel)
         if aid in ('kvbl', 'setv', 'kvcb', 'brow'):
+            # Changed value
             old_val = k2fdcvt[key_sel]['v']
             
             if aid=='kvbl':
@@ -457,7 +475,8 @@ def dlg_opt_editor(title, keys_info=None
                     #while not good
             if aid=='kvcb' and vals['kvcb']!=-1:
                 ind     = vals['kvcb']
-                k2fdcvt[key_sel]['v'] = list(dct_sel.keys())[ind]
+                val_l   = font_l    if frm_sel=='font' else     list(var_sel.keys())
+                k2fdcvt[key_sel]['v'] = val_l[ind]
             if aid=='brow':
                 path    = app.dlg_file(True, '', os.path.expanduser(k2fdcvt[key_sel]['v']), '')
                 if not path:  continue#while
@@ -489,8 +508,8 @@ def parse_raw_keys_info(path_to_raw):
             tags   |= set(tags_s.strip(' ()').replace('#', '').split(','))
             cmnt    = cmnt.replace(tags_s, '')
             mt      = reTags.search(cmnt)
-        dctN= [[int(m.group(1)), m.group(2)] for m in reN2S.finditer(cmnt)]
-        dctS= [[    m.group(1) , m.group(2)] for m in reN2S.finditer(cmnt)]
+        dctN= [[int(m.group(1)), m.group(2).rstrip(',')] for m in reN2S.finditer(cmnt)]
+        dctS= [[    m.group(1) , m.group(2).rstrip(',')] for m in reN2S.finditer(cmnt)]
         frm,\
         dct = ('enum_i', dctN)    if dctN else \
               ('enum_s', dctS)    if dctS else \
@@ -583,4 +602,5 @@ ToDo
 [+][kv-kv][04apr17] Restore Sec and Tags
 [ ][kv-kv][04apr17] ro-combo hitory for Tags
 [ ][kv-kv][05apr17] Add "default" to fonts if def_val=="default"
+[ ][at-kv][05apr17] Preview for format=font
 '''

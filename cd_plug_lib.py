@@ -41,6 +41,7 @@ REDUCTS = {'lb'     :'label'
         ,  'rd-gp'  :'radiogroup'
         ,  'cb'     :'combo'
         ,  'cb-ro'  :'combo_ro'
+        ,  'cb-r'   :'combo_ro'
         ,  'lbx'    :'listbox'
         ,  'ch-lbx' :'checklistbox'
         ,  'lvw'    :'listview'
@@ -48,6 +49,8 @@ REDUCTS = {'lb'     :'label'
         ,  'tabs'   :'tabs'
         ,  'clr'    :'colorpanel'
         ,  'im'     :'image'
+        ,  'f-lb'   :'filter_listbox'
+        ,  'f-lvw'  :'filter_listview'
         }
 
 def f(s, *args, **kwargs):return s.format(*args, **kwargs)
@@ -424,7 +427,7 @@ def dlg_wrapper(title, w, h, cnts, in_vals={}, focus_cid=None):
             cnt['props']= cnt.get('ro_mono_brd')
 
         # Simple props
-        for k in ['cap', 'hint', 'props']:
+        for k in ['cap', 'hint', 'props', 'font', 'name']:
             if k in cnt:
                 lst += [k+'='+str(cnt[k])]
         # Position:
@@ -581,6 +584,16 @@ def dlg_valign_consts():
               ,_sp7=fit_top_by_env('linklabel')
               ,_sp8=fit_top_by_env('spinedit')
               )
+    hints   = dict(
+               _sp1=f('{} check', fits['_sp1'])
+              ,_sp2=f('{} edit', fits['_sp2'])
+              ,_sp3=f('{} button', fits['_sp3'])
+              ,_sp4=f('{} combo_ro', fits['_sp4'])
+              ,_sp5=f('{} combo', fits['_sp5'])
+              ,_sp6=f('{} checkbutton', fits['_sp6'])
+              ,_sp7=f('{} linklabel', fits['_sp7'])
+              ,_sp8=f('{} spinedit', fits['_sp8'])
+              )
     vals    = dict(
                ch1 =False
               ,ed2 ='=======?'
@@ -592,50 +605,50 @@ def dlg_valign_consts():
     focused = '-'
     while True:
         aid, vals, fid, chds = dlg_wrapper(_('Adjust vertical alignments')   ,DLG_W, DLG_H, 
-            [dict(cid='lb1'     ,tp='lb'    ,t= 10              ,l=  5  ,w=100  ,cap='==============='                          )
-            ,dict(cid='ch1'     ,tp='ch'    ,t= 10+fits['_sp1'] ,l=115  ,w=100  ,cap='=======?'             ,hint=fits['_sp1']  )
-            ,dict(cid='up1'     ,tp='bt'    ,t= 10-3            ,l=230  ,w=50   ,cap=UP                                         )
-            ,dict(cid='dn1'     ,tp='bt'    ,t= 10-3            ,l=280  ,w=50   ,cap=DN                                         )
+            [dict(cid='lb1' ,tp='lb'    ,t= 10              ,l=  5  ,w=100  ,cap='==============='                      )
+            ,dict(cid='ch1' ,tp='ch'    ,t= 10+fits['_sp1'] ,l=115  ,w=100  ,cap='=======?'         ,hint=hints['_sp1'] )
+            ,dict(cid='up1' ,tp='bt'    ,t= 10-3            ,l=230  ,w=50   ,cap=UP                                     )
+            ,dict(cid='dn1' ,tp='bt'    ,t= 10-3            ,l=280  ,w=50   ,cap=DN                                     )
                 
-            ,dict(cid='lb2'     ,tp='lb'    ,t= 40              ,l=  5  ,w=100  ,cap='==============='                          )
-            ,dict(cid='ed2'     ,tp='ed'    ,t= 40+fits['_sp2'] ,l=115  ,w=100                              ,hint=fits['_sp2']  )
-            ,dict(cid='up2'     ,tp='bt'    ,t= 40-3            ,l=230  ,w=50   ,cap=UP                                         )
-            ,dict(cid='dn2'     ,tp='bt'    ,t= 40-3            ,l=280  ,w=50   ,cap=DN                                         )
+            ,dict(cid='lb2' ,tp='lb'    ,t= 40              ,l=  5  ,w=100  ,cap='==============='                      )
+            ,dict(cid='ed2' ,tp='ed'    ,t= 40+fits['_sp2'] ,l=115  ,w=100                          ,hint=hints['_sp2'] )
+            ,dict(cid='up2' ,tp='bt'    ,t= 40-3            ,l=230  ,w=50   ,cap=UP                                     )
+            ,dict(cid='dn2' ,tp='bt'    ,t= 40-3            ,l=280  ,w=50   ,cap=DN                                     )
                 
-            ,dict(cid='lb3'     ,tp='lb'    ,t= 70              ,l=  5  ,w=100  ,cap='==============='                          )
-            ,dict(cid='bt3'     ,tp='bt'    ,t= 70+fits['_sp3'] ,l=115  ,w=100  ,cap='=======?'             ,hint=fits['_sp3']  )
-            ,dict(cid='up3'     ,tp='bt'    ,t= 70-3            ,l=230  ,w=50   ,cap=UP                                         )
-            ,dict(cid='dn3'     ,tp='bt'    ,t= 70-3            ,l=280  ,w=50   ,cap=DN                                         )
+            ,dict(cid='lb3' ,tp='lb'    ,t= 70              ,l=  5  ,w=100  ,cap='==============='                      )
+            ,dict(cid='bt3' ,tp='bt'    ,t= 70+fits['_sp3'] ,l=115  ,w=100  ,cap='=======?'         ,hint=hints['_sp3'] )
+            ,dict(cid='up3' ,tp='bt'    ,t= 70-3            ,l=230  ,w=50   ,cap=UP                                     )
+            ,dict(cid='dn3' ,tp='bt'    ,t= 70-3            ,l=280  ,w=50   ,cap=DN                                     )
                 
-            ,dict(cid='lb4'     ,tp='lb'    ,t=100              ,l=  5  ,w=100  ,cap='==============='                          )
-            ,dict(cid='cbo4'    ,tp='cb-ro' ,t=100+fits['_sp4'] ,l=115  ,w=100  ,items=['=======?']         ,hint=fits['_sp4']  )
-            ,dict(cid='up4'     ,tp='bt'    ,t=100-3            ,l=230  ,w=50   ,cap=UP                                         )
-            ,dict(cid='dn4'     ,tp='bt'    ,t=100-3            ,l=280  ,w=50   ,cap=DN                                         )
+            ,dict(cid='lb4' ,tp='lb'    ,t=100              ,l=  5  ,w=100  ,cap='==============='                      )
+            ,dict(cid='cbo4',tp='cb-ro' ,t=100+fits['_sp4'] ,l=115  ,w=100  ,items=['=======?']     ,hint=hints['_sp4'] )
+            ,dict(cid='up4' ,tp='bt'    ,t=100-3            ,l=230  ,w=50   ,cap=UP                                     )
+            ,dict(cid='dn4' ,tp='bt'    ,t=100-3            ,l=280  ,w=50   ,cap=DN                                     )
                 
-            ,dict(cid='lb5'     ,tp='lb'    ,t=130              ,l=  5  ,w=100  ,cap='==============='                          )
-            ,dict(cid='cb5'     ,tp='cb'    ,t=130+fits['_sp5'] ,l=115  ,w=100  ,items=['=======?']         ,hint=fits['_sp5']  )
-            ,dict(cid='up5'     ,tp='bt'    ,t=130-3            ,l=230  ,w=50   ,cap=UP                                         )
-            ,dict(cid='dn5'     ,tp='bt'    ,t=130-3            ,l=280  ,w=50   ,cap=DN                                         )
+            ,dict(cid='lb5' ,tp='lb'    ,t=130              ,l=  5  ,w=100  ,cap='==============='                      )
+            ,dict(cid='cb5' ,tp='cb'    ,t=130+fits['_sp5'] ,l=115  ,w=100  ,items=['=======?']     ,hint=hints['_sp5'] )
+            ,dict(cid='up5' ,tp='bt'    ,t=130-3            ,l=230  ,w=50   ,cap=UP                                     )
+            ,dict(cid='dn5' ,tp='bt'    ,t=130-3            ,l=280  ,w=50   ,cap=DN                                     )
                 
-            ,dict(cid='lb6'     ,tp='lb'    ,t=160              ,l=  5  ,w=100  ,cap='==============='                          )
-            ,dict(cid='chb6'    ,tp='ch-bt' ,t=160+fits['_sp6'] ,l=115  ,w=100  ,cap='=======?'             ,hint=fits['_sp6']  )
-            ,dict(cid='up6'     ,tp='bt'    ,t=160-3            ,l=230  ,w=50   ,cap=UP                                         )
-            ,dict(cid='dn6'     ,tp='bt'    ,t=160-3            ,l=280  ,w=50   ,cap=DN                                         )
+            ,dict(cid='lb6' ,tp='lb'    ,t=160              ,l=  5  ,w=100  ,cap='==============='                      )
+            ,dict(cid='chb6',tp='ch-bt' ,t=160+fits['_sp6'] ,l=115  ,w=100  ,cap='=======?'         ,hint=hints['_sp6'] )
+            ,dict(cid='up6' ,tp='bt'    ,t=160-3            ,l=230  ,w=50   ,cap=UP                                     )
+            ,dict(cid='dn6' ,tp='bt'    ,t=160-3            ,l=280  ,w=50   ,cap=DN                                     )
                 
-            ,dict(cid='lb7'     ,tp='lb'    ,t=190              ,l=  5  ,w=100  ,cap='==============='                          )
-            ,dict(cid='chb7'    ,tp='ln-lb' ,t=190+fits['_sp7'] ,l=115  ,w=100  ,cap='=======?',props='-'   ,hint=fits['_sp7']  )
-            ,dict(cid='up7'     ,tp='bt'    ,t=190-3            ,l=230  ,w=50   ,cap=UP                                         )
-            ,dict(cid='dn7'     ,tp='bt'    ,t=190-3            ,l=280  ,w=50   ,cap=DN                                         )
+            ,dict(cid='lb7' ,tp='lb'    ,t=190              ,l=  5  ,w=100  ,cap='==============='                      )
+            ,dict(cid='chb7',tp='ln-lb' ,t=190+fits['_sp7'] ,l=115  ,w=100  ,cap='=======?'         ,props=hints['_sp7'])
+            ,dict(cid='up7' ,tp='bt'    ,t=190-3            ,l=230  ,w=50   ,cap=UP                                     )
+            ,dict(cid='dn7' ,tp='bt'    ,t=190-3            ,l=280  ,w=50   ,cap=DN                                     )
                 
-            ,dict(cid='lb8'     ,tp='lb'    ,t=220              ,l=  5  ,w=100  ,cap='4444444444444444'                         )
-            ,dict(cid='sp8'     ,tp='sp-ed' ,t=220+fits['_sp8'] ,l=115  ,w=100  ,props='0,4444444,1'        ,hint=fits['_sp8']  )
-            ,dict(cid='up8'     ,tp='bt'    ,t=220-3            ,l=230  ,w=50   ,cap=UP                                         )
-            ,dict(cid='dn8'     ,tp='bt'    ,t=220-3            ,l=280  ,w=50   ,cap=DN                                         )
+            ,dict(cid='lb8' ,tp='lb'    ,t=220              ,l=  5  ,w=100  ,cap='4444444444444444'                     )
+            ,dict(cid='sp8' ,tp='sp-ed' ,t=220+fits['_sp8'] ,l=115  ,w=100  ,props='0,4444444,1'    ,hint=hints['_sp8'] )
+            ,dict(cid='up8' ,tp='bt'    ,t=220-3            ,l=230  ,w=50   ,cap=UP                                     )
+            ,dict(cid='dn8' ,tp='bt'    ,t=220-3            ,l=280  ,w=50   ,cap=DN                                     )
                 
-            ,dict(cid='save'    ,tp='bt'    ,t=DLG_H-30         ,l=115  ,w=100  ,cap=_('&Save')
+            ,dict(cid='save',tp='bt'    ,t=DLG_H-30         ,l=115  ,w=100  ,cap=_('&Save')
                                                                                 ,hint=_('Apply the fittings to controls of all dialogs.'
                                                                                         '\rCtrl+Click  - Show data to mail report.'))
-            ,dict(cid='-'       ,tp='bt'    ,t=DLG_H-30         ,l=230  ,w=100  ,cap=_('Cancel')        )
+            ,dict(cid='-'   ,tp='bt'    ,t=DLG_H-30         ,l=230  ,w=100  ,cap=_('Cancel')        )
             ], vals, focus_cid=focused)
         if aid is None or aid=='-':    return#while True
         scam        = app.app_proc(app.PROC_GET_KEYSTATE, '') if app.app_api_version()>='1.0.143' else ''
