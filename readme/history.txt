@@ -1,3 +1,6 @@
+1.1.4 (2017-04-06)
+added: * to view only changed
+added: target to select value-storage
 
 1.0.0 (2017-04-02)
 init: dlg Options

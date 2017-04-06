@@ -2,7 +2,7 @@
 Authors:
     Andrey Kvichansky    (kvichans on github.com)
 Version:
-    '1.1.2 2017-04-06'
+    '1.1.3 2017-04-06'
 ToDo: (see end of file)
 '''
 
@@ -190,7 +190,11 @@ def dlg_opt_editor(title, keys_info=None
     pass;                      #LOG and log('chap_vl={}',(chap_vl))
     pass;                      #LOG and log('tags_l={}',(tags_l))
     pass;                      #LOG and log('tags_vl={}',(tags_vl))
-    k2fdcvt = OrdDict([
+
+    def get_main_data(trgt_json='user.json'):
+        opts_json   = app.app_path(app.APP_DIR_SETTINGS)+os.sep+trgt_json
+        opts        = apx._get_file_opts(opts_json)
+        return OrdDict([
             (       kinfo['key'],
                {'f':kinfo.get('format', frm_of_val(kinfo['def_val']))
                ,'t':kinfo.get('dct')            if ('dct' not in kinfo or   isinstance(kinfo.get('dct'), dict)) else 
@@ -198,19 +202,26 @@ def dlg_opt_editor(title, keys_info=None
                ,'d':kinfo['def_val']
                ,'c':kinfo['comment']            if                          isinstance(kinfo['comment'], str) else
                     '\n'.join(kinfo['comment'])
-               ,'v':apx.get_opt(kinfo['key'], kinfo['def_val'])
+               ,'v':opts.get(kinfo['key'], kinfo['def_val'])
                ,'a':kinfo.get('chapter', '')
                ,'g':set(kinfo.get('tags', []))
                }
             )  for  kinfo in keys_info
             ])
+       #def get_main_data
+
+    k2fdcvt = get_main_data()
     pass;                      #LOG and log('k2fdcvt={}',(k2fdcvt))
 
     fltr_h  = _('Suitable keys will contain all specified words.'
               '\rTips:'
+              '\r • Start with "*" to view only changed values.'
               '\r • Use "<" or ">" for word boundary.'
               '\r     size> <tab'
               '\r   selects "tab_size" but not "ui_tab_size" or "tab_size_x".')
+    trgt_h  = _('Set storage for values')
+
+    trgt_s  = 'user.json'
     key_sel = keys_info[0]['key']
     cond_s  = ''
     chap_s  = stores.get(subset+'chap')
@@ -238,6 +249,8 @@ def dlg_opt_editor(title, keys_info=None
         #   tags_set
         chap_s  = chap_l[chap_n]
         pass;                  #LOG and log('chap_n,chap_s={}',(chap_n,chap_s))
+        only_chd= cond_s.startswith('*')
+        cond_4f = (cond_s if not only_chd else cond_s[1:]).upper()
         fl_kfsvt= [ (knm
                     ,fdcv['f']
                     ,'*' if fdcv['d']!=fdcv['v'] else ''
@@ -247,7 +260,8 @@ def dlg_opt_editor(title, keys_info=None
                     ,f(' (#{})',', #'.join(fdcv['g']))  if tags_l and               fdcv['g'] else ''
                     )
                     for (knm, fdcv) in k2fdcvt.items()
-                    if  (cond_s==''     or test_cond(cond_s.upper(), knm))  and
+                    if  (not only_chd   or fdcv['d']!=fdcv['v'])            and
+                        (cond_4f==''    or test_cond(cond_4f, knm))  and
                         (chap_n==0      or chap_s==fdcv['a'])               and
                         (not tags_set   or (tags_set & fdcv['g']))
                  ]
@@ -271,10 +285,10 @@ def dlg_opt_editor(title, keys_info=None
                   index_1(font_l,               val_sel)                         \
                                         if frm_sel=='font' and     font_l   else \
                   -1
-        
+
         stat    = f(' ({}/{})', len(fl_kfsvt), len(k2fdcvt))
         col_aws = [p+cw for (p,cw) in zip(('', 'C', 'C', ''), map(str, COL_WS))]
-        itms    = (zip([_('Key')+stat, _('Type'),   _(' '), _('Value')], col_aws)
+        itms    = (zip([_('Key')+stat, _('Type'),   _(' '), f(_('Value from "{}"'), trgt_s)], col_aws)
                   ,    [ ( kch+knm+ktg,   kf,          kset,   to_str(kv, kf, kdct)) for
                          (     knm,       kf,          kset,          kv,     kdct, kch, ktg ) in fl_kfsvt]
                   )
@@ -298,7 +312,7 @@ def dlg_opt_editor(title, keys_info=None
                   f('{},{}',          k2fdcvt[key_sel.replace('font_size', 'font_name')]['v'], val_sel)             \
                     if frm_sel=='int' and 'font_size' in key_sel                                            else    \
                   ''
-        pass;                   LOG and log('pvw_font={}',(pvw_font))
+        pass;                  #LOG and log('pvw_font={}',(pvw_font))
         cnts    =([]
             # Filter
                  +[dict(cid='fltr',tp='bt'  ,t=0        ,l=0            ,w=0            ,cap=''                 ,def_bt='1'         )] # 
@@ -307,36 +321,34 @@ def dlg_opt_editor(title, keys_info=None
             # Chapters
             +([] if 1==len(chap_l) else []
                  +[dict(           tp='lb'  ,t=5        ,l=15+COL_WS[0] ,w=140          ,cap=_('Se&ction:')                         )] # &c
-                 +[dict(cid='chap',tp='cb-ro',t=25      ,l=15+COL_WS[0] ,w=140          ,items=chap_v                       ,act='1')] #
+                 +[dict(cid='chap',tp='cb-r',t=25       ,l=15+COL_WS[0] ,w=140          ,items=chap_v                       ,act='1')] #
             )
             # Tags
             +([] if not tags_l else []
                  +[dict(           tp='lb'  ,t=5        ,l=COL_WS[0]+160,r=DLG_W-10-80  ,cap=_('T&ags:')                            )] # &a
-                 +[dict(cid='tags',tp='cb-ro',t=25      ,l=COL_WS[0]+160,r=DLG_W-10-80  ,items=tags_hl                      ,act='1')] #
+                 +[dict(cid='tags',tp='cb-r',t=25       ,l=COL_WS[0]+160,r=DLG_W-10-80  ,items=tags_hl                      ,act='1')] #
                  +[dict(cid='?tgs',tp='bt'  ,tid='tags' ,l=DLG_W-5-80   ,w=80           ,cap=_('Tag&s…')    ,hint=_('Choose tags')  )] # &s
                  +[dict(cid='-tgs',tp='bt'  ,t=57       ,l=DLG_W-5-80   ,w=80           ,cap=_('Clea&r')    ,hint=_('Clear tags')   )] # &r
             )
             # Table of keys
                  +[dict(cid='lvls',tp='lvw' ,t=57       ,l=5 ,h=LST_H   ,w=LST_W        ,items=itms             ,grid='1'   ,act='1')] #
+
+                 +[dict(           tp='lb'  ,tid='kved' ,l=l_val-100-5  ,w=100          ,cap=_('>&Value:')                          )] # &v 
             # Editors for value
             +([] if not as_bool else []
-                 +[dict(           tp='lb'  ,tid='kvbl' ,l=l_val-100-5  ,w=100          ,cap=_('>&Value:')                          )] # &v 
-                 +[dict(cid='kvbl',tp='ch'  ,t=65+LST_H ,l=l_val+5      ,w=COL_WS[-1]+15,cap=_('O&n')                       ,act='1')] # &n
+                 +[dict(cid='kved',tp='ch'  ,t=65+LST_H ,l=l_val+5      ,w=COL_WS[-1]+15,cap=_('O&n')                       ,act='1')] # &n
             )
             +([] if not as_char else []
-                 +[dict(           tp='lb'  ,tid='kved' ,l=l_val-100-5  ,w=100          ,cap=_('>&Value:')                          )] # &v 
                  +[dict(cid='kved',tp='ed'  ,t=65+LST_H ,l=l_val+5      ,w=COL_WS[-1]+15                                            )] #
                  +[dict(cid='setv',tp='bt'  ,tid='kved' ,l=DLG_W-5-80   ,w=80           ,cap=_('Cha&nge')                           )] # &n
             )
             +([] if not as_file else []
-                 +[dict(           tp='lb'  ,tid='kved' ,l=l_val-100-5  ,w=100          ,cap=_('>&Value:')                          )] # &v 
                  +[dict(cid='kved',tp='ed'  ,t=65+LST_H ,l=l_val+5      ,w=COL_WS[-1]+15-30                                         )] #
                  +[dict(cid='brow',tp='bt'  ,tid='kved' ,l=DLG_W-5-80-35,w=30           ,cap=_('&...') ,hint=_('Browse file')       )] # &.
                  +[dict(cid='setv',tp='bt'  ,tid='kved' ,l=DLG_W-5-80   ,w=80           ,cap=_('Cha&nge')                           )] # &n
             )
             +([] if not as_enum else []
-                 +[dict(           tp='lb'  ,tid='kvcb' ,l=l_val-100-5  ,w=100          ,cap=_('>&Value:')                          )] # &v 
-                 +[dict(cid='kvcb',tp='cb-ro',t=65+LST_H,l=l_val+5      ,w=COL_WS[-1]+15,items=var_sel                      ,act='1')] #
+                 +[dict(cid='kved',tp='cb-r',t=65+LST_H ,l=l_val+5      ,w=COL_WS[-1]+15,items=var_sel                      ,act='1')] #
             )
             # View def-value
                  +[dict(           tp='lb'  ,tid='dfvl' ,l=l_val-100-5  ,w=100          ,cap=_('>Default value:')                   )] # 
@@ -349,6 +361,8 @@ def dlg_opt_editor(title, keys_info=None
                  +[dict(cid='cmnt',tp='memo',t=125+LST_H,l=5 ,h=CMNT_H-3,w=LST_W        ,font=pvw_font          ,ro_mono_brd='1,0,1')] #
             )
 
+            # Target json
+                 +[dict(cid='trgt',tp='bt'  ,t=120      ,l=DLG_W-5-80   ,w=80           ,cap=_('&Target…')  ,hint=trgt_h            )] # &t
                  +[dict(cid='cust',tp='bt'  ,t=150      ,l=DLG_W-5-80   ,w=80           ,cap=_('Ad&just…')                          )] # &j
 #                +[dict(cid='?'   ,tp='bt'  ,t=DLG_H-65 ,l=DLG_W-5-80   ,w=80           ,cap=_('&Help…')                            )] # &h
                  +[dict(cid='-'   ,tp='bt'  ,t=DLG_H-35 ,l=DLG_W-5-80   ,w=80           ,cap=_('Close')                             )] #
@@ -363,11 +377,11 @@ def dlg_opt_editor(title, keys_info=None
         if tags_l:
             vals.update(dict(tags=tags_n))
         if as_bool:
-            vals.update(dict(kvbl=val_sel                               if key_sel else False))
+            vals.update(dict(kved=val_sel                               if key_sel else False))
         if as_char:
             vals.update(dict(kved=to_str(val_sel, frm_sel, dct_sel)     if key_sel else ''  ))
         if as_enum:
-            vals.update(dict(kvcb=sel_sel                               if key_sel else False))
+            vals.update(dict(kved=sel_sel                               if key_sel else False))
 
        #pass;                   LOG and log('cnts={}',(cnts))
         aid, vals, fid, chds = dlg_wrapper(f('{} ({})', title, VERSION_V), DLG_W, DLG_H, cnts, vals, focus_cid=fid)
@@ -452,11 +466,11 @@ def dlg_opt_editor(title, keys_info=None
             k2fdcvt[key_sel]['v'] = dvl_sel
             # Update json file
             apx.set_opt(key_sel, dvl_sel)
-        if aid in ('kvbl', 'setv', 'kvcb', 'brow'):
+        if aid in ('kved', 'setv', 'brow'):
             # Changed value
             old_val = k2fdcvt[key_sel]['v']
             
-            if aid=='kvbl':
+            if as_bool and aid=='kved':
                 k2fdcvt[key_sel]['v'] = not k2fdcvt[key_sel]['v']
             if aid=='setv':
                 new_val = vals['kved']
@@ -473,8 +487,8 @@ def dlg_opt_editor(title, keys_info=None
                         if new_val is None:
                             break#while not good
                     #while not good
-            if aid=='kvcb' and vals['kvcb']!=-1:
-                ind     = vals['kvcb']
+            if as_enum and aid=='kved' and vals['kved']!=-1:
+                ind     = vals['kved']
                 val_l   = font_l    if frm_sel=='font' else     list(var_sel.keys())
                 k2fdcvt[key_sel]['v'] = val_l[ind]
             if aid=='brow':
@@ -485,8 +499,42 @@ def dlg_opt_editor(title, keys_info=None
             new_val = k2fdcvt[key_sel]['v']
             if old_val != new_val:
                 # Update json file
-                apx.set_opt(key_sel, new_val)
+                if trgt_s=='user.json':
+                    apx.set_opt(key_sel, new_val)
+                else:
+                    opts_json   = app.app_path(app.APP_DIR_SETTINGS)+os.sep+trgt_s
+                    opts        = apx._get_file_opts(opts_json)
+                    if new_val==opts.get(key_sel, dvl_sel): continue#while
+                    if new_val==dvl_sel:
+                        opts.pop(key_sel, None)
+                    else:
+                        opts[key_sel]   = new_val
+                    open(opts_json,'w').write(json.dumps(opts, indent=2))
             
+        if aid=='trgt':
+            trgt_l  = []
+            for all_b in (False, True):
+                trgt_l  = ['lexer '+lxr+'.json' 
+                            for lxr in app.lexer_proc(app.LEXER_GET_LIST, '').splitlines() 
+                            if app.lexer_proc(app.LEXER_GET_ENABLED, lxr) and 
+                            (all_b or os.path.isfile(app.app_path(app.APP_DIR_SETTINGS)+os.sep+'lexer '+lxr+'.json'))
+                          ]
+                trgt_l  = ['user.json'] + trgt_l
+                trgt_n  = app.dlg_menu(app.MENU_LIST
+                                      ,'\n'.join(trgt_l+([] if all_b else [_('[Show all lexers]')]))
+                                      ,index_1(trgt_l, trgt_s, 0)
+                                      )
+                if trgt_n is None:          break#for
+                pass;          #LOG and log('trgt_n={}',(trgt_n))
+                if trgt_n == len(trgt_l):   continue#for with all_b=True
+                break#for
+               #for all_b
+            if trgt_n is None:              continue#while
+            new_trgt_s  = trgt_l[trgt_n]
+            pass;              #LOG and log('new_trgt_s={}',(new_trgt_s))
+            if new_trgt_s!=trgt_s:
+                k2fdcvt = get_main_data(new_trgt_s)
+                trgt_s  = new_trgt_s
        #while
    #def dlg_opt_editor
 
@@ -603,4 +651,5 @@ ToDo
 [ ][kv-kv][04apr17] ro-combo hitory for Tags
 [ ][kv-kv][05apr17] Add "default" to fonts if def_val=="default"
 [ ][at-kv][05apr17] Preview for format=font
+[ ][kv-kv][06apr17] Spec filter sign: * - to show only modified
 '''
