@@ -2,11 +2,11 @@
 Authors:
     Andrey Kvichansky    (kvichans on github.com)
 Version:
-    '1.1.3 2017-04-06'
+    '1.1.4 2017-04-06'
 ToDo: (see end of file)
 '''
 
-import  re, os, sys, json, collections
+import  re, os, sys, json, collections, webbrowser, tempfile, html, pickle
 
 import  cudatext            as app
 import  cudax_lib           as apx
@@ -220,6 +220,7 @@ def dlg_opt_editor(title, keys_info=None
               '\r     size> <tab'
               '\r   selects "tab_size" but not "ui_tab_size" or "tab_size_x".')
     trgt_h  = _('Set storage for values')
+    rprt_h  = _('Create HTML report and open it in browser')
 
     trgt_s  = 'user.json'
     key_sel = keys_info[0]['key']
@@ -364,6 +365,7 @@ def dlg_opt_editor(title, keys_info=None
             # Target json
                  +[dict(cid='trgt',tp='bt'  ,t=120      ,l=DLG_W-5-80   ,w=80           ,cap=_('&Target…')  ,hint=trgt_h            )] # &t
                  +[dict(cid='cust',tp='bt'  ,t=150      ,l=DLG_W-5-80   ,w=80           ,cap=_('Ad&just…')                          )] # &j
+                 +[dict(cid='rprt',tp='bt'  ,t=DLG_H-65 ,l=DLG_W-5-80   ,w=80           ,cap=_('Report…')   ,hint=rprt_h            )] # &h
 #                +[dict(cid='?'   ,tp='bt'  ,t=DLG_H-65 ,l=DLG_W-5-80   ,w=80           ,cap=_('&Help…')                            )] # &h
                  +[dict(cid='-'   ,tp='bt'  ,t=DLG_H-35 ,l=DLG_W-5-80   ,w=80           ,cap=_('Close')                             )] #
                  )
@@ -511,6 +513,12 @@ def dlg_opt_editor(title, keys_info=None
                         opts[key_sel]   = new_val
                     open(opts_json,'w').write(json.dumps(opts, indent=2))
             
+        if aid=='rprt':
+            htm_file = os.path.join(tempfile.gettempdir(), 'CudaText_option_report.html')
+            if not do_report(htm_file, '' if trgt_s=='user.json' else trgt_s): continue#while
+            webbrowser.open_new_tab('file://'+htm_file)
+            app.msg_status('Opened browser with file '+htm_file)
+
         if aid=='trgt':
             trgt_l  = []
             for all_b in (False, True):
@@ -621,6 +629,177 @@ def parse_raw_keys_info(path_to_raw):
     return kinfs
    #def parse_raw_keys_info
 
+RPT_HEAD = '''
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>CudaText options</title>
+    <style type="text/css">
+td, th, body {
+    color:          #000;
+    font-family:    Verdana, Arial, Helvetica, sans-serif;
+    font-size:      12px;
+}
+table {
+    border-width:   1px;
+    border-spacing: 2px;
+    border-color:   gray;
+    border-collapse:collapse;
+}
+table td, table th{
+    border-width:   1px;
+    padding:        1px;
+    border-style:   solid;
+    border-color:   gray;
+}
+pre {
+    margin:         0;
+    padding:        0;
+}
+td.nxt {
+    color:          grey;
+}
+td.win {
+    font-weight:    bold;
+}
+    </style>
+</head>
+<body>
+'''
+RPT_FOOT = '''
+</body>
+</html>
+'''
+
+def do_report(fn, lex):
+#   lex         = ed.get_prop(app.PROP_LEXER_CARET)
+    def_json    = apx.get_def_setting_dir()         +os.sep+'default.json'
+    usr_json    = app.app_path(app.APP_DIR_SETTINGS)+os.sep+'user.json'
+    lex_json    = app.app_path(app.APP_DIR_SETTINGS)+os.sep+lex                                 if lex else ''
+
+    def_opts    = apx._get_file_opts(def_json, {},  object_pairs_hook=collections.OrderedDict)
+    usr_opts    = apx._get_file_opts(usr_json, {},  object_pairs_hook=collections.OrderedDict)
+    lex_opts    = apx._get_file_opts(lex_json, {},  object_pairs_hook=collections.OrderedDict)  if lex else None
+
+    def_opts    = pickle.loads(pickle.dumps(def_opts))                              # clone to pop
+    usr_opts    = pickle.loads(pickle.dumps(usr_opts))                              # clone to pop
+    lex_opts    = pickle.loads(pickle.dumps(lex_opts))  if lex else {}              # clone to pop
+
+    fil_opts    = get_ovrd_ed_opts(ed)
+    cmt_opts    = {}
+    # Find Commentary for def opts in def file
+    # Rely: _commentary_ is some (0+) lines between opt-line and prev opt-line
+    def_body    = open(def_json).read()
+    def_body    = def_body.replace('\r\n', '\n').replace('\r', '\n')
+    def_body    = def_body[def_body.find('{')+1:]   # Cut head with start '{'
+    def_body    = def_body.lstrip()
+    for opt in def_opts.keys():
+        pos_opt = def_body.find('"{}"'.format(opt))
+        cmt     = def_body[:pos_opt].strip()
+        cmt     = ('\n\n'+cmt).split('\n\n')[-1]
+        cmt     = re.sub('^\s*//', '', cmt, flags=re.M)
+        cmt     = cmt.strip()
+        cmt_opts[opt]    = html.escape(cmt)
+        def_body= def_body[def_body.find('\n', pos_opt)+1:]   # Cut the opt
+
+    with open(fn, 'w', encoding='utf8') as f:
+        f.write(RPT_HEAD)
+        f.write('<h4>High priority: editor options</h4>')
+        f.write('<table>\n')
+        f.write(    '<tr>\n')
+        f.write(    '<th>Option name</th>\n')
+        f.write(    '<th>Value in<br>default</th>\n')
+        f.write(    '<th>Value in<br>user</th>\n')
+        f.write(    '<th>Value in<br>{}</th>\n'.format(lex))                                                            if lex else None
+        f.write(    '<th title="{}">Value for file<br>{}</th>\n'.format(ed.get_filename()
+                                              , os.path.basename(ed.get_filename())))
+        f.write(    '<th>Comment</th>\n')
+        f.write(    '</tr>\n')
+        for opt in fil_opts.keys():
+            winner  = 'def'
+            winner  = 'usr' if opt in usr_opts else winner
+            winner  = 'lex' if opt in lex_opts else winner
+            winner  = 'fil' if opt in fil_opts else winner
+            f.write(    '<tr>\n')
+            f.write(    '<td>{}</td>\n'.format(opt))
+            f.write(    '<td class="{}">{}</td>\n'.format('win' if winner=='def' else 'nxt', def_opts.get(opt, '')))
+            f.write(    '<td class="{}">{}</td>\n'.format('win' if winner=='usr' else 'nxt', usr_opts.get(opt, '')))
+            f.write(    '<td class="{}">{}</td>\n'.format('win' if winner=='lex' else 'nxt', lex_opts.get(opt, '')))    if lex else None
+            f.write(    '<td class="{}">{}</td>\n'.format('win' if winner=='fil' else 'nxt', fil_opts.get(opt, '')))
+            f.write(    '<td><pre>{}</pre></td>\n'.format(cmt_opts.get(opt, '')))
+            f.write(    '</tr>\n')
+            def_opts.pop(opt, None)
+            usr_opts.pop(opt, None)
+            lex_opts.pop(opt, None)                                                                                     if lex else None
+        f.write('</table><br/>\n')
+        f.write('<h4>Overridden default options</h4>')
+        f.write('<table>\n')
+        f.write(    '<tr>\n')
+        f.write(    '<th>Option name</th>\n')
+        f.write(    '<th>Value in<br>default</th>\n')
+        f.write(    '<th>Value in<br>user</th>\n')
+        f.write(    '<th>Value in<br>{}<br></th>\n'.format(lex))                                                        if lex else None
+        f.write(    '<th>Comment</th>\n')
+        f.write(    '</tr>\n')
+        for opt in def_opts.keys():
+            winner  = 'def'
+            winner  = 'usr' if opt in usr_opts else winner
+            winner  = 'lex' if opt in lex_opts else winner
+            winner  = 'fil' if opt in fil_opts else winner
+            f.write(    '<tr>\n')
+            f.write(    '<td>{}</td>\n'.format(opt))
+            f.write(    '<td class="{}">{}</td>\n'.format('win' if winner=='def' else 'nxt', def_opts.get(opt, '')))
+            f.write(    '<td class="{}">{}</td>\n'.format('win' if winner=='usr' else 'nxt', usr_opts.get(opt, '')))
+            f.write(    '<td class="{}">{}</td>\n'.format('win' if winner=='lex' else 'nxt', lex_opts.get(opt, '')))    if lex else None
+            f.write(    '<td><pre>{}</pre></td>\n'.format(cmt_opts.get(opt, '')))
+            f.write(    '</tr>\n')
+            usr_opts.pop(opt, None)
+            lex_opts.pop(opt, None)                                                                                     if lex else None
+        f.write('</table><br/>\n')
+        f.write('<h4>Overridden user-only options</h4>')
+        f.write('<table>\n')
+        f.write(    '<tr>\n')
+        f.write(    '<th>Option name</th>\n')
+        f.write(    '<th>Value in<br>user</th>\n')
+        f.write(    '<th>Value in<br>lexer<br>{}</th>\n'.format(lex))                                                   if lex else None
+        f.write(    '<th>Comment</th>\n')
+        f.write(    '</tr>\n')
+        for opt in usr_opts.keys():
+            winner  = 'usr'
+            winner  = 'lex' if opt in lex_opts else winner
+            f.write(    '<tr>\n')
+            f.write(    '<td>{}</td>\n'.format(opt))
+            f.write(    '<td class="{}">{}</td>\n'.format('win' if winner=='usr' else 'nxt', usr_opts.get(opt, '')))
+            f.write(    '<td class="{}">{}</td>\n'.format('win' if winner=='lex' else 'nxt', lex_opts.get(opt, '')))    if lex else None
+            f.write(    '<td><pre>{}</pre></td>\n'.format(cmt_opts.get(opt, '')))
+            f.write(    '</tr>\n')
+            lex_opts.pop(opt, None)                                                                                     if lex else None
+        for opt in lex_opts.keys():
+            winner  = 'lex'
+            f.write(    '<tr>\n')
+            f.write(    '<td>{}</td>\n'.format(opt))
+            f.write(    '<td class="{}"></td>  \n'.format('non'))
+            f.write(    '<td class="{}">{}</td>\n'.format('win', lex_opts.get(opt, '')))
+            f.write(    '<td><pre>{}</pre></td>\n'.format(cmt_opts.get(opt, '')))
+            f.write(    '</tr>\n')
+            lex_opts.pop(opt, None)
+        f.write('</table><br/>\n')
+        f.write(RPT_FOOT)
+        return True
+   #def do_report(fn):
+
+def get_ovrd_ed_opts(ed):
+    ans     = collections.OrderedDict()
+    ans['tab_size']             = ed.get_prop(app.PROP_TAB_SIZE)
+    ans['tab_spaces']           = ed.get_prop(app.PROP_TAB_SPACES)
+    ans['wrap_mode']            = ed.get_prop(app.PROP_WRAP)
+    ans['unprinted_show']       = ed.get_prop(app.PROP_UNPRINTED_SHOW)
+    ans['unprinted_spaces']     = ed.get_prop(app.PROP_UNPRINTED_SPACES)
+    ans['unprinted_ends']       = ed.get_prop(app.PROP_UNPRINTED_ENDS)
+    ans['unprinted_end_details']= ed.get_prop(app.PROP_UNPRINTED_END_DETAILS)
+    return ans
+   #def get_ovrd_ed_opts(ed):
+
 def index_1(cllc, val, defans=-1):
     return cllc.index(val) if val in cllc else defans
 
@@ -630,9 +809,9 @@ if __name__ == '__main__' :     # Tests
 '''
 ToDo
 [+][kv-kv][02apr17] History for cond
-[ ][kv-kv][02apr17] ? Chapters list and "chap" attr into kinfo
-[ ][kv-kv][02apr17] ? Tags list and "tag" attr into kinfo
-[ ][kv-kv][02apr17] ? Delimeter row in table
+[-][kv-kv][02apr17] ? Chapters list and "chap" attr into kinfo
+[-][kv-kv][02apr17] ? Tags list and "tag" attr into kinfo
+[-][kv-kv][02apr17] ? Delimeter row in table
 [ ][kv-kv][02apr17] "Need restart" in Comments
 [+][kv-kv][02apr17] ? Calc Format by Def_val
 [ ][kv-kv][02apr17] int_mm for min+max
@@ -646,10 +825,11 @@ ToDo
 [+][at-kv][04apr17] Format 'font'
 [-][at-kv][04apr17] ? FilterListView
 [+][at-kv][04apr17] use new default.json
-[ ][kv-kv][04apr17] Testing for update user.json
+[-][kv-kv][04apr17] Testing for update user.json
 [+][kv-kv][04apr17] Restore Sec and Tags
-[ ][kv-kv][04apr17] ro-combo hitory for Tags
-[ ][kv-kv][05apr17] Add "default" to fonts if def_val=="default"
-[ ][at-kv][05apr17] Preview for format=font
-[ ][kv-kv][06apr17] Spec filter sign: * - to show only modified
+[+][kv-kv][04apr17] ro-combo hitory for Tags
+[+][kv-kv][05apr17] Add "default" to fonts if def_val=="default"
+[+][at-kv][05apr17] Preview for format=font
+[+][kv-kv][06apr17] Spec filter sign: * - to show only modified
+[-][kv-kv][06apr17] Format color
 '''
