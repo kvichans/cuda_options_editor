@@ -2,7 +2,7 @@
 Authors:
     Andrey Kvichansky    (kvichans on github.com)
 Version:
-    '1.1.7 2017-04-07'
+    '1.1.8 2017-04-07'
 ToDo: (see end of file)
 '''
 
@@ -560,7 +560,8 @@ def parse_raw_keys_info(path_to_raw):
     reTags  = re.compile(r' *\((#\w+,?)+\)')
     reN2S   = re.compile(r' *(\d+): *(.+)')
     reS2S   = re.compile(r' *"(\w+)": *(.+)')
-    def parse_cmnt(cmnt, frm):  
+    reLike  = re.compile(r' *\(like (\w+)\)')
+    def parse_cmnt(cmnt, frm, kinfs):  
         tags= set()
         mt  = reTags.search(cmnt)
         while mt:
@@ -570,9 +571,22 @@ def parse_raw_keys_info(path_to_raw):
             mt      = reTags.search(cmnt)
         dctN= [[int(m.group(1)), m.group(2).rstrip(',')] for m in reN2S.finditer(cmnt)]
         dctS= [[    m.group(1) , m.group(2).rstrip(',')] for m in reN2S.finditer(cmnt)]
+        frmK,\
+        dctK= frm, None
+        mt  = reLike.search(cmnt)
+        if mt:
+            ref_knm = mt.group(1)
+            ref_kinf= [kinf for kinf in kinfs if kinf['key']==ref_knm]
+            if not ref_kinf:
+                log('Error on parse {}. No ref-key {} from comment\n{}',(path_to_raw, ref_knm, cmnt))
+            else:
+                ref_kinf = ref_kinf[0]
+                frmK= ref_kinf['format']    if 'format' in ref_kinf else    frmK
+                dctK= ref_kinf['dct']       if 'dct'    in ref_kinf else    dctK
         frm,\
         dct = ('enum_i', dctN)    if dctN else \
               ('enum_s', dctS)    if dctS else \
+              (frmK,     dctK)    if dctK else \
               (frm     , []  )
         return cmnt, frm, dct, list(tags)
        #def parse_cmnt
@@ -619,7 +633,7 @@ def parse_raw_keys_info(path_to_raw):
             kinfs  += [kinf]
             kinf['key']         = key
             kinf['def_val']     = dval
-            cmnt,frm,dct,tags   = parse_cmnt(ref_cmnt+l+cmnt[3:]    if cmnt.startswith('...') else cmnt, frm)
+            cmnt,frm,dct,tags   = parse_cmnt(ref_cmnt+l+cmnt[3:]    if cmnt.startswith('...') else cmnt, frm, kinfs)
             kinf['comment']     = cmnt
             if frm in ('enum_i','enum_s','font'):
                 kinf['format']  = frm
