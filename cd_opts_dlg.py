@@ -2,7 +2,7 @@
 Authors:
     Andrey Kvichansky    (kvichans on github.com)
 Version:
-    '1.1.5 2017-04-07'
+    '1.1.6 2017-04-07'
 ToDo: (see end of file)
 '''
 
@@ -41,16 +41,16 @@ class Command:
         , keys_info=None
         , path_raw_keys_info=apx.get_def_setting_dir()          +os.sep+'default.json'
 #       , path_raw_keys_info=apx.get_def_setting_dir()          +os.sep+'kv-default.json'
-        , path_svd_keys_info=app.app_path(app.APP_DIR_SETTINGS) +os.sep+'default_keys_info.json'
+        , path_svd_keys_info=app.app_path(app.APP_DIR_SETTINGS) +os.sep+'_default_keys_info.json'
+        , subset='def.'
         )
        #def dlg_cuda_opts
    #class Command
 
 def dlg_opt_editor(title, keys_info=None
-        , path_to_json='settings/user.json'
         , path_raw_keys_info=''
         , path_svd_keys_info=''
-        , subset='def.'
+        , subset=''
         ):
     """ Editor for any json data.
         Params 
@@ -87,20 +87,20 @@ def dlg_opt_editor(title, keys_info=None
                 app.msg_status(_('Update key-info at '+path_svd_keys_info))
         pass;                  #return
             
-    if -1== 1:  # Test data
-        keys_info = [dict(key='key-bool',format='bool'  ,def_val=False           ,comment= 'smth')
-                    ,dict(key='key-int' ,format='int'   ,def_val=123             ,comment= 'smth\nsmth')
-                    ,dict(key='key-aint'                ,def_val=123             ,comment= 'smth\nsmth')
-                    ,dict(key='key-str' ,format='str'   ,def_val='xyz'           ,comment= 'smth')
-                    ,dict(key='key-flo' ,format='float' ,def_val=1.23            ,comment= 'smth')
-                    ,dict(key='key-aflo'                ,def_val=1.23            ,comment= 'smth')
-                    ,dict(key='key-font',format='font'  ,def_val=''              ,comment= 'smth')
-                    ,dict(key='key-file',format='file'  ,def_val=''              ,comment= 'smth')
-                    ,dict(key='key-en_i',format='enum_i',def_val=1               ,comment= 'smth',   dct={0:'000', 1:'111', 2:'222'})
-                    ,dict(key='key-en_s',format='enum_s',def_val='b'             ,comment= 'smth',   dct=[('a','AA'), ('b','BB'), ('c','CC')])
-                    ,dict(key='key-json',format='json'  ,def_val={'x':{'a':1}}   ,comment= 'Style')
-                    ]
-        path_to_json=os.path.dirname(__file__)+os.sep+'test.json'
+#   if -1== 1:  # Test data
+#       keys_info = [dict(key='key-bool',format='bool'  ,def_val=False           ,comment= 'smth')
+#                   ,dict(key='key-int' ,format='int'   ,def_val=123             ,comment= 'smth\nsmth')
+#                   ,dict(key='key-aint'                ,def_val=123             ,comment= 'smth\nsmth')
+#                   ,dict(key='key-str' ,format='str'   ,def_val='xyz'           ,comment= 'smth')
+#                   ,dict(key='key-flo' ,format='float' ,def_val=1.23            ,comment= 'smth')
+#                   ,dict(key='key-aflo'                ,def_val=1.23            ,comment= 'smth')
+#                   ,dict(key='key-font',format='font'  ,def_val=''              ,comment= 'smth')
+#                   ,dict(key='key-file',format='file'  ,def_val=''              ,comment= 'smth')
+#                   ,dict(key='key-en_i',format='enum_i',def_val=1               ,comment= 'smth',   dct={0:'000', 1:'111', 2:'222'})
+#                   ,dict(key='key-en_s',format='enum_s',def_val='b'             ,comment= 'smth',   dct=[('a','AA'), ('b','BB'), ('c','CC')])
+#                   ,dict(key='key-json',format='json'  ,def_val={'x':{'a':1}}   ,comment= 'Style')
+#                   ]
+#       path_to_json=os.path.dirname(__file__)+os.sep+'test.json'
 
     if 0==len(keys_info):
         return app.msg_status(_('Empty keys_info'))
@@ -235,7 +235,7 @@ def dlg_opt_editor(title, keys_info=None
     fid     = 'lvls'
     while True: #NOTE: json_props
         COL_WS      = [                 stores.get(subset+'cust.wd_k', 250)
-                      ,                 stores.get(subset+'cust.wd_f',  50)
+#                     ,                 stores.get(subset+'cust.wd_f',  50)
                       ,                 stores.get(subset+'cust.wd_s',  20)
                       ,                 stores.get(subset+'cust.wd_v', 250)]         # Widths of listview columns 
         CMNT_H      =                   stores.get(subset+'cust.ht_c', 100)          # Height of Comment memo
@@ -288,9 +288,13 @@ def dlg_opt_editor(title, keys_info=None
                   -1
 
         stat    = f(' ({}/{})', len(fl_kfsvt), len(k2fdcvt))
-        col_aws = [p+cw for (p,cw) in zip(('', 'C', 'C', ''), map(str, COL_WS))]
-        itms    = (zip([_('Key')+stat, _('Type'),   _(' '), f(_('Value from "{}"'), trgt_s)], col_aws)
-                  ,    [ ( kch+knm+ktg,   kf,          kset,   to_str(kv, kf, kdct)) for
+        col_aws = [p+cw for (p,cw) in zip(('',      'C', ''), map(str, COL_WS))]
+#       col_aws = [p+cw for (p,cw) in zip(('', 'C', 'C', ''), map(str, COL_WS))]
+#       itms    = (zip([_('Key')+stat, _('Type'),   _(' '), f(_('Value from "{}"'), trgt_s)], col_aws)
+#                 ,    [ ( kch+knm+ktg,   kf,          kset,   to_str(kv, kf, kdct)) for
+#                        (     knm,       kf,          kset,          kv,     kdct, kch, ktg ) in fl_kfsvt]
+        itms    = (zip([_('Key')+stat,              _(' '), f(_('Value from "{}"'), trgt_s)], col_aws)
+                  ,    [ ( kch+knm+ktg,                kset,   to_str(kv, kf, kdct)) for
                          (     knm,       kf,          kset,          kv,     kdct, kch, ktg ) in fl_kfsvt]
                   )
         pass;                  #LOG and log('cond_s={}',(cond_s))
@@ -404,21 +408,21 @@ def dlg_opt_editor(title, keys_info=None
         open(CFG_JSON, 'w').write(json.dumps(stores, indent=4))
 
         if aid=='cust':
-            custs   = app.dlg_input_ex(6, _('Adjust')
-                  , _(  'Height of Table (min 100)')  , str(stores.get(subset+'cust.ht_t', 300))
+            custs   = app.dlg_input_ex(5, _('Adjust')
+                  , _(  'Height of Table (min 125)')  , str(stores.get(subset+'cust.ht_t', 300))
                   , _(     'Width of Key (min 250)')  , str(stores.get(subset+'cust.wd_k', 250))
-                  , _(    'Width of Type (min  50)')  , str(stores.get(subset+'cust.wd_f',  50))
+#                 , _(    'Width of Type (min  50)')  , str(stores.get(subset+'cust.wd_f',  50))
                   , _(       'Width of * (min  20)')  , str(stores.get(subset+'cust.wd_s',  20))
                   , _(   'Width of Value (min 250)')  , str(stores.get(subset+'cust.wd_v', 250))
                   , _('Height of Comment (min  55)')  , str(stores.get(subset+'cust.ht_c', 100))
                     )
             if custs is None:   continue#while
-            stores[subset+'cust.ht_t']  = max(300, int(custs[0]))
+            stores[subset+'cust.ht_t']  = max(125, int(custs[0]))
             stores[subset+'cust.wd_k']  = max(250, int(custs[1]))
-            stores[subset+'cust.wd_f']  = max( 50, int(custs[2]))
-            stores[subset+'cust.wd_s']  = max( 20, int(custs[3]))
-            stores[subset+'cust.wd_v']  = max(250, int(custs[4]))
-            stores[subset+'cust.ht_c']  = max(100, int(custs[5]))
+#           stores[subset+'cust.wd_f']  = max( 50, int(custs[2]))
+            stores[subset+'cust.wd_s']  = max( 20, int(custs[2]))
+            stores[subset+'cust.wd_v']  = max(250, int(custs[3]))
+            stores[subset+'cust.ht_c']  = max( 55, int(custs[4]))
             open(CFG_JSON, 'w').write(json.dumps(stores, indent=4))
             continue#while
             
