@@ -2,7 +2,7 @@
 Authors:
     Andrey Kvichansky    (kvichans on github.com)
 Version:
-    '1.1.4 2017-04-06'
+    '1.1.5 2017-04-07'
 ToDo: (see end of file)
 '''
 
@@ -238,8 +238,8 @@ def dlg_opt_editor(title, keys_info=None
                       ,                 stores.get(subset+'cust.wd_f',  50)
                       ,                 stores.get(subset+'cust.wd_s',  20)
                       ,                 stores.get(subset+'cust.wd_v', 250)]         # Widths of listview columns 
-        CMNT_H      =                   stores.get(subset+'cust.ht_c',  55)          # Height of Comment memo
-        LST_W, LST_H= sum(COL_WS)+20,   stores.get(subset+'cust.ht_t', 100)-5        # Listview sizes
+        CMNT_H      =                   stores.get(subset+'cust.ht_c', 100)          # Height of Comment memo
+        LST_W, LST_H= sum(COL_WS)+20,   stores.get(subset+'cust.ht_t', 300)-5        # Listview sizes
         DLG_W, DLG_H= 5+LST_W+5+80+5 \
                     , 5+20+30+LST_H+5+30+5+30+5+CMNT_H+5     # Dialog sizes
         l_val   = DLG_W-10-80-20-COL_WS[-1]
@@ -278,12 +278,12 @@ def dlg_opt_editor(title, keys_info=None
         cmt_sel = k2fdcvt[key_sel]['c'] if key_sel                          else ''
         var_sel = [f('{}: {}', k, v) for (k,v) in dct_sel.items()] \
                                         if frm_sel in ('enum_i', 'enum_s')  else \
-                  font_l                                                         \
+                  font_l + ([] if val_sel in font_l else [val_sel])              \
                                         if frm_sel=='font' and     font_l   else \
                   None
         sel_sel = index_1(list(dct_sel.keys()), val_sel) \
                                         if frm_sel in ('enum_i', 'enum_s')  else \
-                  index_1(font_l,               val_sel)                         \
+                  index_1(font_l,               val_sel, len(font_l))            \
                                         if frm_sel=='font' and     font_l   else \
                   -1
 
@@ -405,20 +405,20 @@ def dlg_opt_editor(title, keys_info=None
 
         if aid=='cust':
             custs   = app.dlg_input_ex(6, _('Adjust')
-                  , _(  'Height of Table (min 100)')  , str(stores.get(subset+'cust.ht_t', 100))
+                  , _(  'Height of Table (min 100)')  , str(stores.get(subset+'cust.ht_t', 300))
                   , _(     'Width of Key (min 250)')  , str(stores.get(subset+'cust.wd_k', 250))
                   , _(    'Width of Type (min  50)')  , str(stores.get(subset+'cust.wd_f',  50))
                   , _(       'Width of * (min  20)')  , str(stores.get(subset+'cust.wd_s',  20))
                   , _(   'Width of Value (min 250)')  , str(stores.get(subset+'cust.wd_v', 250))
-                  , _('Height of Comment (min  55)')  , str(stores.get(subset+'cust.ht_c',  55))
+                  , _('Height of Comment (min  55)')  , str(stores.get(subset+'cust.ht_c', 100))
                     )
             if custs is None:   continue#while
-            stores[subset+'cust.ht_t']  = max(100, int(custs[0]))
+            stores[subset+'cust.ht_t']  = max(300, int(custs[0]))
             stores[subset+'cust.wd_k']  = max(250, int(custs[1]))
             stores[subset+'cust.wd_f']  = max( 50, int(custs[2]))
             stores[subset+'cust.wd_s']  = max( 20, int(custs[3]))
             stores[subset+'cust.wd_v']  = max(250, int(custs[4]))
-            stores[subset+'cust.ht_c']  = max( 55, int(custs[5]))
+            stores[subset+'cust.ht_c']  = max(100, int(custs[5]))
             open(CFG_JSON, 'w').write(json.dumps(stores, indent=4))
             continue#while
             
