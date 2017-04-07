@@ -2,7 +2,7 @@
 Authors:
     Andrey Kvichansky    (kvichans on github.com)
 Version:
-    '1.1.8 2017-04-07'
+    '1.1.9 2017-04-08'
 ToDo: (see end of file)
 '''
 
@@ -40,7 +40,6 @@ class Command:
         dlg_opt_editor('CudaText options'
         , keys_info=None
         , path_raw_keys_info=apx.get_def_setting_dir()          +os.sep+'default.json'
-#       , path_raw_keys_info=apx.get_def_setting_dir()          +os.sep+'kv-default.json'
         , path_svd_keys_info=app.app_path(app.APP_DIR_SETTINGS) +os.sep+'_default_keys_info.json'
         , subset='def.'
         )
@@ -338,8 +337,10 @@ def dlg_opt_editor(title, keys_info=None
             # Table of keys
                  +[dict(cid='lvls',tp='lvw' ,t=57       ,l=5 ,h=LST_H   ,w=LST_W        ,items=itms             ,grid='1'   ,act='1')] #
 
-                 +[dict(           tp='lb'  ,tid='kved' ,l=l_val-100-5  ,w=100          ,cap=_('>&Value:')                          )] # &v 
             # Editors for value
+            +([] if not key_sel else []
+                 +[dict(           tp='lb'  ,tid='kved' ,l=l_val-100-5  ,w=100          ,cap=_('>&Value:')                          )] # &v 
+            )
             +([] if not as_bool else []
                  +[dict(cid='kved',tp='ch'  ,t=65+LST_H ,l=l_val+5      ,w=COL_WS[-1]+15,cap=_('O&n')                       ,act='1')] # &n
             )
@@ -558,8 +559,8 @@ def parse_raw_keys_info(path_to_raw):
     l       = '\n'
     
     reTags  = re.compile(r' *\((#\w+,?)+\)')
-    reN2S   = re.compile(r' *(\d+): *(.+)')
-    reS2S   = re.compile(r' *"(\w+)": *(.+)')
+    reN2S   = re.compile(r'\s+(\d+): *(.+)')
+    reS2S   = re.compile(r'\s+"(\w*)": *(.+)')
     reLike  = re.compile(r' *\(like (\w+)\)')
     def parse_cmnt(cmnt, frm, kinfs):  
         tags= set()
@@ -569,8 +570,8 @@ def parse_raw_keys_info(path_to_raw):
             tags   |= set(tags_s.strip(' ()').replace('#', '').split(','))
             cmnt    = cmnt.replace(tags_s, '')
             mt      = reTags.search(cmnt)
-        dctN= [[int(m.group(1)), m.group(2).rstrip(',')] for m in reN2S.finditer(cmnt)]
-        dctS= [[    m.group(1) , m.group(2).rstrip(',')] for m in reN2S.finditer(cmnt)]
+        dctN= [[int(m.group(1)), m.group(2).rstrip(', ')] for m in reN2S.finditer(cmnt+l)]
+        dctS= [[    m.group(1) , m.group(2).rstrip(', ')] for m in reS2S.finditer(cmnt+l)]
         frmK,\
         dctK= frm, None
         mt  = reLike.search(cmnt)
@@ -597,6 +598,8 @@ def parse_raw_keys_info(path_to_raw):
     reChap2 = re.compile(r' *//\[(.+)\]')
     reCmnt  = re.compile(r' *//(.+)')
     reKeyDV = re.compile(r' *"(\w+)" *: *(.+)')
+    reInt   = re.compile(r' *(-?\d+)')
+    reFloat = re.compile(r' *(-?\d+\.\d+)')
     reFontNm= re.compile(r'font\w*_name')
     chap    = ''
     ref_cmnt= ''    # Full comment to add to '... smth'
@@ -618,12 +621,13 @@ def parse_raw_keys_info(path_to_raw):
         elif    reKeyDV.match(line):
             mt= reKeyDV.match(line)
             key     = mt.group(1)
-            dval_s  = mt.group(2).rstrip(',')
+            dval_s  = mt.group(2).rstrip(', ')
             cmnt    = cmnt.strip(l)     if cmnt else pre_cmnt
-            frm,dval= ('int',  int(dval_s)  )   if dval_s.isdigit()                     else \
-                      ('float',float(dval_s))   if dval_s.isdecimal()                   else \
+            frm,dval= \
                       ('bool', True         )   if dval_s=='true'                       else \
                       ('bool', False        )   if dval_s=='false'                      else \
+                      ('float',float(dval_s))   if reFloat.match(dval_s)                else \
+                      ('int',  int(dval_s)  )   if reInt.match(dval_s)                  else \
                       ('font', dval_s[1:-1] )   if reFontNm.search(key)                 else \
                       ('str',  jsstr(dval_s))   if dval_s[0]=='"' and dval_s[-1]=='"'   else \
                       ('unk',  dval_s       )
@@ -631,18 +635,21 @@ def parse_raw_keys_info(path_to_raw):
             ref_cmnt= ref_cmnt                                      if cmnt.startswith('...') else cmnt
             kinf    = OrdDict()
             kinfs  += [kinf]
-            kinf['key']         = key
-            kinf['def_val']     = dval
-            cmnt,frm,dct,tags   = parse_cmnt(ref_cmnt+l+cmnt[3:]    if cmnt.startswith('...') else cmnt, frm, kinfs)
-            kinf['comment']     = cmnt
-            if frm in ('enum_i','enum_s','font'):
-                kinf['format']  = frm
-            if dct:
-                kinf['dct']     = dct
+            kinf['key']             = key
+            kinf['def_val']         = dval
+            kinf['comment']         = cmnt
+            if frm in ('int','str'):
+                cmnt,frm,dct,tags   = parse_cmnt(ref_cmnt+l+cmnt[3:]    if cmnt.startswith('...') else cmnt, frm, kinfs)
+                kinf['comment']     = cmnt
+                if frm in ('enum_i','enum_s','font'):
+                    kinf['format']  = frm
+                if dct:
+                    log('Bad comment at key {}',key) if len(dct)<2 else None
+                    kinf['dct']     = dct
+                if tags:
+                    kinf['tags']    = tags
             if chap:
-                kinf['chapter'] = chap
-            if tags:
-                kinf['tags']    = tags
+                kinf['chapter']     = chap
             pre_cmnt= cmnt              if cmnt else pre_cmnt
             cmnt    = ''
        #for line
