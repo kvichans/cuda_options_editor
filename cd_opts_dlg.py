@@ -2,7 +2,7 @@
 Authors:
     Andrey Kvichansky    (kvichans on github.com)
 Version:
-    '1.1.6 2017-04-07'
+    '1.1.7 2017-04-07'
 ToDo: (see end of file)
 '''
 
@@ -586,6 +586,7 @@ def parse_raw_keys_info(path_to_raw):
     reFontNm= re.compile(r'font\w*_name')
     chap    = ''
     ref_cmnt= ''    # Full comment to add to '... smth'
+    pre_cmnt= ''
     cmnt    = ''
     for line in lines:
         if False:pass
@@ -604,7 +605,7 @@ def parse_raw_keys_info(path_to_raw):
             mt= reKeyDV.match(line)
             key     = mt.group(1)
             dval_s  = mt.group(2).rstrip(',')
-            cmnt    = cmnt.strip(l)
+            cmnt    = cmnt.strip(l)     if cmnt else pre_cmnt
             frm,dval= ('int',  int(dval_s)  )   if dval_s.isdigit()                     else \
                       ('float',float(dval_s))   if dval_s.isdecimal()                   else \
                       ('bool', True         )   if dval_s=='true'                       else \
@@ -628,6 +629,7 @@ def parse_raw_keys_info(path_to_raw):
                 kinf['chapter'] = chap
             if tags:
                 kinf['tags']    = tags
+            pre_cmnt= cmnt              if cmnt else pre_cmnt
             cmnt    = ''
        #for line
     return kinfs
