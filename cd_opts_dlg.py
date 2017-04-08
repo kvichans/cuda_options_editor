@@ -2,7 +2,7 @@
 Authors:
     Andrey Kvichansky    (kvichans on github.com)
 Version:
-    '1.1.9 2017-04-08'
+    '1.1.10 2017-04-08'
 ToDo: (see end of file)
 '''
 
@@ -627,8 +627,8 @@ def parse_raw_keys_info(path_to_raw):
                       ('bool', True         )   if dval_s=='true'                       else \
                       ('bool', False        )   if dval_s=='false'                      else \
                       ('float',float(dval_s))   if reFloat.match(dval_s)                else \
-                      ('int',  int(dval_s)  )   if reInt.match(dval_s)                  else \
-                      ('font', dval_s[1:-1] )   if reFontNm.search(key)                 else \
+                      ('int',  int(  dval_s))   if reInt.match(dval_s)                  else \
+                      ('font', dval_s[1:-1] )   if reFontNm.match(key)                  else \
                       ('str',  jsstr(dval_s))   if dval_s[0]=='"' and dval_s[-1]=='"'   else \
                       ('unk',  dval_s       )
             
@@ -638,10 +638,11 @@ def parse_raw_keys_info(path_to_raw):
             kinf['key']             = key
             kinf['def_val']         = dval
             kinf['comment']         = cmnt
+            kinf['format']          = frm
             if frm in ('int','str'):
                 cmnt,frm,dct,tags   = parse_cmnt(ref_cmnt+l+cmnt[3:]    if cmnt.startswith('...') else cmnt, frm, kinfs)
                 kinf['comment']     = cmnt
-                if frm in ('enum_i','enum_s','font'):
+                if frm in ('enum_i','enum_s'):
                     kinf['format']  = frm
                 if dct:
                     log('Bad comment at key {}',key) if len(dct)<2 else None
