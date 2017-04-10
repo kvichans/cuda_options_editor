@@ -1,3 +1,6 @@
+1.1.12 (2017-04-10)
+fixed: forbid to change json (wait set_opt new release)
+
 1.1.8 (2017-04-07)
 added: (like key) to copy enum
 

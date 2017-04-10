@@ -2,7 +2,7 @@
 Authors:
     Andrey Kvichansky    (kvichans on github.com)
 Version:
-    '1.1.11 2017-04-10'
+    '1.1.12 2017-04-10'
 ToDo: (see end of file)
 '''
 
@@ -348,7 +348,7 @@ def dlg_opt_editor(title, keys_info=None
             )
             +([] if not as_char else []
                  +[dict(cid='kved',tp='ed'  ,t=65+LST_H ,l=l_val+5      ,w=COL_WS[-1]+15                                            )] #
-                 +[dict(cid='setv',tp='bt'  ,tid='kved' ,l=DLG_W-5-80   ,w=80           ,cap=_('Cha&nge')                           )] # &n
+                 +[dict(cid='setv',tp='bt'  ,tid='kved' ,l=DLG_W-5-80   ,w=80           ,cap=_('Cha&nge')   ,en=(frm_sel!='json')   )] # &n
             )
             +([] if not as_file else []
                  +[dict(cid='kved',tp='ed'  ,t=65+LST_H ,l=l_val+5      ,w=COL_WS[-1]+15-30                                         )] #
@@ -361,7 +361,8 @@ def dlg_opt_editor(title, keys_info=None
             # View def-value
                  +[dict(           tp='lb'  ,tid='dfvl' ,l=l_val-100-5  ,w=100          ,cap=_('>Default value:')                   )] # 
                  +[dict(cid='dfvl',tp='ed'  ,t=93+LST_H ,l=l_val+5      ,w=COL_WS[-1]+15                        ,ro_mono_brd='1,0,1')] #
-                 +[dict(cid='setd',tp='bt'  ,tid='dfvl' ,l=DLG_W-5-80   ,w=80           ,cap=_('Reset')     ,en=(dvl_sel!=val_sel)  )] # 
+                 +[dict(cid='setd',tp='bt'  ,tid='dfvl' ,l=DLG_W-5-80   ,w=80           ,cap=_('Reset')     ,en=(dvl_sel!=val_sel
+                                                                                                            and  frm_sel!='json')   )] # 
             # View commnent (with tested font)
             +([]  
                  +[dict(cid='cmnt',tp='memo',t=125+LST_H,l=5 ,h=CMNT_H-3,w=LST_W                                ,ro_mono_brd='1,1,1')] #
