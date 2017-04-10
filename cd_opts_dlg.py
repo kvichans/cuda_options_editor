@@ -2,7 +2,7 @@
 Authors:
     Andrey Kvichansky    (kvichans on github.com)
 Version:
-    '1.1.10 2017-04-08'
+    '1.1.11 2017-04-10'
 ToDo: (see end of file)
 '''
 
@@ -309,12 +309,14 @@ def dlg_opt_editor(title, keys_info=None
         as_char = key_sel and (frm_sel in ('int', 'float', 'str', 'json')   or frm_sel=='font' and not font_l)
         as_enum = key_sel and (frm_sel in ('enum_i', 'enum_s')              or frm_sel=='font' and     font_l)
         as_file = key_sel and  frm_sel in ('file')
+        font_nm4sz  = key_sel.replace('font_size', 'font_name')
+        font_sz4nm  = key_sel.replace('font_name', 'font_size')
         pvw_font= '' \
-                    if not font_l                                                                           else    \
-                  f('{},{}', val_sel, k2fdcvt[key_sel.replace('font_name', 'font_size')]['v'])                      \
-                    if frm_sel=='font' and val_sel!='default'                                               else    \
-                  f('{},{}',          k2fdcvt[key_sel.replace('font_size', 'font_name')]['v'], val_sel)             \
-                    if frm_sel=='int' and 'font_size' in key_sel                                            else    \
+                    if not font_l                                                              else \
+                  f('{},{}', val_sel, k2fdcvt[font_sz4nm]['v'])                                     \
+                    if frm_sel=='font' and val_sel!='default'       and font_sz4nm in k2fdcvt  else \
+                  f('{},{}',          k2fdcvt[font_nm4sz]['v'], val_sel)                            \
+                    if frm_sel=='int' and 'font_size' in key_sel    and font_nm4sz in k2fdcvt  else \
                   ''
         pass;                  #LOG and log('pvw_font={}',(pvw_font))
         cnts    =([]
@@ -496,7 +498,8 @@ def dlg_opt_editor(title, keys_info=None
                     #while not good
             if as_enum and aid=='kved' and vals['kved']!=-1:
                 ind     = vals['kved']
-                val_l   = font_l    if frm_sel=='font' else     list(var_sel.keys())
+                val_l   = font_l    if frm_sel=='font' else     list(dct_sel.keys())
+#               val_l   = font_l    if frm_sel=='font' else     list(var_sel.keys())
                 k2fdcvt[key_sel]['v'] = val_l[ind]
             if aid=='brow':
                 path    = app.dlg_file(True, '', os.path.expanduser(k2fdcvt[key_sel]['v']), '')
