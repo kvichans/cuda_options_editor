@@ -427,7 +427,7 @@ def dlg_wrapper(title, w, h, cnts, in_vals={}, focus_cid=None):
             cnt['props']= cnt.get('ro_mono_brd')
 
         # Simple props
-        for k in ['cap', 'hint', 'props', 'font', 'name']:
+        for k in ['cap', 'hint', 'props', 'font_name', 'font_size', 'font_color', 'font', 'name']:
             if k in cnt:
                 lst += [k+'='+str(cnt[k])]
         # Position:

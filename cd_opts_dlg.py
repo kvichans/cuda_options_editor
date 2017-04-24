@@ -2,7 +2,7 @@
 Authors:
     Andrey Kvichansky    (kvichans on github.com)
 Version:
-    '1.1.12 2017-04-10'
+    '1.1.13 2017-04-24'
 ToDo: (see end of file)
 '''
 
@@ -311,14 +311,14 @@ def dlg_opt_editor(title, keys_info=None
         as_file = key_sel and  frm_sel in ('file')
         font_nm4sz  = key_sel.replace('font_size', 'font_name')
         font_sz4nm  = key_sel.replace('font_name', 'font_size')
-        pvw_font= '' \
+        pvw_font_ns = None \
                     if not font_l                                                              else \
-                  f('{},{}', val_sel, k2fdcvt[font_sz4nm]['v'])                                     \
+                  (val_sel,                 k2fdcvt[font_sz4nm]['v'])                               \
                     if frm_sel=='font' and val_sel!='default'       and font_sz4nm in k2fdcvt  else \
-                  f('{},{}',          k2fdcvt[font_nm4sz]['v'], val_sel)                            \
+                  (k2fdcvt[font_nm4sz]['v'], val_sel                )                               \
                     if frm_sel=='int' and 'font_size' in key_sel    and font_nm4sz in k2fdcvt  else \
-                  ''
-        pass;                  #LOG and log('pvw_font={}',(pvw_font))
+                  None
+        pass;                  #LOG and log('pvw_font_ns={}',(pvw_font_ns))
         cnts    =([]
             # Filter
                  +[dict(cid='fltr',tp='bt'  ,t=0        ,l=0            ,w=0            ,cap=''                 ,def_bt='1'         )] # 
@@ -366,8 +366,9 @@ def dlg_opt_editor(title, keys_info=None
             # View commnent (with tested font)
             +([]  
                  +[dict(cid='cmnt',tp='memo',t=125+LST_H,l=5 ,h=CMNT_H-3,w=LST_W                                ,ro_mono_brd='1,1,1')] #
-              if not (pvw_font) else []
-                 +[dict(cid='cmnt',tp='memo',t=125+LST_H,l=5 ,h=CMNT_H-3,w=LST_W        ,font=pvw_font          ,ro_mono_brd='1,0,1')] #
+              if not (pvw_font_ns) else []
+                 +[dict(cid='cmnt',tp='memo',t=125+LST_H,l=5 ,h=CMNT_H-3,w=LST_W    ,font_name=pvw_font_ns[0]
+                                                                                    ,font_size=pvw_font_ns[1]   ,ro_mono_brd='1,0,1')] #
             )
 
             # Target json
@@ -864,4 +865,5 @@ ToDo
 [+][at-kv][05apr17] Preview for format=font
 [+][kv-kv][06apr17] Spec filter sign: * - to show only modified
 [-][kv-kv][06apr17] Format color
+[ ][kv-kv][24apr17] Sort as Def or as User
 '''
