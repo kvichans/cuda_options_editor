@@ -226,7 +226,10 @@ def dlg_opt_editor(title, keys_info=None
               '\r • Use "<" or ">" for word boundary.'
               '\r     size> <tab'
               '\r   selects "tab_size" but not "ui_tab_size" or "tab_size_x".')
-    t1st_h  = _('Begin list with altered keys in order from user file')
+    t1st_c  = _('Conf&igured on top')
+    t1st_h  = _('Show user keys on top of entire list.'
+              '\rThe order of keys will be the same as in user file.')
+#   t1st_h  = _('Begin list with altered keys in order from user file')
     trgt_h  = _('Set storage for values')
     rprt_h  = _('Create HTML report and open it in browser')
 
@@ -347,7 +350,7 @@ def dlg_opt_editor(title, keys_info=None
             )
             # Table of keys
                  +[dict(cid='lvls',tp='lvw' ,t=57       ,l=5 ,h=LST_H   ,w=LST_W        ,items=itms             ,grid='1'   ,act='1')] #
-                 +[dict(cid='t1st',tp='ch'  ,t=65+LST_H ,l=5            ,w=100          ,cap=_('Altered f&irst'),hint=t1st_h,act='1')] # &i
+                 +[dict(cid='t1st',tp='ch'  ,t=65+LST_H ,l=5            ,w=100          ,cap=t1st_c         ,hint=t1st_h    ,act='1')] # &i
 
             # Editors for value
             +([] if not key_sel else []
