@@ -1,3 +1,7 @@
+1.1.14 (2017-04-24)
+added: begin with user keys (with order)
+fixed: font preview
+
 1.1.12 (2017-04-10)
 fixed: forbid to change json (wait set_opt new release)
 

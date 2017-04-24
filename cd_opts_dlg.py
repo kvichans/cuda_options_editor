@@ -2,7 +2,7 @@
 Authors:
     Andrey Kvichansky    (kvichans on github.com)
 Version:
-    '1.1.13 2017-04-24'
+    '1.1.14 2017-04-24'
 ToDo: (see end of file)
 '''
 
@@ -190,9 +190,16 @@ def dlg_opt_editor(title, keys_info=None
     pass;                      #LOG and log('tags_l={}',(tags_l))
     pass;                      #LOG and log('tags_vl={}',(tags_vl))
 
-    def get_main_data(trgt_json='user.json'):
+    def get_main_data(trgt_json='user.json', trgt_1st=False):
         opts_json   = app.app_path(app.APP_DIR_SETTINGS)+os.sep+trgt_json
-        opts        = apx._get_file_opts(opts_json)
+        trgt_opts   = apx._json_loads(open(opts_json, encoding='utf8').read(), object_pairs_hook=OrdDict)
+#       trgt_opts   = apx._get_file_opts(opts_json, object_pairs_hook=OrdDict)
+        nonlocal keys_info
+        keys_info_  = keys_info
+        if trgt_1st:
+            keys_d      = OrdDict([(ki['key'],ki) for ki in keys_info])
+            keys_info_  = [keys_d[k] for k  in trgt_opts if k             in keys_d] \
+                        + [ki        for ki in keys_info if ki['key'] not in trgt_opts]
         return OrdDict([
             (       kinfo['key'],
                {'f':kinfo.get('format', frm_of_val(kinfo['def_val']))
@@ -201,15 +208,16 @@ def dlg_opt_editor(title, keys_info=None
                ,'d':kinfo['def_val']
                ,'c':kinfo['comment']            if                          isinstance(kinfo['comment'], str) else
                     '\n'.join(kinfo['comment'])
-               ,'v':opts.get(kinfo['key'], kinfo['def_val'])
+               ,'v':trgt_opts.get(kinfo['key'], kinfo['def_val'])
                ,'a':kinfo.get('chapter', '')
                ,'g':set(kinfo.get('tags', []))
                }
-            )  for  kinfo in keys_info
+            )  for  kinfo in keys_info_
             ])
        #def get_main_data
 
-    k2fdcvt = get_main_data()
+    t1st_b  = stores.get('t1st', False)
+    k2fdcvt = get_main_data(trgt_1st=t1st_b)
     pass;                      #LOG and log('k2fdcvt={}',(k2fdcvt))
 
     fltr_h  = _('Suitable keys will contain all specified words.'
@@ -218,6 +226,7 @@ def dlg_opt_editor(title, keys_info=None
               '\r • Use "<" or ">" for word boundary.'
               '\r     size> <tab'
               '\r   selects "tab_size" but not "ui_tab_size" or "tab_size_x".')
+    t1st_h  = _('Begin list with altered keys in order from user file')
     trgt_h  = _('Set storage for values')
     rprt_h  = _('Create HTML report and open it in browser')
 
@@ -338,25 +347,26 @@ def dlg_opt_editor(title, keys_info=None
             )
             # Table of keys
                  +[dict(cid='lvls',tp='lvw' ,t=57       ,l=5 ,h=LST_H   ,w=LST_W        ,items=itms             ,grid='1'   ,act='1')] #
+                 +[dict(cid='t1st',tp='ch'  ,t=65+LST_H ,l=5            ,w=100          ,cap=_('Altered f&irst'),hint=t1st_h,act='1')] # &i
 
             # Editors for value
             +([] if not key_sel else []
-                 +[dict(           tp='lb'  ,tid='kved' ,l=l_val-100-5  ,w=100          ,cap=_('>&Value:')                          )] # &v 
+                 +[dict(           tp='lb'  ,tid='t1st' ,l=l_val-100-5  ,w=100          ,cap=_('>&Value:')                          )] # &v 
             )
             +([] if not as_bool else []
-                 +[dict(cid='kved',tp='ch'  ,t=65+LST_H ,l=l_val+5      ,w=COL_WS[-1]+15,cap=_('O&n')                       ,act='1')] # &n
+                 +[dict(cid='kved',tp='ch'  ,tid='t1st' ,l=l_val+5      ,w=COL_WS[-1]+15,cap=_('O&n')                       ,act='1')] # &n
             )
             +([] if not as_char else []
-                 +[dict(cid='kved',tp='ed'  ,t=65+LST_H ,l=l_val+5      ,w=COL_WS[-1]+15                                            )] #
-                 +[dict(cid='setv',tp='bt'  ,tid='kved' ,l=DLG_W-5-80   ,w=80           ,cap=_('Cha&nge')   ,en=(frm_sel!='json')   )] # &n
+                 +[dict(cid='kved',tp='ed'  ,tid='t1st' ,l=l_val+5      ,w=COL_WS[-1]+15                                            )] #
+                 +[dict(cid='setv',tp='bt'  ,tid='t1st' ,l=DLG_W-5-80   ,w=80           ,cap=_('Cha&nge')   ,en=(frm_sel!='json')   )] # &n
             )
             +([] if not as_file else []
-                 +[dict(cid='kved',tp='ed'  ,t=65+LST_H ,l=l_val+5      ,w=COL_WS[-1]+15-30                                         )] #
-                 +[dict(cid='brow',tp='bt'  ,tid='kved' ,l=DLG_W-5-80-35,w=30           ,cap=_('&...') ,hint=_('Browse file')       )] # &.
-                 +[dict(cid='setv',tp='bt'  ,tid='kved' ,l=DLG_W-5-80   ,w=80           ,cap=_('Cha&nge')                           )] # &n
+                 +[dict(cid='kved',tp='ed'  ,tid='t1st' ,l=l_val+5      ,w=COL_WS[-1]+15-30                                         )] #
+                 +[dict(cid='brow',tp='bt'  ,tid='t1st' ,l=DLG_W-5-80-35,w=30           ,cap=_('&...') ,hint=_('Browse file')       )] # &.
+                 +[dict(cid='setv',tp='bt'  ,tid='t1st' ,l=DLG_W-5-80   ,w=80           ,cap=_('Cha&nge')                           )] # &n
             )
             +([] if not as_enum else []
-                 +[dict(cid='kved',tp='cb-r',t=65+LST_H ,l=l_val+5      ,w=COL_WS[-1]+15,items=var_sel                      ,act='1')] #
+                 +[dict(cid='kved',tp='cb-r',tid='t1st' ,l=l_val+5      ,w=COL_WS[-1]+15,items=var_sel                      ,act='1')] #
             )
             # View def-value
                  +[dict(           tp='lb'  ,tid='dfvl' ,l=l_val-100-5  ,w=100          ,cap=_('>Default value:')                   )] # 
@@ -380,6 +390,7 @@ def dlg_opt_editor(title, keys_info=None
                  )
         vals    =       dict(cond=cond_s
                             ,lvls=ind_sel
+                            ,t1st=t1st_b
                             ,dfvl=to_str(dvl_sel, frm_sel, dct_sel)     if key_sel else ''
                             ,cmnt=cmt_sel.replace('\r', '\n')           if key_sel else ''
                             )
@@ -407,9 +418,11 @@ def dlg_opt_editor(title, keys_info=None
         cond_s  = vals['cond']
         chap_n  = vals['chap']  if 1<len(chap_l)    else chap_n
         ind_sel = vals['lvls']
+        t1st_b  = vals['t1st']
 
-        stores[subset+'h.cond']= add_to_history(cond_s, stores.get(subset+'h.cond', []), MAX_HIST, unicase=False)
-        stores[subset+'chap']  = chap_l[chap_n]
+        stores[subset+'h.cond'] = add_to_history(cond_s, stores.get(subset+'h.cond', []), MAX_HIST, unicase=False)
+        stores[subset+'chap']   = chap_l[chap_n]
+        stores['t1st']          = t1st_b
         open(CFG_JSON, 'w').write(json.dumps(stores, indent=4))
 
         if aid=='cust':
@@ -431,6 +444,8 @@ def dlg_opt_editor(title, keys_info=None
             open(CFG_JSON, 'w').write(json.dumps(stores, indent=4))
             continue#while
             
+        if aid=='t1st':     # Show user key first
+            k2fdcvt = get_main_data(trgt_s, t1st_b)
         if aid=='tags':     # Use prev tag set
             ind     = vals['tags']
             tags_s  = tags_hl[ind]
@@ -551,7 +566,7 @@ def dlg_opt_editor(title, keys_info=None
             new_trgt_s  = trgt_l[trgt_n]
             pass;              #LOG and log('new_trgt_s={}',(new_trgt_s))
             if new_trgt_s!=trgt_s:
-                k2fdcvt = get_main_data(new_trgt_s)
+                k2fdcvt = get_main_data(new_trgt_s, t1st_b)
                 trgt_s  = new_trgt_s
        #while
    #def dlg_opt_editor
