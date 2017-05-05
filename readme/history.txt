@@ -1,3 +1,6 @@
+1.1.15 (2017-04-24)
+added: parse "Folders from:" to "enum_s" {folder:folder}
+
 1.1.14 (2017-04-24)
 added: begin with user keys (with order)
 fixed: font preview

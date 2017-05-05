@@ -2,7 +2,7 @@
 Authors:
     Andrey Kvichansky    (kvichans on github.com)
 Version:
-    '1.1.14 2017-04-24'
+    '1.1.15 2017-05-05'
 ToDo: (see end of file)
 '''
 
@@ -21,6 +21,8 @@ pass;                           ##!! waits correction
 
 _   = get_translation(__file__) # I18N
 
+MIN_API_VER_4WR = '1.0.175'     # vis
+MIN_API_VER_4AG = '1.0.176'
 VERSION     = re.split('Version:', __doc__)[1].split("'")[1]
 VERSION_V,  \
 VERSION_D   = VERSION.split(' ')
@@ -51,6 +53,15 @@ def dlg_opt_editor(title, keys_info=None
         , path_svd_keys_info=''
         , subset=''
         ):
+    dlg_opt_editor_wr(title, keys_info, path_raw_keys_info, path_svd_keys_info, subset)
+#   dlg_opt_editor_ag(title, keys_info, path_raw_keys_info, path_svd_keys_info, subset)
+   #def dlg_opt_editor
+
+def dlg_opt_editor_wr(title, keys_info=None
+        , path_raw_keys_info=''
+        , path_svd_keys_info=''
+        , subset=''
+        ):
     """ Editor for any json data.
         Params 
             title       (str)   Dialog title
@@ -63,6 +74,7 @@ def dlg_opt_editor(title, keys_info=None
                                     dct:    (dict)
                                             (pairs list)
     """
+    if app.app_api_version()<MIN_API_VER_4WR: return app.msg_status(_('Need update CudaText'))
     if not keys_info:
         if not os.path.isfile(path_raw_keys_info):
             return app.msg_status(_('No sourse for key-info'))
@@ -104,76 +116,30 @@ def dlg_opt_editor(title, keys_info=None
     if 0==len(keys_info):
         return app.msg_status(_('Empty keys_info'))
 
+    # Start COMMON STATIC data
+    fltr_h  = _('Suitable keys will contain all specified words.'
+              '\rTips:'
+              '\r • Start with "*" to view only changed values.'
+              '\r • Use "<" or ">" for word boundary.'
+              '\r     size> <tab'
+              '\r   selects "tab_size" but not "ui_tab_size" or "tab_size_x".')
+    t1st_c  = _('Conf&igured on top')
+    t1st_h  = _('Show user keys on top of entire list.'
+              '\rThe order of keys will be the same as in user file.')
+    trgt_h  = _('Set storage for values')
+    rprt_h  = _('Create HTML report and open it in browser')
+
     font_l  = [] if app.app_api_version()<'1.0.174' else \
               [font 
                 for font in app.app_proc(app.PROC_ENUM_FONTS, '')
                 if not font.startswith('@')] 
     font_l  = ['default'] + font_l
-    stores      = json.loads(open(CFG_JSON).read(), object_pairs_hook=OrdDict) \
-                    if os.path.exists(CFG_JSON) and os.path.getsize(CFG_JSON) != 0 else \
-                  OrdDict()
+    # Finish COMMON STATIC data
 
-    def add_to_history(val:str, lst:list, max_len:int, unicase=True)->list:
-        """ Add/Move val to list head. """
-        lst_u = [ s.upper() for s in lst] if unicase else lst
-        val_u = val.upper()               if unicase else val
-        if val_u in lst_u:
-            if 0 == lst_u.index(val_u):   return lst
-            del lst[lst_u.index(val_u)]
-        lst.insert(0, val)
-        if len(lst)>max_len:
-            del lst[max_len:]
-        return lst
-       #def add_to_history
-    def frm_of_val(val):
-        if isinstance(val, bool):   return 'bool'
-        if isinstance(val, int):    return 'int'
-        if isinstance(val, float):  return 'float'
-        if isinstance(val, str):    return 'str'
-        pass;                       return ''
-       #def frm_of_val
-    def to_str(kv, kformat, dct=None):
-        'Convert a value of key to string to show (in listview cell, in edit)'
-        if kformat=='json' \
-        or isinstance(kv, dict) or isinstance(kv, list):
-            return json.dumps(kv)
-        if kformat=='enum_i' and dct is not None:
-            return dct.get(kv, str(kv))
-        if kformat=='enum_s' and dct is not None:
-            return dct.get(str(kv), str(kv))
-        return str(kv)
-       #def to_str
-    def from_str(strv, kformat, dct=None):
-        'Convert a value of key to string to show (in listview cell, in edit)'
-        if kformat in ('bool'):
-            return bool(strv)
-        if kformat in ('int'):
-            return int(strv)
-        if kformat in ('float'):
-            return float(strv)
-        if kformat in ('str'):
-            return strv
-        if kformat=='json' \
-        or isinstance(kv, dict) or isinstance(kv, list):
-            return json.loads(strv, object_pairs_hook=OrdDict)
-        if kformat in ('enum_i', 'enum_s') and dct is not None:
-            ind = list(dct.values()).index(strv)
-            ans = list(dct.keys())[ind]
-            return int(ans) if kformat=='enum_i' else ans 
-        return strv
-       #def from_str
-    
-    reNotWdChar = re.compile(r'\W')
-    def test_cond(cnd_s, text):
-        if not cnd_s:       return True
-        text    = text.upper()
-        if '<' in cnd_s or '>' in cnd_s:
-            text    = '·' + reNotWdChar.sub('·', text)    + '·'
-            cnd_s   = ' ' + cnd_s + ' '
-            cnd_s   = cnd_s.replace(' <', ' ·').replace('> ', '· ')
-        pass;                  #LOG and log('cnd_s, text={}',(cnd_s, text))
-        return all(map(lambda c:c in text, cnd_s.split()))
-       #def test_cond
+    # Start COMMON DINAMIC data
+    stores  = json.loads(open(CFG_JSON).read(), object_pairs_hook=OrdDict) \
+                if os.path.exists(CFG_JSON) and os.path.getsize(CFG_JSON) != 0 else \
+              OrdDict()
 
     chap_l  = list({kinfo.get('chapter', '') for  kinfo in keys_info if kinfo.get('chapter', '')})
     chap_l  = [' '] + sorted(chap_l)
@@ -190,48 +156,9 @@ def dlg_opt_editor(title, keys_info=None
     pass;                      #LOG and log('tags_l={}',(tags_l))
     pass;                      #LOG and log('tags_vl={}',(tags_vl))
 
-    def get_main_data(trgt_json='user.json', trgt_1st=False):
-        opts_json   = app.app_path(app.APP_DIR_SETTINGS)+os.sep+trgt_json
-        trgt_opts   = apx._json_loads(open(opts_json, encoding='utf8').read(), object_pairs_hook=OrdDict)
-#       trgt_opts   = apx._get_file_opts(opts_json, object_pairs_hook=OrdDict)
-        nonlocal keys_info
-        keys_info_  = keys_info
-        if trgt_1st:
-            keys_d      = OrdDict([(ki['key'],ki) for ki in keys_info])
-            keys_info_  = [keys_d[k] for k  in trgt_opts if k             in keys_d] \
-                        + [ki        for ki in keys_info if ki['key'] not in trgt_opts]
-        return OrdDict([
-            (       kinfo['key'],
-               {'f':kinfo.get('format', frm_of_val(kinfo['def_val']))
-               ,'t':kinfo.get('dct')            if ('dct' not in kinfo or   isinstance(kinfo.get('dct'), dict)) else 
-                    OrdDict(kinfo.get('dct'))
-               ,'d':kinfo['def_val']
-               ,'c':kinfo['comment']            if                          isinstance(kinfo['comment'], str) else
-                    '\n'.join(kinfo['comment'])
-               ,'v':trgt_opts.get(kinfo['key'], kinfo['def_val'])
-               ,'a':kinfo.get('chapter', '')
-               ,'g':set(kinfo.get('tags', []))
-               }
-            )  for  kinfo in keys_info_
-            ])
-       #def get_main_data
-
     t1st_b  = stores.get('t1st', False)
-    k2fdcvt = get_main_data(trgt_1st=t1st_b)
+    k2fdcvt = get_main_data(keys_info, trgt_1st=t1st_b)
     pass;                      #LOG and log('k2fdcvt={}',(k2fdcvt))
-
-    fltr_h  = _('Suitable keys will contain all specified words.'
-              '\rTips:'
-              '\r • Start with "*" to view only changed values.'
-              '\r • Use "<" or ">" for word boundary.'
-              '\r     size> <tab'
-              '\r   selects "tab_size" but not "ui_tab_size" or "tab_size_x".')
-    t1st_c  = _('Conf&igured on top')
-    t1st_h  = _('Show user keys on top of entire list.'
-              '\rThe order of keys will be the same as in user file.')
-#   t1st_h  = _('Begin list with altered keys in order from user file')
-    trgt_h  = _('Set storage for values')
-    rprt_h  = _('Create HTML report and open it in browser')
 
     trgt_s  = 'user.json'
     key_sel = keys_info[0]['key']
@@ -244,6 +171,7 @@ def dlg_opt_editor(title, keys_info=None
     tags_hl = [s for s in stores.get(subset+'h.tags', []) if s ]
     tags_n  = 0 if tags_s and tags_hl else -1
     fid     = 'lvls'
+    # Finish COMMON DINAMIC data
     while True: #NOTE: json_props
         COL_WS      = [                 stores.get(subset+'cust.wd_k', 250)
 #                     ,                 stores.get(subset+'cust.wd_f',  50)
@@ -297,13 +225,10 @@ def dlg_opt_editor(title, keys_info=None
                   index_1(font_l,               val_sel, len(font_l))            \
                                         if frm_sel=='font' and     font_l   else \
                   -1
+        pass;                  #LOG and log('sel_sel,var_sel={}',(sel_sel,var_sel))
 
         stat    = f(' ({}/{})', len(fl_kfsvt), len(k2fdcvt))
         col_aws = [p+cw for (p,cw) in zip(('',      'C', ''), map(str, COL_WS))]
-#       col_aws = [p+cw for (p,cw) in zip(('', 'C', 'C', ''), map(str, COL_WS))]
-#       itms    = (zip([_('Key')+stat, _('Type'),   _(' '), f(_('Value from "{}"'), trgt_s)], col_aws)
-#                 ,    [ ( kch+knm+ktg,   kf,          kset,   to_str(kv, kf, kdct)) for
-#                        (     knm,       kf,          kset,          kv,     kdct, kch, ktg ) in fl_kfsvt]
         itms    = (zip([_('Key')+stat,              _(' '), f(_('Value from "{}"'), trgt_s)], col_aws)
                   ,    [ ( kch+knm+ktg,                kset,   to_str(kv, kf, kdct)) for
                          (     knm,       kf,          kset,          kv,     kdct, kch, ktg ) in fl_kfsvt]
@@ -318,8 +243,8 @@ def dlg_opt_editor(title, keys_info=None
         tags_hl = [s for s in stores.get(subset+'h.tags', []) if s ]
         
         as_bool = key_sel and  frm_sel in ('bool')
-        as_char = key_sel and (frm_sel in ('int', 'float', 'str', 'json')   or frm_sel=='font' and not font_l)
-        as_enum = key_sel and (frm_sel in ('enum_i', 'enum_s')              or frm_sel=='font' and     font_l)
+        as_char = key_sel and (frm_sel in ('int', 'float', 'str', 'json')   or frm_sel=='font' and not bool(font_l))
+        as_enum = key_sel and (frm_sel in ('enum_i', 'enum_s')              or frm_sel=='font' and     bool(font_l))
         as_file = key_sel and  frm_sel in ('file')
         font_nm4sz  = key_sel.replace('font_size', 'font_name')
         font_sz4nm  = key_sel.replace('font_name', 'font_size')
@@ -331,66 +256,47 @@ def dlg_opt_editor(title, keys_info=None
                     if frm_sel=='int' and 'font_size' in key_sel    and font_nm4sz in k2fdcvt  else \
                   None
         pass;                  #LOG and log('pvw_font_ns={}',(pvw_font_ns))
-        cnts    =([]
-            # Filter
-                 +[dict(cid='fltr',tp='bt'  ,t=0        ,l=0            ,w=0            ,cap=''                 ,def_bt='1'         )] # 
-                 +[dict(           tp='lb'  ,t=5        ,l=5+2          ,w=COL_WS[0]    ,cap=_('&Filter:')  ,hint=fltr_h            )] # &k
-                 +[dict(cid='cond',tp='cb'  ,t=25       ,l=5+2          ,w=COL_WS[0]    ,items=cond_hl                              )] #
-            # Chapters
-            +([] if 1==len(chap_l) else []
-                 +[dict(           tp='lb'  ,t=5        ,l=15+COL_WS[0] ,w=140          ,cap=_('Se&ction:')                         )] # &c
-                 +[dict(cid='chap',tp='cb-r',t=25       ,l=15+COL_WS[0] ,w=140          ,items=chap_v                       ,act='1')] #
-            )
-            # Tags
-            +([] if not tags_l else []
-                 +[dict(           tp='lb'  ,t=5        ,l=COL_WS[0]+160,r=DLG_W-10-80  ,cap=_('T&ags:')                            )] # &a
-                 +[dict(cid='tags',tp='cb-r',t=25       ,l=COL_WS[0]+160,r=DLG_W-10-80  ,items=tags_hl                      ,act='1')] #
-                 +[dict(cid='?tgs',tp='bt'  ,tid='tags' ,l=DLG_W-5-80   ,w=80           ,cap=_('Tag&s…')    ,hint=_('Choose tags')  )] # &s
-                 +[dict(cid='-tgs',tp='bt'  ,t=57       ,l=DLG_W-5-80   ,w=80           ,cap=_('Clea&r')    ,hint=_('Clear tags')   )] # &r
-            )
-            # Table of keys
-                 +[dict(cid='lvls',tp='lvw' ,t=57       ,l=5 ,h=LST_H   ,w=LST_W        ,items=itms             ,grid='1'   ,act='1')] #
-                 +[dict(cid='t1st',tp='ch'  ,t=65+LST_H ,l=5            ,w=100          ,cap=t1st_c         ,hint=t1st_h    ,act='1')] # &i
-
-            # Editors for value
-            +([] if not key_sel else []
-                 +[dict(           tp='lb'  ,tid='t1st' ,l=l_val-100-5  ,w=100          ,cap=_('>&Value:')                          )] # &v 
-            )
-            +([] if not as_bool else []
-                 +[dict(cid='kved',tp='ch'  ,tid='t1st' ,l=l_val+5      ,w=COL_WS[-1]+15,cap=_('O&n')                       ,act='1')] # &n
-            )
-            +([] if not as_char else []
-                 +[dict(cid='kved',tp='ed'  ,tid='t1st' ,l=l_val+5      ,w=COL_WS[-1]+15                                            )] #
-                 +[dict(cid='setv',tp='bt'  ,tid='t1st' ,l=DLG_W-5-80   ,w=80           ,cap=_('Cha&nge')   ,en=(frm_sel!='json')   )] # &n
-            )
-            +([] if not as_file else []
-                 +[dict(cid='kved',tp='ed'  ,tid='t1st' ,l=l_val+5      ,w=COL_WS[-1]+15-30                                         )] #
-                 +[dict(cid='brow',tp='bt'  ,tid='t1st' ,l=DLG_W-5-80-35,w=30           ,cap=_('&...') ,hint=_('Browse file')       )] # &.
-                 +[dict(cid='setv',tp='bt'  ,tid='t1st' ,l=DLG_W-5-80   ,w=80           ,cap=_('Cha&nge')                           )] # &n
-            )
-            +([] if not as_enum else []
-                 +[dict(cid='kved',tp='cb-r',tid='t1st' ,l=l_val+5      ,w=COL_WS[-1]+15,items=var_sel                      ,act='1')] #
-            )
-            # View def-value
-                 +[dict(           tp='lb'  ,tid='dfvl' ,l=l_val-100-5  ,w=100          ,cap=_('>Default value:')                   )] # 
-                 +[dict(cid='dfvl',tp='ed'  ,t=93+LST_H ,l=l_val+5      ,w=COL_WS[-1]+15                        ,ro_mono_brd='1,0,1')] #
-                 +[dict(cid='setd',tp='bt'  ,tid='dfvl' ,l=DLG_W-5-80   ,w=80           ,cap=_('Reset')     ,en=(dvl_sel!=val_sel
-                                                                                                            and  frm_sel!='json')   )] # 
-            # View commnent (with tested font)
-            +([]  
-                 +[dict(cid='cmnt',tp='memo',t=125+LST_H,l=5 ,h=CMNT_H-3,w=LST_W                                ,ro_mono_brd='1,1,1')] #
-              if not (pvw_font_ns) else []
-                 +[dict(cid='cmnt',tp='memo',t=125+LST_H,l=5 ,h=CMNT_H-3,w=LST_W    ,font_name=pvw_font_ns[0]
-                                                                                    ,font_size=pvw_font_ns[1]   ,ro_mono_brd='1,0,1')] #
-            )
-
-            # Target json
-                 +[dict(cid='trgt',tp='bt'  ,t=120      ,l=DLG_W-5-80   ,w=80           ,cap=_('&Target…')  ,hint=trgt_h            )] # &t
-                 +[dict(cid='cust',tp='bt'  ,t=150      ,l=DLG_W-5-80   ,w=80           ,cap=_('Ad&just…')                          )] # &j
-                 +[dict(cid='rprt',tp='bt'  ,t=DLG_H-65 ,l=DLG_W-5-80   ,w=80           ,cap=_('Report…')   ,hint=rprt_h            )] # &h
-#                +[dict(cid='?'   ,tp='bt'  ,t=DLG_H-65 ,l=DLG_W-5-80   ,w=80           ,cap=_('&Help…')                            )] # &h
-                 +[dict(cid='-'   ,tp='bt'  ,t=DLG_H-35 ,l=DLG_W-5-80   ,w=80           ,cap=_('Close')                             )] #
-                 )
+        w_chap  = len(chap_l)>1
+        w_tags  = bool(tags_l)
+        pass;                  #LOG and log('(w_chap,w_tags),(as_bool,as_char,as_enum,as_file)={}',((w_chap,w_tags),(as_bool,as_char,as_enum,as_file)))
+        cnts    =[
+                # Filter
+                  dict( cid='fltr',tp='bt'  ,t=0        ,l=0            ,w=0            ,cap=''                 ,def_bt='1'                                 )   # 
+                 ,dict(            tp='lb'  ,t=5        ,l=5+2          ,w=COL_WS[0]    ,cap=_('&Filter:')  ,hint=fltr_h                                    )   # &f
+                 ,dict( cid='cond',tp='cb'  ,t=25       ,l=5+2          ,w=COL_WS[0]    ,items=cond_hl                                                      )   #
+                # Chapters
+                 ,dict(            tp='lb'  ,t=5        ,l=15+COL_WS[0] ,w=140          ,cap=_('Se&ction:')                         ,vis=w_chap             )   # &c
+                 ,dict( cid='chap',tp='cb-r',t=25       ,l=15+COL_WS[0] ,w=140          ,items=chap_v                       ,act='1',vis=w_chap             )   #
+                # Tags
+                 ,dict(            tp='lb'  ,t=5        ,l=COL_WS[0]+160,r=DLG_W-10-80  ,cap=_('T&ags:')                            ,vis=w_tags             )   # &a
+                 ,dict( cid='tags',tp='cb-r',t=25       ,l=COL_WS[0]+160,r=DLG_W-10-80  ,items=tags_hl                      ,act='1',vis=w_tags             )   #
+                 ,dict( cid='?tgs',tp='bt'  ,tid='tags' ,l=DLG_W-5-80   ,w=80           ,cap=_('Tag&s…')    ,hint=_('Choose tags')  ,vis=w_tags             )   # &s
+                 ,dict( cid='-tgs',tp='bt'  ,t=57       ,l=DLG_W-5-80   ,w=80           ,cap=_('Clea&r')    ,hint=_('Clear tags')   ,vis=w_tags             )   # &r
+                # Table of keys+values
+                 ,dict( cid='lvls',tp='lvw' ,t=57       ,l=5 ,h=LST_H   ,w=LST_W        ,items=itms             ,grid='1'   ,act='1'                        )   #
+                # Editors for value
+                 ,dict(            tp='lb'  ,tid='t1st' ,l=l_val-100-5  ,w=100          ,cap=_('>&Value:')                                                  )   # &v 
+                 ,dict( cid='edch',tp='ch'  ,tid='t1st' ,l=l_val+5      ,w=COL_WS[-1]+15,cap=_('O&n')                       ,act='1',vis=as_bool            )   # &n
+                 ,dict( cid='eded',tp='ed'  ,tid='t1st' ,l=l_val+5      ,w=COL_WS[-1]+15-(30 if as_file else 0)                     ,vis=as_char or as_file )   #
+                 ,dict( cid='brow',tp='bt'  ,tid='t1st' ,l=DLG_W-5-80-35,w=30           ,cap=_('&...') ,hint=_('Browse file')       ,vis=as_file            )   # &.
+                 ,dict( cid='setv',tp='bt'  ,tid='t1st' ,l=DLG_W-5-80   ,w=80           ,cap=_('Cha&nge')   ,en=(frm_sel!='json')   ,vis=as_char or as_file )   # &n
+                 ,dict( cid='edcb',tp='cb-r',tid='t1st' ,l=l_val+5      ,w=COL_WS[-1]+15,items=var_sel                      ,act='1',vis=as_enum            )   #
+                # View def-value
+                 ,dict(            tp='lb'  ,tid='dfvl' ,l=l_val-100-5  ,w=100          ,cap=_('>Default value:')                                           )   # 
+                 ,dict( cid='dfvl',tp='ed'  ,t=93+LST_H ,l=l_val+5      ,w=COL_WS[-1]+15                        ,ro_mono_brd='1,0,1'                        )   #
+                 ,dict( cid='setd',tp='bt'  ,tid='dfvl' ,l=DLG_W-5-80   ,w=80           ,cap=_('Reset')     ,en=(dvl_sel!=val_sel and  frm_sel!='json')     )   # 
+                # Comment
+                 ,dict( cid='cmnt',tp='memo',t=125+LST_H,l=5 ,h=CMNT_H-3,w=LST_W                                ,ro_mono_brd='1,1,1'                        )   #
+                # Target json
+                 ,dict( cid='trgt',tp='bt'  ,t=120      ,l=DLG_W-5-80   ,w=80           ,cap=_('&Target…')  ,hint=trgt_h                                    )   # &t
+                 ,dict( cid='cust',tp='bt'  ,t=150      ,l=DLG_W-5-80   ,w=80           ,cap=_('Ad&just…')                                                  )   # &j
+                 ,dict( cid='rprt',tp='bt'  ,t=DLG_H-65 ,l=DLG_W-5-80   ,w=80           ,cap=_('Report…')   ,hint=rprt_h                                    )   # &h
+                 ,dict( cid='-'   ,tp='bt'  ,t=DLG_H-35 ,l=DLG_W-5-80   ,w=80           ,cap=_('Close')                                                     )   #
+                 ,dict( cid='t1st',tp='ch'  ,t=65+LST_H ,l=5            ,w=100          ,cap=t1st_c         ,hint=t1st_h    ,act='1'                        )   # &i
+                 ]
+        if pvw_font_ns: # View commnent with tested font
+            [cnt for cnt in cnts if cnt.get('cid')=='cmnt'][0].update(
+                dict(font_name=pvw_font_ns[0], font_size=pvw_font_ns[1] ,ro_mono_brd='1,0,1'))
         vals    =       dict(cond=cond_s
                             ,lvls=ind_sel
                             ,t1st=t1st_b
@@ -402,17 +308,17 @@ def dlg_opt_editor(title, keys_info=None
         if tags_l:
             vals.update(dict(tags=tags_n))
         if as_bool:
-            vals.update(dict(kved=val_sel                               if key_sel else False))
-        if as_char:
-            vals.update(dict(kved=to_str(val_sel, frm_sel, dct_sel)     if key_sel else ''  ))
+            vals.update(dict(edch=val_sel                               if key_sel else False))
+        if as_char or as_file:
+            vals.update(dict(eded=to_str(val_sel, frm_sel, dct_sel)     if key_sel else ''  ))
         if as_enum:
-            vals.update(dict(kved=sel_sel                               if key_sel else False))
+            vals.update(dict(edcb=sel_sel                               if key_sel else False))
 
        #pass;                   LOG and log('cnts={}',(cnts))
         aid, vals, fid, chds = dlg_wrapper(f('{} ({})', title, VERSION_V), DLG_W, DLG_H, cnts, vals, focus_cid=fid)
         if aid is None or aid=='-':  return
 
-        if aid=='fltr' and fid=='kved':     # Подмена умолчательной кнопки по активному редактору
+        if aid=='fltr' and fid=='eded':     # Подмена умолчательной кнопки по активному редактору
             aid = 'setv'
 
         pass;                  #    LOG and log('aid={}',(aid))
@@ -432,7 +338,6 @@ def dlg_opt_editor(title, keys_info=None
             custs   = app.dlg_input_ex(5, _('Adjust')
                   , _(  'Height of Table (min 125)')  , str(stores.get(subset+'cust.ht_t', 300))
                   , _(     'Width of Key (min 250)')  , str(stores.get(subset+'cust.wd_k', 250))
-#                 , _(    'Width of Type (min  50)')  , str(stores.get(subset+'cust.wd_f',  50))
                   , _(       'Width of * (min  20)')  , str(stores.get(subset+'cust.wd_s',  20))
                   , _(   'Width of Value (min 250)')  , str(stores.get(subset+'cust.wd_v', 250))
                   , _('Height of Comment (min  55)')  , str(stores.get(subset+'cust.ht_c', 100))
@@ -440,7 +345,6 @@ def dlg_opt_editor(title, keys_info=None
             if custs is None:   continue#while
             stores[subset+'cust.ht_t']  = max(125, int(custs[0]))
             stores[subset+'cust.wd_k']  = max(250, int(custs[1]))
-#           stores[subset+'cust.wd_f']  = max( 50, int(custs[2]))
             stores[subset+'cust.wd_s']  = max( 20, int(custs[2]))
             stores[subset+'cust.wd_v']  = max(250, int(custs[3]))
             stores[subset+'cust.ht_c']  = max( 55, int(custs[4]))
@@ -448,7 +352,7 @@ def dlg_opt_editor(title, keys_info=None
             continue#while
             
         if aid=='t1st':     # Show user key first
-            k2fdcvt = get_main_data(trgt_s, t1st_b)
+            k2fdcvt = get_main_data(keys_info, trgt_s, t1st_b)
         if aid=='tags':     # Use prev tag set
             ind     = vals['tags']
             tags_s  = tags_hl[ind]
@@ -495,14 +399,14 @@ def dlg_opt_editor(title, keys_info=None
             k2fdcvt[key_sel]['v'] = dvl_sel
             # Update json file
             apx.set_opt(key_sel, dvl_sel)
-        if aid in ('kved', 'setv', 'brow'):
+        if aid in ('edch', 'eded', 'edcb', 'setv', 'brow'):
             # Changed value
             old_val = k2fdcvt[key_sel]['v']
             
-            if as_bool and aid=='kved':
+            if as_bool and aid=='edch':
                 k2fdcvt[key_sel]['v'] = not k2fdcvt[key_sel]['v']
             if aid=='setv':
-                new_val = vals['kved']
+                new_val = vals['eded']
                 good    = False
                 while not good:
                     try:
@@ -516,8 +420,8 @@ def dlg_opt_editor(title, keys_info=None
                         if new_val is None:
                             break#while not good
                     #while not good
-            if as_enum and aid=='kved' and vals['kved']!=-1:
-                ind     = vals['kved']
+            if as_enum and aid=='edcb' and vals['edcb']!=-1:
+                ind     = vals['edcb']
                 val_l   = font_l    if frm_sel=='font' else     list(dct_sel.keys())
 #               val_l   = font_l    if frm_sel=='font' else     list(var_sel.keys())
                 k2fdcvt[key_sel]['v'] = val_l[ind]
@@ -549,6 +453,7 @@ def dlg_opt_editor(title, keys_info=None
 
         if aid=='trgt':
             trgt_l  = []
+            trgt_n  = None
             for all_b in (False, True):
                 trgt_l  = ['lexer '+lxr+'.json' 
                             for lxr in app.lexer_proc(app.LEXER_GET_LIST, '').splitlines() 
@@ -569,10 +474,1009 @@ def dlg_opt_editor(title, keys_info=None
             new_trgt_s  = trgt_l[trgt_n]
             pass;              #LOG and log('new_trgt_s={}',(new_trgt_s))
             if new_trgt_s!=trgt_s:
-                k2fdcvt = get_main_data(new_trgt_s, t1st_b)
+                k2fdcvt = get_main_data(keys_info, new_trgt_s, t1st_b)
                 trgt_s  = new_trgt_s
        #while
-   #def dlg_opt_editor
+   #def dlg_opt_editor_wr
+
+#def dlg_opt_editor_ag_new(title, keys_info=None
+#       , path_raw_keys_info=''
+#       , path_svd_keys_info=''
+#       , subset=''
+#       ):
+#   """ Editor for any json data.
+#       Params 
+#           title       (str)   Dialog title
+#           keys_info   (list)  Info for each key as dict
+#                                   key:    (str)
+#                                   format: (str)   bool|int|str|float|enum_i|enum_s|json
+#                                   comment:(str)
+#                                           (str list)
+#                                   def_val: 
+#                                   dct:    (dict)
+#                                           (pairs list)
+#   """
+#   if app.app_api_version()<MIN_API_VER_4WR: return app.msg_status(_('Need update CudaText'))
+#   if not keys_info:
+#       if not os.path.isfile(path_raw_keys_info):
+#           return app.msg_status(_('No sourse for key-info'))
+#       # If ready json exists - use ready
+#       # Else - parse raw (and save as ready)
+#
+#       mtime_raw   = os.path.getmtime(path_raw_keys_info)
+#       mtime_svd   = os.path.getmtime(path_svd_keys_info) if os.path.exists(path_svd_keys_info) else 0
+#       if 'use ready'!='use ready' and mtime_raw < mtime_svd:
+#           # Use ready
+#           keys_info   = json.loads(open(path_svd_keys_info, encoding='utf8').read(), object_pairs_hook=OrdDict)
+#           app.msg_status(f(_('Load key-info ({}) from "{}"'),len(keys_info),path_svd_keys_info))
+#       else:
+#           # Parse raw
+#           keys_info   = parse_raw_keys_info(path_raw_keys_info)
+#           if not keys_info:
+#               return app.msg_status(_('Bad sourse for key-info'))
+#           if path_svd_keys_info:
+#               # Save as ready
+#               open(path_svd_keys_info,'w').write(json.dumps(keys_info, indent=4))
+#               app.msg_status(_('Update key-info at '+path_svd_keys_info))
+#       pass;                  #return
+#           
+##   if -1== 1:  # Test data
+##       keys_info = [dict(key='key-bool',format='bool'  ,def_val=False           ,comment= 'smth')
+##                   ,dict(key='key-int' ,format='int'   ,def_val=123             ,comment= 'smth\nsmth')
+##                   ,dict(key='key-aint'                ,def_val=123             ,comment= 'smth\nsmth')
+##                   ,dict(key='key-str' ,format='str'   ,def_val='xyz'           ,comment= 'smth')
+##                   ,dict(key='key-flo' ,format='float' ,def_val=1.23            ,comment= 'smth')
+##                   ,dict(key='key-aflo'                ,def_val=1.23            ,comment= 'smth')
+##                   ,dict(key='key-font',format='font'  ,def_val=''              ,comment= 'smth')
+##                   ,dict(key='key-file',format='file'  ,def_val=''              ,comment= 'smth')
+##                   ,dict(key='key-en_i',format='enum_i',def_val=1               ,comment= 'smth',   dct={0:'000', 1:'111', 2:'222'})
+##                   ,dict(key='key-en_s',format='enum_s',def_val='b'             ,comment= 'smth',   dct=[('a','AA'), ('b','BB'), ('c','CC')])
+##                   ,dict(key='key-json',format='json'  ,def_val={'x':{'a':1}}   ,comment= 'Style')
+##                   ]
+##       path_to_json=os.path.dirname(__file__)+os.sep+'test.json'
+#
+#   if 0==len(keys_info):
+#       return app.msg_status(_('Empty keys_info'))
+#
+#   # Start COMMON STATIC data
+#   fltr_h  = _('Suitable keys will contain all specified words.'
+#             '\rTips:'
+#             '\r • Start with "*" to view only changed values.'
+#             '\r • Use "<" or ">" for word boundary.'
+#             '\r     size> <tab'
+#             '\r   selects "tab_size" but not "ui_tab_size" or "tab_size_x".')
+#   t1st_c  = _('Conf&igured on top')
+#   t1st_h  = _('Show user keys on top of entire list.'
+#             '\rThe order of keys will be the same as in user file.')
+#   trgt_h  = _('Set storage for values')
+#   rprt_h  = _('Create HTML report and open it in browser')
+#
+#   font_l  = [] if app.app_api_version()<'1.0.174' else \
+#             [font 
+#               for font in app.app_proc(app.PROC_ENUM_FONTS, '')
+#               if not font.startswith('@')] 
+#   font_l  = ['default'] + font_l
+#   # Finish COMMON STATIC data
+#
+#   # Start COMMON DINAMIC data
+#   stores  = json.loads(open(CFG_JSON).read(), object_pairs_hook=OrdDict) \
+#               if os.path.exists(CFG_JSON) and os.path.getsize(CFG_JSON) != 0 else \
+#             OrdDict()
+#
+#   chap_l  = list({kinfo.get('chapter', '') for  kinfo in keys_info if kinfo.get('chapter', '')})
+#   chap_l  = [' '] + sorted(chap_l)
+#   chap_vl = [len(['' for kinfo in keys_info if chp==kinfo.get('chapter', '')]) for chp in chap_l if chp!=' ']
+#   chap_vl = [''] + [f(' ({})', str(chp)) for chp in chap_vl]
+#   tag_set = set()
+#   for  kinfo in keys_info:
+#       tag_set.update({t for t in kinfo.get('tags', [])})
+#   tags_l  = sorted(list(tag_set))
+#   tags_vl = [len(['' for kinfo in keys_info if tag in kinfo.get('tags', [])]) for tag in tags_l]
+#   tags_vl = [f(' ({})', str(tag)) for tag in tags_vl]
+#   pass;                      #LOG and log('chap_l={}',(chap_l))
+#   pass;                      #LOG and log('chap_vl={}',(chap_vl))
+#   pass;                      #LOG and log('tags_l={}',(tags_l))
+#   pass;                      #LOG and log('tags_vl={}',(tags_vl))
+#
+#   t1st_b  = stores.get('t1st', False)
+#   k2fdcvt = get_main_data(keys_info, trgt_1st=t1st_b)
+#   pass;                      #LOG and log('k2fdcvt={}',(k2fdcvt))
+#
+#   trgt_s  = 'user.json'
+#   key_sel = keys_info[0]['key']
+#   cond_s  = ''
+#   chap_s  = stores.get(subset+'chap')
+#   chap_n  = index_1(chap_l, chap_s, 0)
+#   tags_set= {tag for tag in stores.get(subset+'tags', []) if tag in tags_l}
+#   tags_s  = '#'+', #'.join(tags_set)  if tags_set else ''
+#   stores[subset+'h.tags']= add_to_history(tags_s, stores.get(subset+'h.tags', []), MAX_HIST, unicase=False)
+#   tags_hl = [s for s in stores.get(subset+'h.tags', []) if s ]
+#   tags_n  = 0 if tags_s and tags_hl else -1
+#   fid     = 'lvls'
+#   # Finish COMMON DINAMIC data
+#   while True: #NOTE: json_props
+#       COL_WS      = [                 stores.get(subset+'cust.wd_k', 250)
+##                     ,                 stores.get(subset+'cust.wd_f',  50)
+#                     ,                 stores.get(subset+'cust.wd_s',  20)
+#                     ,                 stores.get(subset+'cust.wd_v', 250)]         # Widths of listview columns 
+#       CMNT_H      =                   stores.get(subset+'cust.ht_c', 100)          # Height of Comment memo
+#       LST_W, LST_H= sum(COL_WS)+20,   stores.get(subset+'cust.ht_t', 300)-5        # Listview sizes
+#       DLG_W, DLG_H= 5+LST_W+5+80+5 \
+#                   , 5+20+30+LST_H+5+30+5+30+5+CMNT_H+5     # Dialog sizes
+#       l_val   = DLG_W-10-80-20-COL_WS[-1]
+#       
+#       # Filter with 
+#       #   cond_s
+#       #   chap_n, chap_s
+#       #   tags_set
+#       chap_s  = chap_l[chap_n]
+#       pass;                  #LOG and log('chap_n,chap_s={}',(chap_n,chap_s))
+#       only_chd= cond_s.startswith('*')
+#       cond_4f = (cond_s if not only_chd else cond_s[1:]).upper()
+#       fl_kfsvt= [ (knm
+#                   ,fdcv['f']
+#                   ,'*' if fdcv['d']!=fdcv['v'] else ''
+#                   ,fdcv['v']
+#                   ,fdcv['t']
+#                   ,f('{}: ',fdcv['a'])                if chap_l and chap_n==0 and fdcv['a'] else ''
+#                   ,f(' (#{})',', #'.join(fdcv['g']))  if tags_l and               fdcv['g'] else ''
+#                   )
+#                   for (knm, fdcv) in k2fdcvt.items()
+#                   if  (not only_chd   or fdcv['d']!=fdcv['v'])            and
+#                       (cond_4f==''    or test_cond(cond_4f, knm))  and
+#                       (chap_n==0      or chap_s==fdcv['a'])               and
+#                       (not tags_set   or (tags_set & fdcv['g']))
+#                ]
+#       fl_k2i  = {knm:ikey for (ikey, (knm,kf,kset,kv,kdct,kch,ktg)) in enumerate(fl_kfsvt)}
+#       ind_sel = fl_k2i[key_sel]       if key_sel in fl_k2i                else \
+#                 0                     if fl_k2i                           else \
+#                 -1
+#       key_sel = fl_kfsvt[ind_sel][0]  if ind_sel!=-1                      else ''
+#       frm_sel = k2fdcvt[key_sel]['f'] if key_sel                          else ''
+#       dct_sel = k2fdcvt[key_sel]['t'] if key_sel                          else None
+#       dvl_sel = k2fdcvt[key_sel]['d'] if key_sel                          else None
+#       val_sel = k2fdcvt[key_sel]['v'] if key_sel                          else None
+#       cmt_sel = k2fdcvt[key_sel]['c'] if key_sel                          else ''
+#       var_sel = [f('{}: {}', k, v) for (k,v) in dct_sel.items()] \
+#                                       if frm_sel in ('enum_i', 'enum_s')  else \
+#                 font_l + ([] if val_sel in font_l else [val_sel])              \
+#                                       if frm_sel=='font' and     font_l   else \
+#                 None
+#       sel_sel = index_1(list(dct_sel.keys()), val_sel) \
+#                                       if frm_sel in ('enum_i', 'enum_s')  else \
+#                 index_1(font_l,               val_sel, len(font_l))            \
+#                                       if frm_sel=='font' and     font_l   else \
+#                 -1
+#       pass;                  #LOG and log('sel_sel,var_sel={}',(sel_sel,var_sel))
+#
+#       stat    = f(' ({}/{})', len(fl_kfsvt), len(k2fdcvt))
+#       col_aws = [p+cw for (p,cw) in zip(('',      'C', ''), map(str, COL_WS))]
+#       itms    = (zip([_('Key')+stat,              _(' '), f(_('Value from "{}"'), trgt_s)], col_aws)
+#                 ,    [ ( kch+knm+ktg,                kset,   to_str(kv, kf, kdct)) for
+#                        (     knm,       kf,          kset,          kv,     kdct, kch, ktg ) in fl_kfsvt]
+#                 )
+#       pass;                  #LOG and log('cond_s={}',(cond_s))
+#       pass;                  #LOG and log('fl_kfsvt={}',(fl_kfsvt))
+#       pass;                  #LOG and log('fl_k2i={}',(fl_k2i))
+#       pass;                  #LOG and log('key_sel,ind_sel={}',(key_sel, ind_sel))
+#       cond_hl = [s for s in stores.get(subset+'h.cond', []) if s ]
+#       
+#       chap_v  = [chp+chp_vl for (chp,chp_vl) in zip(chap_l, chap_vl)]
+#       tags_hl = [s for s in stores.get(subset+'h.tags', []) if s ]
+#       
+#       as_bool = key_sel and  frm_sel in ('bool')
+#       as_char = key_sel and (frm_sel in ('int', 'float', 'str', 'json')   or frm_sel=='font' and not bool(font_l))
+#       as_enum = key_sel and (frm_sel in ('enum_i', 'enum_s')              or frm_sel=='font' and     bool(font_l))
+#       as_file = key_sel and  frm_sel in ('file')
+#       font_nm4sz  = key_sel.replace('font_size', 'font_name')
+#       font_sz4nm  = key_sel.replace('font_name', 'font_size')
+#       pvw_font_ns = None \
+#                   if not font_l                                                              else \
+#                 (val_sel,                 k2fdcvt[font_sz4nm]['v'])                               \
+#                   if frm_sel=='font' and val_sel!='default'       and font_sz4nm in k2fdcvt  else \
+#                 (k2fdcvt[font_nm4sz]['v'], val_sel                )                               \
+#                   if frm_sel=='int' and 'font_size' in key_sel    and font_nm4sz in k2fdcvt  else \
+#                 None
+#       pass;                  #LOG and log('pvw_font_ns={}',(pvw_font_ns))
+#       w_chap  = len(chap_l)>1
+#       w_tags  = bool(tags_l)
+#       pass;                  #LOG and log('(w_chap,w_tags),(as_bool,as_char,as_enum,as_file)={}',((w_chap,w_tags),(as_bool,as_char,as_enum,as_file)))
+#       cnts    =[
+#               # Filter
+#                 dict( cid='fltr',tp='bt'  ,t=0        ,l=0            ,w=0            ,cap=''                 ,def_bt='1'                                 )   # 
+#                ,dict(            tp='lb'  ,t=5        ,l=5+2          ,w=COL_WS[0]    ,cap=_('&Filter:')  ,hint=fltr_h                                    )   # &f
+#                ,dict( cid='cond',tp='cb'  ,t=25       ,l=5+2          ,w=COL_WS[0]    ,items=cond_hl                                                      )   #
+#               # Chapters
+#                ,dict(            tp='lb'  ,t=5        ,l=15+COL_WS[0] ,w=140          ,cap=_('Se&ction:')                         ,vis=w_chap             )   # &c
+#                ,dict( cid='chap',tp='cb-r',t=25       ,l=15+COL_WS[0] ,w=140          ,items=chap_v                       ,act='1',vis=w_chap             )   #
+#               # Tags
+#                ,dict(            tp='lb'  ,t=5        ,l=COL_WS[0]+160,r=DLG_W-10-80  ,cap=_('T&ags:')                            ,vis=w_tags             )   # &a
+#                ,dict( cid='tags',tp='cb-r',t=25       ,l=COL_WS[0]+160,r=DLG_W-10-80  ,items=tags_hl                      ,act='1',vis=w_tags             )   #
+#                ,dict( cid='?tgs',tp='bt'  ,tid='tags' ,l=DLG_W-5-80   ,w=80           ,cap=_('Tag&s…')    ,hint=_('Choose tags')  ,vis=w_tags             )   # &s
+#                ,dict( cid='-tgs',tp='bt'  ,t=57       ,l=DLG_W-5-80   ,w=80           ,cap=_('Clea&r')    ,hint=_('Clear tags')   ,vis=w_tags             )   # &r
+#               # Table of keys+values
+#                ,dict( cid='lvls',tp='lvw' ,t=57       ,l=5 ,h=LST_H   ,w=LST_W        ,items=itms             ,grid='1'   ,act='1'                        )   #
+#               # Editors for value
+#                ,dict(            tp='lb'  ,tid='t1st' ,l=l_val-100-5  ,w=100          ,cap=_('>&Value:')                                                  )   # &v 
+#                ,dict( cid='edch',tp='ch'  ,tid='t1st' ,l=l_val+5      ,w=COL_WS[-1]+15,cap=_('O&n')                       ,act='1',vis=as_bool            )   # &n
+#                ,dict( cid='eded',tp='ed'  ,tid='t1st' ,l=l_val+5      ,w=COL_WS[-1]+15-(30 if as_file else 0)                     ,vis=as_char or as_file )   #
+#                ,dict( cid='brow',tp='bt'  ,tid='t1st' ,l=DLG_W-5-80-35,w=30           ,cap=_('&...') ,hint=_('Browse file')       ,vis=as_file            )   # &.
+#                ,dict( cid='setv',tp='bt'  ,tid='t1st' ,l=DLG_W-5-80   ,w=80           ,cap=_('Cha&nge')   ,en=(frm_sel!='json')   ,vis=as_char or as_file )   # &n
+#                ,dict( cid='edcb',tp='cb-r',tid='t1st' ,l=l_val+5      ,w=COL_WS[-1]+15,items=var_sel                      ,act='1',vis=as_enum            )   #
+#               # View def-value
+#                ,dict(            tp='lb'  ,tid='dfvl' ,l=l_val-100-5  ,w=100          ,cap=_('>Default value:')                                           )   # 
+#                ,dict( cid='dfvl',tp='ed'  ,t=93+LST_H ,l=l_val+5      ,w=COL_WS[-1]+15                        ,ro_mono_brd='1,0,1'                        )   #
+#                ,dict( cid='setd',tp='bt'  ,tid='dfvl' ,l=DLG_W-5-80   ,w=80           ,cap=_('Reset')     ,en=(dvl_sel!=val_sel and  frm_sel!='json')     )   # 
+#               # Comment
+#                ,dict( cid='cmnt',tp='memo',t=125+LST_H,l=5 ,h=CMNT_H-3,w=LST_W                                ,ro_mono_brd='1,1,1'                        )   #
+#               # Target json
+#                ,dict( cid='trgt',tp='bt'  ,t=120      ,l=DLG_W-5-80   ,w=80           ,cap=_('&Target…')  ,hint=trgt_h                                    )   # &t
+#                ,dict( cid='cust',tp='bt'  ,t=150      ,l=DLG_W-5-80   ,w=80           ,cap=_('Ad&just…')                                                  )   # &j
+#                ,dict( cid='rprt',tp='bt'  ,t=DLG_H-65 ,l=DLG_W-5-80   ,w=80           ,cap=_('Report…')   ,hint=rprt_h                                    )   # &h
+#                ,dict( cid='-'   ,tp='bt'  ,t=DLG_H-35 ,l=DLG_W-5-80   ,w=80           ,cap=_('Close')                                                     )   #
+#                ,dict( cid='t1st',tp='ch'  ,t=65+LST_H ,l=5            ,w=100          ,cap=t1st_c         ,hint=t1st_h    ,act='1'                        )   # &i
+#                ]
+#       if pvw_font_ns: # View commnent with tested font
+#           [cnt for cnt in cnts if cnt.get('cid')=='cmnt'][0].update(
+#               dict(font_name=pvw_font_ns[0], font_size=pvw_font_ns[1] ,ro_mono_brd='1,0,1'))
+#       vals = get_vals(as_bool, as_char, as_enum, as_file, chap_l, chap_n, cmt_sel, cond_s, dct_sel, dvl_sel, frm_sel,
+#                       ind_sel, key_sel, sel_sel, t1st_b, tags_l, tags_n, val_sel)
+#       
+#       aid, vals, fid, chds = dlg_wrapper(f('{} ({})', title, VERSION_V), DLG_W, DLG_H, cnts, vals, focus_cid=fid)
+#       
+#       if aid is None or aid=='-':  return
+#
+#       if aid=='fltr' and fid=='eded':     # Подмена умолчательной кнопки по активному редактору
+#           aid = 'setv'
+#
+#       pass;                  #    LOG and log('aid={}',(aid))
+#
+#       fid     = 'lvls'
+#       cond_s  = vals['cond']
+#       chap_n  = vals['chap']  if 1<len(chap_l)    else chap_n
+#       ind_sel = vals['lvls']
+#       t1st_b  = vals['t1st']
+#
+#       stores[subset+'h.cond'] = add_to_history(cond_s, stores.get(subset+'h.cond', []), MAX_HIST, unicase=False)
+#       stores[subset+'chap']   = chap_l[chap_n]
+#       stores['t1st']          = t1st_b
+#       open(CFG_JSON, 'w').write(json.dumps(stores, indent=4))
+#
+#       if aid=='cust':
+#           custs   = app.dlg_input_ex(5, _('Adjust')
+#                 , _(  'Height of Table (min 125)')  , str(stores.get(subset+'cust.ht_t', 300))
+#                 , _(     'Width of Key (min 250)')  , str(stores.get(subset+'cust.wd_k', 250))
+#                 , _(       'Width of * (min  20)')  , str(stores.get(subset+'cust.wd_s',  20))
+#                 , _(   'Width of Value (min 250)')  , str(stores.get(subset+'cust.wd_v', 250))
+#                 , _('Height of Comment (min  55)')  , str(stores.get(subset+'cust.ht_c', 100))
+#                   )
+#           if custs is None:   continue#while
+#           stores[subset+'cust.ht_t']  = max(125, int(custs[0]))
+#           stores[subset+'cust.wd_k']  = max(250, int(custs[1]))
+#           stores[subset+'cust.wd_s']  = max( 20, int(custs[2]))
+#           stores[subset+'cust.wd_v']  = max(250, int(custs[3]))
+#           stores[subset+'cust.ht_c']  = max( 55, int(custs[4]))
+#           open(CFG_JSON, 'w').write(json.dumps(stores, indent=4))
+#           continue#while
+#           
+#       if aid=='t1st':     # Show user key first
+#           k2fdcvt = get_main_data(keys_info, trgt_s, t1st_b)
+#       if aid=='tags':     # Use prev tag set
+#           ind     = vals['tags']
+#           tags_s  = tags_hl[ind]
+#           tags_set= set(tags_s.replace('#', '').replace(' ', '').split(','))
+#           tags_n  = 0
+#           stores[subset+'h.tags']= add_to_history(tags_s, stores.get(subset+'h.tags', []), MAX_HIST, unicase=False)
+#           stores[subset+'tags']  = list(tags_set)
+#           open(CFG_JSON, 'w').write(json.dumps(stores, indent=4))
+#       if aid=='-tgs':     # Clear tags
+#           tags_s  = ''
+#           tags_set= set()
+#           tags_n  = -1
+#           stores[subset+'h.tags']= add_to_history(tags_s, stores.get(subset+'h.tags', []), MAX_HIST, unicase=False)
+#           stores[subset+'tags']  = list(tags_set)
+#           open(CFG_JSON, 'w').write(json.dumps(stores, indent=4))
+#       if aid=='?tgs':     # Choose any tags
+#           sels    = ['1' if tag in tags_set else '0' for tag in tags_l]
+#           crt     = str(sels.index('1') if '1' in sels else 0)
+#           tags_v  = [tag+tag_v for (tag,tag_v) in zip(tags_l, tags_vl)]
+#           tg_aid, \
+#           tg_vals,\
+#           *_t     = dlg_wrapper(f(_('Tags ({})'), len(tags_l)), GAP+200+GAP, GAP+400+GAP+24+GAP, 
+#                   [ dict(cid='tgs',tp='ch-lbx',t=5,h=400  ,l=5            ,w=200  ,items=tags_v           ) #
+#                    ,dict(cid='!'  ,tp='bt'    ,t=5+400+5  ,l=    200-140  ,w=70   ,cap=_('OK'),props='1'  ) #  default
+#                    ,dict(cid='-'  ,tp='bt'    ,t=5+400+5  ,l=5  +200- 70  ,w=70   ,cap=_('Cancel')        ) #  
+#                   ]
+#                   , dict(tgs=(crt,sels)), focus_cid='tgs')
+#           if tg_aid=='!':
+#               crt,sels= tg_vals['tgs']
+#               tags    = [tag for (ind,tag) in enumerate(tags_l) if sels[ind]=='1']
+#               tags_set= set(tags)
+#               tags_s  = '#'+', #'.join(tags)  if tags else ''
+#               tags_n  = 0                     if tags else -1
+#               stores[subset+'h.tags']= add_to_history(tags_s, stores.get(subset+'h.tags', []), MAX_HIST, unicase=False)
+#               stores[subset+'tags']  = list(tags_set)
+#               open(CFG_JSON, 'w').write(json.dumps(stores, indent=4))
+#       
+#       if ind_sel==-1:  continue#while
+#       key_sel = fl_kfsvt[ind_sel][0]
+#       pass;                  #LOG and log('cond_s={}',(cond_s))
+#
+#       if aid=='setd' and dvl_sel!=val_sel:
+#           # Reset def value
+#           k2fdcvt[key_sel]['v'] = dvl_sel
+#           # Update json file
+#           apx.set_opt(key_sel, dvl_sel)
+#       if aid in ('edch', 'eded', 'edcb', 'setv', 'brow'):
+#           # Changed value
+#           old_val = k2fdcvt[key_sel]['v']
+#           
+#           if as_bool and aid=='edch':
+#               k2fdcvt[key_sel]['v'] = not k2fdcvt[key_sel]['v']
+#           if aid=='setv':
+#               new_val = vals['eded']
+#               good    = False
+#               while not good:
+#                   try:
+#                       k2fdcvt[key_sel]['v'] = from_str(new_val, k2fdcvt[key_sel]['f'])
+#                       good    = True
+#                   except Exception as ex:
+#                       good    = False
+#                       app.msg_status(_('Uncorrect value'))
+#                   if not good:
+#                       new_val = app.dlg_input(f(_('Value of "{}" (type "{}")'), key_sel, k2fdcvt[key_sel]['f']), new_val)
+#                       if new_val is None:
+#                           break#while not good
+#                   #while not good
+#           if as_enum and aid=='edcb' and vals['edcb']!=-1:
+#               ind     = vals['edcb']
+#               val_l   = font_l    if frm_sel=='font' else     list(dct_sel.keys())
+##               val_l   = font_l    if frm_sel=='font' else     list(var_sel.keys())
+#               k2fdcvt[key_sel]['v'] = val_l[ind]
+#           if aid=='brow':
+#               path    = app.dlg_file(True, '', os.path.expanduser(k2fdcvt[key_sel]['v']), '')
+#               if not path:  continue#while
+#               k2fdcvt[key_sel]['v'] = path
+#
+#           new_val = k2fdcvt[key_sel]['v']
+#           if old_val != new_val:
+#               # Update json file
+#               if trgt_s=='user.json':
+#                   apx.set_opt(key_sel, new_val)
+#               else:
+#                   opts_json   = app.app_path(app.APP_DIR_SETTINGS)+os.sep+trgt_s
+#                   opts        = apx._get_file_opts(opts_json)
+#                   if new_val==opts.get(key_sel, dvl_sel): continue#while
+#                   if new_val==dvl_sel:
+#                       opts.pop(key_sel, None)
+#                   else:
+#                       opts[key_sel]   = new_val
+#                   open(opts_json,'w').write(json.dumps(opts, indent=2))
+#           
+#       if aid=='rprt':
+#           htm_file = os.path.join(tempfile.gettempdir(), 'CudaText_option_report.html')
+#           if not do_report(htm_file, '' if trgt_s=='user.json' else trgt_s): continue#while
+#           webbrowser.open_new_tab('file://'+htm_file)
+#           app.msg_status('Opened browser with file '+htm_file)
+#
+#       if aid=='trgt':
+#           trgt_l  = []
+#           for all_b in (False, True):
+#               trgt_l  = ['lexer '+lxr+'.json' 
+#                           for lxr in app.lexer_proc(app.LEXER_GET_LIST, '').splitlines() 
+#                           if app.lexer_proc(app.LEXER_GET_ENABLED, lxr) and 
+#                           (all_b or os.path.isfile(app.app_path(app.APP_DIR_SETTINGS)+os.sep+'lexer '+lxr+'.json'))
+#                         ]
+#               trgt_l  = ['user.json'] + trgt_l
+#               trgt_n  = app.dlg_menu(app.MENU_LIST
+#                                     ,'\n'.join(trgt_l+([] if all_b else [_('[Show all lexers]')]))
+#                                     ,index_1(trgt_l, trgt_s, 0)
+#                                     )
+#               if trgt_n is None:          break#for
+#               pass;          #LOG and log('trgt_n={}',(trgt_n))
+#               if trgt_n == len(trgt_l):   continue#for with all_b=True
+#               break#for
+#              #for all_b
+#           if trgt_n is None:              continue#while
+#           new_trgt_s  = trgt_l[trgt_n]
+#           pass;              #LOG and log('new_trgt_s={}',(new_trgt_s))
+#           if new_trgt_s!=trgt_s:
+#               k2fdcvt = get_main_data(keys_info, new_trgt_s, t1st_b)
+#               trgt_s  = new_trgt_s
+#      #while
+#  #def dlg_opt_editor_ag_new
+#
+#
+#def get_vals(as_bool, as_char, as_enum, as_file, chap_l, chap_n, cmt_sel, cond_s, dct_sel, dvl_sel, frm_sel, ind_sel,
+#            key_sel, sel_sel, t1st_b, tags_l, tags_n, val_sel):
+#   vals = dict(cond=cond_s
+#               , lvls=ind_sel
+#               , t1st=t1st_b
+#               , dfvl=to_str(dvl_sel, frm_sel, dct_sel) if key_sel else ''
+#               , cmnt=cmt_sel.replace('\r', '\n') if key_sel else ''
+#               )
+#   if 1<len(chap_l):
+#       vals.update(dict(chap=chap_n))
+#   if tags_l:
+#       vals.update(dict(tags=tags_n))
+#   if as_bool:
+#       vals.update(dict(edch=val_sel if key_sel else False))
+#   if as_char or as_file:
+#       vals.update(dict(eded=to_str(val_sel, frm_sel, dct_sel) if key_sel else ''))
+#   if as_enum:
+#       vals.update(dict(edcb=sel_sel if key_sel else False))
+#
+#       # pass;                   LOG and log('cnts={}',(cnts))
+#   return vals
+
+
+def dlg_opt_editor_ag(title, keys_info=None
+        , path_raw_keys_info=''
+        , path_svd_keys_info=''
+        , subset=''
+        ):
+    """ Editor for any json data.
+        Params 
+            title       (str)   Dialog title
+            keys_info   (list)  Info for each key as dict
+                                    key:    (str)
+                                    format: (str)   bool|int|str|float|enum_i|enum_s|json
+                                    comment:(str)
+                                            (str list)
+                                    def_val: 
+                                    dct:    (dict)
+                                            (pairs list)
+    """
+    if app.app_api_version()<MIN_API_VER_4AG: return app.msg_status(_('Need update CudaText'))
+    if not keys_info:
+        if not os.path.isfile(path_raw_keys_info):
+            return app.msg_status(_('No sourse for key-info'))
+        # If ready json exists - use ready
+        # Else - parse raw (and save as ready)
+
+        mtime_raw   = os.path.getmtime(path_raw_keys_info)
+        mtime_svd   = os.path.getmtime(path_svd_keys_info) if os.path.exists(path_svd_keys_info) else 0
+        if 'use ready'!='use ready' and mtime_raw < mtime_svd:
+            # Use ready
+            keys_info   = json.loads(open(path_svd_keys_info, encoding='utf8').read(), object_pairs_hook=OrdDict)
+            app.msg_status(f(_('Load key-info ({}) from "{}"'),len(keys_info),path_svd_keys_info))
+        else:
+            # Parse raw
+            keys_info   = parse_raw_keys_info(path_raw_keys_info)
+            if not keys_info:
+                return app.msg_status(_('Bad sourse for key-info'))
+            if path_svd_keys_info:
+                # Save as ready
+                open(path_svd_keys_info,'w').write(json.dumps(keys_info, indent=4))
+                app.msg_status(_('Update key-info at '+path_svd_keys_info))
+        pass;                  #return
+            
+    if -1==-1:  # Test data
+        keys_info = [dict(key='key-bool',format='bool'  ,def_val=False           ,comment= 'smth')
+                    ,dict(key='key-int' ,format='int'   ,def_val=123             ,comment= 'smth\nsmth')
+                    ,dict(key='key-aint'                ,def_val=123             ,comment= 'smth\nsmth')
+                    ,dict(key='key-str' ,format='str'   ,def_val='xyz'           ,comment= 'smth')
+                    ,dict(key='key-flo' ,format='float' ,def_val=1.23            ,comment= 'smth')
+                    ,dict(key='key-aflo'                ,def_val=1.23            ,comment= 'smth')
+                    ,dict(key='key-font',format='font'  ,def_val=''              ,comment= 'smth')
+                    ,dict(key='key-file',format='file'  ,def_val=''              ,comment= 'smth')
+                    ,dict(key='key-en_i',format='enum_i',def_val=1               ,comment= 'smth',   dct={0:'000', 1:'111', 2:'222'})
+                    ,dict(key='key-en_s',format='enum_s',def_val='b'             ,comment= 'smth',   dct=[('a','AA'), ('b','BB'), ('c','CC')])
+                    ,dict(key='key-json',format='json'  ,def_val={'x':{'a':1}}   ,comment= 'Style')
+                    ]
+        path_to_json=os.path.dirname(__file__)+os.sep+'test.json'
+
+    if 0==len(keys_info):
+        return app.msg_status(_('Empty keys_info'))
+
+    # Start COMMON STATIC data
+    fltr_h  = _('Suitable keys will contain all specified words.'
+              '\rTips:'
+              '\r • Start with "*" to view only changed values.'
+              '\r • Use "<" or ">" for word boundary.'
+              '\r     size> <tab'
+              '\r   selects "tab_size" but not "ui_tab_size" or "tab_size_x".')
+    t1st_c  = _('Conf&igured on top')
+    t1st_h  = _('Show user keys on top of entire list.'
+              '\rThe order of keys will be the same as in user file.')
+    trgt_h  = _('Set storage for values')
+    rprt_h  = _('Create HTML report and open it in browser')
+
+    font_l  = [] if app.app_api_version()<'1.0.174' else \
+              [font 
+                for font in app.app_proc(app.PROC_ENUM_FONTS, '')
+                if not font.startswith('@')] 
+    font_l  = ['default'] + font_l
+    # Finish COMMON STATIC data
+
+    # Start COMMON DINAMIC data
+    stores  = json.loads(open(CFG_JSON).read(), object_pairs_hook=OrdDict) \
+                if os.path.exists(CFG_JSON) and os.path.getsize(CFG_JSON) != 0 else \
+              OrdDict()
+
+    chap_l  = list({kinfo.get('chapter', '') for  kinfo in keys_info if kinfo.get('chapter', '')})
+    chap_l  = [' '] + sorted(chap_l)
+    chap_vl = [len(['' for kinfo in keys_info if chp==kinfo.get('chapter', '')]) for chp in chap_l if chp!=' ']
+    chap_vl = [''] + [f(' ({})', str(chp)) for chp in chap_vl]
+    tag_set = set()
+    for  kinfo in keys_info:
+        tag_set.update({t for t in kinfo.get('tags', [])})
+    tags_l  = sorted(list(tag_set))
+    tags_vl = [len(['' for kinfo in keys_info if tag in kinfo.get('tags', [])]) for tag in tags_l]
+    tags_vl = [f(' ({})', str(tag)) for tag in tags_vl]
+    pass;                      #LOG and log('chap_l={}',(chap_l))
+    pass;                      #LOG and log('chap_vl={}',(chap_vl))
+    pass;                      #LOG and log('tags_l={}',(tags_l))
+    pass;                      #LOG and log('tags_vl={}',(tags_vl))
+
+    t1st_b  = stores.get('t1st', False)
+    k2fdcvt = get_main_data(keys_info, trgt_1st=t1st_b)
+    pass;                      #LOG and log('k2fdcvt={}',(k2fdcvt))
+
+    trgt_s  = 'user.json'
+    key_sel = keys_info[0]['key']
+    cond_s  = ''
+    chap_s  = stores.get(subset+'chap')
+    chap_n  = index_1(chap_l, chap_s, 0)
+    tags_set= {tag for tag in stores.get(subset+'tags', []) if tag in tags_l}
+    tags_s  = '#'+', #'.join(tags_set)  if tags_set else ''
+    stores[subset+'h.tags']= add_to_history(tags_s, stores.get(subset+'h.tags', []), MAX_HIST, unicase=False)
+    tags_hl = [s for s in stores.get(subset+'h.tags', []) if s ]
+    tags_n  = 0 if tags_s and tags_hl else -1
+    fid     = 'lvls'
+    
+    COL_WS      = None
+    CMNT_H      = None
+    LST_W, LST_H= None,None
+    DLG_W, DLG_H= None,None
+    l_val       = None
+    only_chd    = None
+    cond_4f     = None
+    fl_kfsvt    = None
+    ind_sel     = None
+    dvl_sel     = None
+    val_sel     = None
+    frm_sel     = None
+    dct_sel     = None
+    sel_sel     = None
+    cmt_sel     = None
+    as_bool     = None
+    as_char     = None
+    as_enum     = None
+    as_file     = None
+    # Finish COMMON DINAMIC data
+
+#   while True: #NOTE: json_props
+    def get_layout():
+        nonlocal key_sel, ind_sel, dvl_sel, val_sel, frm_sel, dct_sel, sel_sel, cmt_sel
+        nonlocal as_bool, as_char, as_enum, as_file
+        nonlocal DLG_W, DLG_H
+        nonlocal fl_kfsvt
+        nonlocal tags_set
+        COL_WS      = [                 stores.get(subset+'cust.wd_k', 250)
+#                     ,                 stores.get(subset+'cust.wd_f',  50)
+                      ,                 stores.get(subset+'cust.wd_s',  20)
+                      ,                 stores.get(subset+'cust.wd_v', 250)]         # Widths of listview columns 
+        CMNT_H      =                   stores.get(subset+'cust.ht_c', 100)          # Height of Comment memo
+        LST_W, LST_H= sum(COL_WS)+20,   stores.get(subset+'cust.ht_t', 300)-5        # Listview sizes
+        DLG_W, DLG_H= 5+LST_W+5+80+5 \
+                    , 5+20+30+LST_H+5+30+5+30+5+CMNT_H+5     # Dialog sizes
+        l_val   = DLG_W-10-80-20-COL_WS[-1]
+        
+        # Filter with 
+        #   cond_s
+        #   chap_n, chap_s
+        #   tags_set
+        chap_s  = chap_l[chap_n]
+        pass;                  #LOG and log('chap_n,chap_s={}',(chap_n,chap_s))
+        only_chd= cond_s.startswith('*')
+        cond_4f = (cond_s if not only_chd else cond_s[1:]).upper()
+        fl_kfsvt= [ (knm
+                    ,fdcv['f']
+                    ,'*' if fdcv['d']!=fdcv['v'] else ''
+                    ,fdcv['v']
+                    ,fdcv['t']
+                    ,f('{}: ',fdcv['a'])                if chap_l and chap_n==0 and fdcv['a'] else ''
+                    ,f(' (#{})',', #'.join(fdcv['g']))  if tags_l and               fdcv['g'] else ''
+                    )
+                    for (knm, fdcv) in k2fdcvt.items()
+                    if  (not only_chd   or fdcv['d']!=fdcv['v'])            and
+                        (cond_4f==''    or test_cond(cond_4f, knm))  and
+                        (chap_n==0      or chap_s==fdcv['a'])               and
+                        (not tags_set   or (tags_set & fdcv['g']))
+                 ]
+        fl_k2i  = {knm:ikey for (ikey, (knm,kf,kset,kv,kdct,kch,ktg)) in enumerate(fl_kfsvt)}
+        ind_sel = fl_k2i[key_sel]       if key_sel in fl_k2i                else \
+                  0                     if fl_k2i                           else \
+                  -1
+        key_sel = fl_kfsvt[ind_sel][0]  if ind_sel!=-1                      else ''
+        frm_sel = k2fdcvt[key_sel]['f'] if key_sel                          else ''
+        dct_sel = k2fdcvt[key_sel]['t'] if key_sel                          else None
+        dvl_sel = k2fdcvt[key_sel]['d'] if key_sel                          else None
+        val_sel = k2fdcvt[key_sel]['v'] if key_sel                          else None
+        cmt_sel = k2fdcvt[key_sel]['c'] if key_sel                          else ''
+        var_sel = [f('{}: {}', k, v) for (k,v) in dct_sel.items()] \
+                                        if frm_sel in ('enum_i', 'enum_s')  else \
+                  font_l + ([] if val_sel in font_l else [val_sel])              \
+                                        if frm_sel=='font' and     font_l   else \
+                  []
+        sel_sel = index_1(list(dct_sel.keys()), val_sel) \
+                                        if frm_sel in ('enum_i', 'enum_s')  else \
+                  index_1(font_l,               val_sel, len(font_l))            \
+                                        if frm_sel=='font' and     font_l   else \
+                  -1
+        pass;                  #LOG and log('sel_sel,var_sel={}',(sel_sel,var_sel))
+
+        stat    = f(' ({}/{})', len(fl_kfsvt), len(k2fdcvt))
+        col_aws = [p+cw for (p,cw) in zip(('',      'C', ''), map(str, COL_WS))]
+        itms    = (zip([_('Key')+stat,              _(' '), f(_('Value from "{}"'), trgt_s)], col_aws)
+                  ,    [ ( kch+knm+ktg,                kset,   to_str(kv, kf, kdct)) for
+                         (     knm,       kf,          kset,          kv,     kdct, kch, ktg ) in fl_kfsvt]
+                  )
+        pass;                  #LOG and log('cond_s={}',(cond_s))
+        pass;                  #LOG and log('fl_kfsvt={}',(fl_kfsvt))
+        pass;                  #LOG and log('fl_k2i={}',(fl_k2i))
+        pass;                  #LOG and log('key_sel,ind_sel={}',(key_sel, ind_sel))
+        cond_hl = [s for s in stores.get(subset+'h.cond', []) if s ]
+        
+        chap_v  = [chp+chp_vl for (chp,chp_vl) in zip(chap_l, chap_vl)]
+        tags_hl = [s for s in stores.get(subset+'h.tags', []) if s ]
+        
+        as_bool = key_sel and  frm_sel in ('bool')
+        as_char = key_sel and (frm_sel in ('int', 'float', 'str', 'json')   or frm_sel=='font' and not bool(font_l))
+        as_enum = key_sel and (frm_sel in ('enum_i', 'enum_s')              or frm_sel=='font' and     bool(font_l))
+        as_file = key_sel and  frm_sel in ('file')
+        font_nm4sz  = key_sel.replace('font_size', 'font_name')
+        font_sz4nm  = key_sel.replace('font_name', 'font_size')
+        pvw_font_ns = None \
+                    if not font_l                                                              else \
+                  (val_sel,                 k2fdcvt[font_sz4nm]['v'])                               \
+                    if frm_sel=='font' and val_sel!='default'       and font_sz4nm in k2fdcvt  else \
+                  (k2fdcvt[font_nm4sz]['v'], val_sel                )                               \
+                    if frm_sel=='int' and 'font_size' in key_sel    and font_nm4sz in k2fdcvt  else \
+                  None
+        pass;                  #LOG and log('pvw_font_ns={}',(pvw_font_ns))
+        w_chap  = len(chap_l)>1
+        w_tags  = bool(tags_l)
+        pass;                  #LOG and log('(w_chap,w_tags),(as_bool,as_char,as_enum,as_file)={}',((w_chap,w_tags),(as_bool,as_char,as_enum,as_file)))
+        cnts    =[
+                # Filter
+                  dict( cid='fltr',tp='bt'  ,t=0        ,l=0            ,w=0            ,cap=''                 ,def_bt='1'                                 )   # 
+                 ,dict(            tp='lb'  ,t=5        ,l=5+2          ,w=COL_WS[0]    ,cap=_('&Filter:')  ,hint=fltr_h                                    )   # &f
+                 ,dict( cid='cond',tp='cb'  ,t=25       ,l=5+2          ,w=COL_WS[0]    ,items=cond_hl                                                      )   #
+                # Chapters
+                 ,dict(            tp='lb'  ,t=5        ,l=15+COL_WS[0] ,w=140          ,cap=_('Se&ction:')                         ,vis=w_chap             )   # &c
+                 ,dict( cid='chap',tp='cb-r',t=25       ,l=15+COL_WS[0] ,w=140          ,items=chap_v                       ,act='1',vis=w_chap             )   #
+                # Tags
+                 ,dict(            tp='lb'  ,t=5        ,l=COL_WS[0]+160,r=DLG_W-10-80  ,cap=_('T&ags:')                            ,vis=w_tags             )   # &a
+                 ,dict( cid='tags',tp='cb-r',t=25       ,l=COL_WS[0]+160,r=DLG_W-10-80  ,items=tags_hl                      ,act='1',vis=w_tags             )   #
+                 ,dict( cid='?tgs',tp='bt'  ,tid='tags' ,l=DLG_W-5-80   ,w=80           ,cap=_('Tag&s…')    ,hint=_('Choose tags')  ,vis=w_tags             )   # &s
+                 ,dict( cid='-tgs',tp='bt'  ,t=57       ,l=DLG_W-5-80   ,w=80           ,cap=_('Clea&r')    ,hint=_('Clear tags')   ,vis=w_tags             )   # &r
+                # Table of keys+values
+                 ,dict( cid='lvls',tp='lvw' ,t=57       ,l=5 ,h=LST_H   ,w=LST_W        ,items=itms             ,grid='1'   ,act='1'                        )   #
+                # Editors for value
+                 ,dict(            tp='lb'  ,tid='t1st' ,l=l_val-100-5  ,w=100          ,cap=_('>&Value:')                                                  )   # &v 
+                 ,dict( cid='edch',tp='ch'  ,tid='t1st' ,l=l_val+5      ,w=COL_WS[-1]+15,cap=_('O&n')                       ,act='1',vis=as_bool            )   # &n
+                 ,dict( cid='eded',tp='ed'  ,tid='t1st' ,l=l_val+5      ,w=COL_WS[-1]+15-(30 if as_file else 0)                     ,vis=as_char or as_file )   #
+                 ,dict( cid='brow',tp='bt'  ,tid='t1st' ,l=DLG_W-5-80-35,w=30           ,cap=_('&...') ,hint=_('Browse file')       ,vis=as_file            )   # &.
+                 ,dict( cid='setv',tp='bt'  ,tid='t1st' ,l=DLG_W-5-80   ,w=80           ,cap=_('Cha&nge')   ,en=(frm_sel!='json')   ,vis=as_char or as_file )   # &n
+                 ,dict( cid='edcb',tp='cb-r',tid='t1st' ,l=l_val+5      ,w=COL_WS[-1]+15,items=var_sel                      ,act='1',vis=as_enum            )   #
+                # View def-value
+                 ,dict(            tp='lb'  ,tid='dfvl' ,l=l_val-100-5  ,w=100          ,cap=_('>Default value:')                                           )   # 
+                 ,dict( cid='dfvl',tp='ed'  ,t=93+LST_H ,l=l_val+5      ,w=COL_WS[-1]+15                        ,ro_mono_brd='1,0,1'                        )   #
+                 ,dict( cid='setd',tp='bt'  ,tid='dfvl' ,l=DLG_W-5-80   ,w=80           ,cap=_('Reset')     ,en=(dvl_sel!=val_sel and  frm_sel!='json')     )   # 
+                # Comment
+                 ,dict( cid='cmnt',tp='memo',t=125+LST_H,l=5 ,h=CMNT_H-3,w=LST_W                                ,ro_mono_brd='1,1,1'                        )   #
+                # Target json
+                 ,dict( cid='trgt',tp='bt'  ,t=120      ,l=DLG_W-5-80   ,w=80           ,cap=_('&Target…')  ,hint=trgt_h                                    )   # &t
+                 ,dict( cid='cust',tp='bt'  ,t=150      ,l=DLG_W-5-80   ,w=80           ,cap=_('Ad&just…')                                                  )   # &j
+                 ,dict( cid='rprt',tp='bt'  ,t=DLG_H-65 ,l=DLG_W-5-80   ,w=80           ,cap=_('Report…')   ,hint=rprt_h                                    )   # &h
+#                ,dict( cid='?'   ,tp='bt'  ,t=DLG_H-65 ,l=DLG_W-5-80   ,w=80           ,cap=_('&Help…')                                                    )   # &h
+                 ,dict( cid='-'   ,tp='bt'  ,t=DLG_H-35 ,l=DLG_W-5-80   ,w=80           ,cap=_('Close')                                                     )   #
+                 ,dict( cid='t1st',tp='ch'  ,t=65+LST_H ,l=5            ,w=100          ,cap=t1st_c         ,hint=t1st_h    ,act='1'                        )   # &i
+                 ]
+        if pvw_font_ns: # View commnent with tested font
+            [cnt for cnt in cnts if cnt.get('cid')=='cmnt'][0].update(
+                dict(font_name=pvw_font_ns[0], font_size=pvw_font_ns[1] ,ro_mono_brd='1,0,1'))
+                
+        return  {'fm_cap':f('{} ({})', title, VERSION_V)
+                ,'fm_w':DLG_W
+                ,'fm_h':DLG_H
+                ,'fm_ctrls':cnts
+                }
+       #def get_layout
+
+    def get_settings():
+        vals    =       dict(cond=cond_s
+                            ,lvls=ind_sel
+                            ,t1st=t1st_b
+                            ,dfvl=to_str(dvl_sel, frm_sel, dct_sel)     if key_sel else ''
+                            ,cmnt=cmt_sel.replace('\r', '\n')           if key_sel else ''
+                            )
+        if 1<len(chap_l):
+            vals.update(dict(chap=chap_n))
+        if tags_l:
+            vals.update(dict(tags=tags_n))
+        if as_bool:
+            vals.update(dict(edch=val_sel                               if key_sel else False))
+        if as_char or as_file:
+            vals.update(dict(eded=to_str(val_sel, frm_sel, dct_sel)     if key_sel else ''  ))
+        if as_enum:
+            vals.update(dict(edcb=sel_sel                               if key_sel else False))
+        return  {'values':vals
+                ,'focused':fid
+                }
+       #def get_settings
+
+#       aid, vals, fid, chds = dlg_wrapper(f('{} ({})', title, VERSION_V), DLG_W, DLG_H, cnts, vals, focus_cid=fid)
+    def dlg_loop(aid, vals, fid, chds):
+        nonlocal chap_n, trgt_s, t1st_b, tags_set, k2fdcvt
+        BREAK   = [None]*2
+        CONTINUE= lambda:(get_layout(), get_settings())
+        if aid is None or aid=='-':  return BREAK
+
+        if aid=='fltr' and fid=='eded':     # Подмена умолчательной кнопки по активному редактору
+            aid = 'setv'
+
+        pass;                  #    LOG and log('aid={}',(aid))
+
+        fid     = 'lvls'
+        cond_s  = vals['cond']
+        chap_n  = vals['chap']  if 1<len(chap_l)    else chap_n
+        ind_sel = vals['lvls']
+        t1st_b  = vals['t1st']
+
+        stores[subset+'h.cond'] = add_to_history(cond_s, stores.get(subset+'h.cond', []), MAX_HIST, unicase=False)
+        stores[subset+'chap']   = chap_l[chap_n]
+        stores['t1st']          = t1st_b
+        open(CFG_JSON, 'w').write(json.dumps(stores, indent=4))
+
+        if aid=='cust':
+            custs   = app.dlg_input_ex(5, _('Adjust')
+                  , _(  'Height of Table (min 125)')  , str(stores.get(subset+'cust.ht_t', 300))
+                  , _(     'Width of Key (min 250)')  , str(stores.get(subset+'cust.wd_k', 250))
+#                 , _(    'Width of Type (min  50)')  , str(stores.get(subset+'cust.wd_f',  50))
+                  , _(       'Width of * (min  20)')  , str(stores.get(subset+'cust.wd_s',  20))
+                  , _(   'Width of Value (min 250)')  , str(stores.get(subset+'cust.wd_v', 250))
+                  , _('Height of Comment (min  55)')  , str(stores.get(subset+'cust.ht_c', 100))
+                    )
+            if custs is None:   return CONTINUE()#continue#while
+            stores[subset+'cust.ht_t']  = max(125, int(custs[0]))
+            stores[subset+'cust.wd_k']  = max(250, int(custs[1]))
+#           stores[subset+'cust.wd_f']  = max( 50, int(custs[2]))
+            stores[subset+'cust.wd_s']  = max( 20, int(custs[2]))
+            stores[subset+'cust.wd_v']  = max(250, int(custs[3]))
+            stores[subset+'cust.ht_c']  = max( 55, int(custs[4]))
+            open(CFG_JSON, 'w').write(json.dumps(stores, indent=4))
+            return CONTINUE()#continue#while
+            
+        if aid=='t1st':     # Show user key first
+            k2fdcvt = get_main_data(keys_info, trgt_s, t1st_b)
+        if aid=='tags':     # Use prev tag set
+            ind     = vals['tags']
+            tags_s  = tags_hl[ind]
+            tags_set= set(tags_s.replace('#', '').replace(' ', '').split(','))
+            tags_n  = 0
+            stores[subset+'h.tags']= add_to_history(tags_s, stores.get(subset+'h.tags', []), MAX_HIST, unicase=False)
+            stores[subset+'tags']  = list(tags_set)
+            open(CFG_JSON, 'w').write(json.dumps(stores, indent=4))
+        if aid=='-tgs':     # Clear tags
+            tags_s  = ''
+            tags_set= set()
+            tags_n  = -1
+            stores[subset+'h.tags']= add_to_history(tags_s, stores.get(subset+'h.tags', []), MAX_HIST, unicase=False)
+            stores[subset+'tags']  = list(tags_set)
+            open(CFG_JSON, 'w').write(json.dumps(stores, indent=4))
+        if aid=='?tgs':     # Choose any tags
+            sels    = ['1' if tag in tags_set else '0' for tag in tags_l]
+            crt     = str(sels.index('1') if '1' in sels else 0)
+            tags_v  = [tag+tag_v for (tag,tag_v) in zip(tags_l, tags_vl)]
+            tg_aid, \
+            tg_vals,\
+            *_t     = dlg_wrapper(f(_('Tags ({})'), len(tags_l)), GAP+200+GAP, GAP+400+GAP+24+GAP, 
+                    [ dict(cid='tgs',tp='ch-lbx',t=5,h=400  ,l=5            ,w=200  ,items=tags_v           ) #
+                     ,dict(cid='!'  ,tp='bt'    ,t=5+400+5  ,l=    200-140  ,w=70   ,cap=_('OK'),props='1'  ) #  default
+                     ,dict(cid='-'  ,tp='bt'    ,t=5+400+5  ,l=5  +200- 70  ,w=70   ,cap=_('Cancel')        ) #  
+                    ]
+                    , dict(tgs=(crt,sels)), focus_cid='tgs')
+            if tg_aid=='!':
+                crt,sels= tg_vals['tgs']
+                tags    = [tag for (ind,tag) in enumerate(tags_l) if sels[ind]=='1']
+                tags_set= set(tags)
+                tags_s  = '#'+', #'.join(tags)  if tags else ''
+                tags_n  = 0                     if tags else -1
+                stores[subset+'h.tags']= add_to_history(tags_s, stores.get(subset+'h.tags', []), MAX_HIST, unicase=False)
+                stores[subset+'tags']  = list(tags_set)
+                open(CFG_JSON, 'w').write(json.dumps(stores, indent=4))
+        
+        if ind_sel==-1:  return CONTINUE()#continue#while
+        key_sel = fl_kfsvt[ind_sel][0]
+        pass;                  #LOG and log('cond_s={}',(cond_s))
+
+        if aid=='setd' and dvl_sel!=val_sel:
+            # Reset def value
+            k2fdcvt[key_sel]['v'] = dvl_sel
+            # Update json file
+            apx.set_opt(key_sel, dvl_sel)
+        if aid in ('edch', 'eded', 'edcb', 'setv', 'brow'):
+#       if aid in ('kved'                , 'setv', 'brow'):
+            # Changed value
+            old_val = k2fdcvt[key_sel]['v']
+            
+            if as_bool and aid=='edch':
+#           if as_bool and aid=='kved':
+                k2fdcvt[key_sel]['v'] = not k2fdcvt[key_sel]['v']
+            if aid=='setv':
+                new_val = vals['eded']
+#               new_val = vals['kved']
+                good    = False
+                while not good:
+                    try:
+                        k2fdcvt[key_sel]['v'] = from_str(new_val, k2fdcvt[key_sel]['f'])
+                        good    = True
+                    except Exception as ex:
+                        good    = False
+                        app.msg_status(_('Uncorrect value'))
+                    if not good:
+                        new_val = app.dlg_input(f(_('Value of "{}" (type "{}")'), key_sel, k2fdcvt[key_sel]['f']), new_val)
+                        if new_val is None:
+                            return BREAK#break#while not good
+                    #while not good
+            if as_enum and aid=='edcb' and vals['edcb']!=-1:
+#           if as_enum and aid=='kved' and vals['kved']!=-1:
+                ind     = vals['edcb']
+#               ind     = vals['kved']
+                val_l   = font_l    if frm_sel=='font' else     list(dct_sel.keys())
+#               val_l   = font_l    if frm_sel=='font' else     list(var_sel.keys())
+                k2fdcvt[key_sel]['v'] = val_l[ind]
+            if aid=='brow':
+                path    = app.dlg_file(True, '', os.path.expanduser(k2fdcvt[key_sel]['v']), '')
+                if not path:  return CONTINUE()#continue#while
+                k2fdcvt[key_sel]['v'] = path
+
+            new_val = k2fdcvt[key_sel]['v']
+            if old_val != new_val:
+                # Update json file
+                if trgt_s=='user.json':
+                    apx.set_opt(key_sel, new_val)
+                else:
+                    opts_json   = app.app_path(app.APP_DIR_SETTINGS)+os.sep+trgt_s
+                    opts        = apx._get_file_opts(opts_json)
+                    if new_val==opts.get(key_sel, dvl_sel): return CONTINUE()#continue#while
+                    if new_val==dvl_sel:
+                        opts.pop(key_sel, None)
+                    else:
+                        opts[key_sel]   = new_val
+                    open(opts_json,'w').write(json.dumps(opts, indent=2))
+            
+        if aid=='rprt':
+            htm_file = os.path.join(tempfile.gettempdir(), 'CudaText_option_report.html')
+            if not do_report(htm_file, '' if trgt_s=='user.json' else trgt_s): return CONTINUE()#continue#while
+            webbrowser.open_new_tab('file://'+htm_file)
+            app.msg_status('Opened browser with file '+htm_file)
+
+        if aid=='trgt':
+            trgt_l  = []
+            trgt_n  = None
+            for all_b in (False, True):
+                trgt_l  = ['lexer '+lxr+'.json' 
+                            for lxr in app.lexer_proc(app.LEXER_GET_LIST, '').splitlines() 
+                            if app.lexer_proc(app.LEXER_GET_ENABLED, lxr) and 
+                            (all_b or os.path.isfile(app.app_path(app.APP_DIR_SETTINGS)+os.sep+'lexer '+lxr+'.json'))
+                          ]
+                trgt_l  = ['user.json'] + trgt_l
+                trgt_n  = app.dlg_menu(app.MENU_LIST
+                                      ,'\n'.join(trgt_l+([] if all_b else [_('[Show all lexers]')]))
+                                      ,index_1(trgt_l, trgt_s, 0)
+                                      )
+                if trgt_n is None:          return BREAK#break#for
+                pass;          #LOG and log('trgt_n={}',(trgt_n))
+                if trgt_n == len(trgt_l):   return CONTINUE()#continue#for with all_b=True
+                return BREAK#break#for
+               #for all_b
+            if trgt_n is None:              return CONTINUE()#continue#while
+            new_trgt_s  = trgt_l[trgt_n]
+            pass;              #LOG and log('new_trgt_s={}',(new_trgt_s))
+            if new_trgt_s!=trgt_s:
+                k2fdcvt = get_main_data(keys_info, new_trgt_s, t1st_b)
+                trgt_s  = new_trgt_s
+       #while
+        return          get_layout(), get_settings()
+       #def dlg_loop
+    dlg_agent(dlg_loop, get_layout(), get_settings())
+   #def dlg_opt_editor_ag
+
+def add_to_history(val:str, lst:list, max_len:int, unicase=True)->list:
+    """ Add/Move val to list head. """
+    lst_u = [ s.upper() for s in lst] if unicase else lst
+    val_u = val.upper()               if unicase else val
+    if val_u in lst_u:
+        if 0 == lst_u.index(val_u):   return lst
+        del lst[lst_u.index(val_u)]
+    lst.insert(0, val)
+    if len(lst)>max_len:
+        del lst[max_len:]
+    return lst
+   #def add_to_history
+    
+def frm_of_val(val):
+    if isinstance(val, bool):   return 'bool'
+    if isinstance(val, int):    return 'int'
+    if isinstance(val, float):  return 'float'
+    if isinstance(val, str):    return 'str'
+    pass;                       return ''
+   #def frm_of_val
+    
+def to_str(kv, kformat, dct=None):
+    'Convert a value of key to string to show (in listview cell, in edit)'
+    if kformat=='json' \
+    or isinstance(kv, dict) or isinstance(kv, list):
+        return json.dumps(kv)
+    if kformat=='enum_i' and dct is not None:
+        return dct.get(kv, str(kv))
+    if kformat=='enum_s' and dct is not None:
+        return dct.get(str(kv), str(kv))
+    return str(kv)
+   #def to_str
+    
+def from_str(strv, kformat, dct=None):
+    'Convert a value of key to string to show (in listview cell, in edit)'
+    if kformat in ('bool'):
+        return bool(strv)
+    if kformat in ('int'):
+        return int(strv)
+    if kformat in ('float'):
+        return float(strv)
+    if kformat in ('str'):
+        return strv
+    if kformat=='json' \
+    or isinstance(strv, dict) or isinstance(strv, list):
+        return json.loads(strv, object_pairs_hook=OrdDict)
+    if kformat in ('enum_i', 'enum_s') and dct is not None:
+        ind = list(dct.values()).index(strv)
+        ans = list(dct.keys())[ind]
+        return int(ans) if kformat=='enum_i' else ans 
+    return strv
+   #def from_str
+    
+reNotWdChar = re.compile(r'\W')
+def test_cond(cnd_s, text):
+    if not cnd_s:       return True
+    text    = text.upper()
+    if '<' in cnd_s or '>' in cnd_s:
+        text    = '·' + reNotWdChar.sub('·', text)    + '·'
+        cnd_s   = ' ' + cnd_s + ' '
+        cnd_s   = cnd_s.replace(' <', ' ·').replace('> ', '· ')
+    pass;                  #LOG and log('cnd_s, text={}',(cnd_s, text))
+    return all(map(lambda c:c in text, cnd_s.split()))
+   #def test_cond
+
+def get_main_data(keys_info, trgt_json='user.json', trgt_1st=False):
+    opts_json   = app.app_path(app.APP_DIR_SETTINGS)+os.sep+trgt_json
+    trgt_opts   = apx._json_loads(open(opts_json, encoding='utf8').read(), object_pairs_hook=OrdDict)
+#       trgt_opts   = apx._get_file_opts(opts_json, object_pairs_hook=OrdDict)
+#   nonlocal keys_info
+    keys_info_  = keys_info.copy()
+    if trgt_1st:
+        keys_d      = OrdDict([(ki['key'],ki) for ki in keys_info])
+        keys_info_  = [keys_d[k] for k  in trgt_opts if k             in keys_d] \
+                    + [ki        for ki in keys_info if ki['key'] not in trgt_opts]
+    return OrdDict([
+        (       kinfo['key'],
+           {'f':kinfo.get('format', frm_of_val(kinfo['def_val']))
+           ,'t':kinfo.get('dct')            if ('dct' not in kinfo or   isinstance(kinfo.get('dct'), dict)) else 
+                OrdDict(kinfo.get('dct'))
+           ,'d':kinfo['def_val']
+           ,'c':kinfo['comment']            if                          isinstance(kinfo['comment'], str) else
+                '\n'.join(kinfo['comment'])
+           ,'v':trgt_opts.get(kinfo['key'], kinfo['def_val'])
+           ,'a':kinfo.get('chapter', '')
+           ,'g':set(kinfo.get('tags', []))
+           }
+        )  for  kinfo in keys_info_
+        ])
+   #def get_main_data
+
 
 def parse_raw_keys_info(path_to_raw):
     pass;                      #LOG and log('path_to_raw={}',(path_to_raw))
@@ -585,6 +1489,7 @@ def parse_raw_keys_info(path_to_raw):
     reN2S   = re.compile(r'\s+(\d+): *(.+)')
     reS2S   = re.compile(r'\s+"(\w*)": *(.+)')
     reLike  = re.compile(r' *\(like (\w+)\)')
+    reFldFr = re.compile(r'\s*Folders from: (.+)')
     def parse_cmnt(cmnt, frm, kinfs):  
         tags= set()
         mt  = reTags.search(cmnt)
@@ -607,10 +1512,20 @@ def parse_raw_keys_info(path_to_raw):
                 ref_kinf = ref_kinf[0]
                 frmK= ref_kinf['format']    if 'format' in ref_kinf else    frmK
                 dctK= ref_kinf['dct']       if 'dct'    in ref_kinf else    dctK
+        dctF= None
+        mt  = reFldFr.search(cmnt)
+        if mt:
+            from_short  = mt.group(1)
+            from_dir    = from_short if os.path.isdir(from_short) else os.path.join(app.app_path(app.APP_DIR_EXE), from_short)
+            if not os.path.isdir(from_dir):
+                log(_('No folder "{}" from\n{}'), from_short, cmnt)
+            else:
+                dctF    = {d:d for d in os.listdir(from_dir)}
         frm,\
         dct = ('enum_i', dctN)    if dctN else \
               ('enum_s', dctS)    if dctS else \
               (frmK,     dctK)    if dctK else \
+              ('enum_s', dctF)    if dctF else \
               (frm     , []  )
         return cmnt, frm, dct, list(tags)
        #def parse_cmnt
@@ -884,4 +1799,5 @@ ToDo
 [+][kv-kv][06apr17] Spec filter sign: * - to show only modified
 [-][kv-kv][06apr17] Format color
 [ ][kv-kv][24apr17] Sort as Def or as User
+[ ][kv-kv][05may17] New type "list of str"
 '''
