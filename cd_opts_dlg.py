@@ -9,6 +9,7 @@ ToDo: (see end of file)
 import  re, os, sys, json, collections, webbrowser, tempfile, html, pickle
 
 import  cudatext            as app
+import  cudatext_cmd        as cmds
 import  cudax_lib           as apx
 from    .cd_plug_lib    import *
 
@@ -123,7 +124,7 @@ def dlg_opt_editor_wr(title, keys_info=None
               '\r • Use "<" or ">" for word boundary.'
               '\r     size> <tab'
               '\r   selects "tab_size" but not "ui_tab_size" or "tab_size_x".')
-    t1st_c  = _('Conf&igured on top')
+    t1st_c  = _('Conf&igured first')
     t1st_h  = _('Show user keys on top of entire list.'
               '\rThe order of keys will be the same as in user file.')
     trgt_h  = _('Set storage for values')
@@ -399,6 +400,7 @@ def dlg_opt_editor_wr(title, keys_info=None
             k2fdcvt[key_sel]['v'] = dvl_sel
             # Update json file
             apx.set_opt(key_sel, dvl_sel)
+            ed.cmd(cmds.cmd_OpsReloadAndApply)
         if aid in ('edch', 'eded', 'edcb', 'setv', 'brow'):
             # Changed value
             old_val = k2fdcvt[key_sel]['v']
@@ -444,6 +446,7 @@ def dlg_opt_editor_wr(title, keys_info=None
                     else:
                         opts[key_sel]   = new_val
                     open(opts_json,'w').write(json.dumps(opts, indent=2))
+                ed.cmd(cmds.cmd_OpsReloadAndApply)
             
         if aid=='rprt':
             htm_file = os.path.join(tempfile.gettempdir(), 'CudaText_option_report.html')

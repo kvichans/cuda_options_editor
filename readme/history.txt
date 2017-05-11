@@ -1,4 +1,7 @@
-1.1.15 (2017-04-24)
+1.1.16 (2017-05-11)
+added: force Cud to apply new settings
+
+1.1.15 (2017-05-05)
 added: parse "Folders from:" to "enum_s" {folder:folder}
 
 1.1.14 (2017-04-24)
