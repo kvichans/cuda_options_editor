@@ -2,7 +2,7 @@
 Authors:
     Andrey Kvichansky    (kvichans on github.com)
 Version:
-    '1.1.15 2017-05-05'
+    '1.1.16 2017-05-11'
 ToDo: (see end of file)
 '''
 
@@ -220,7 +220,7 @@ def dlg_opt_editor_wr(title, keys_info=None
                                         if frm_sel in ('enum_i', 'enum_s')  else \
                   font_l + ([] if val_sel in font_l else [val_sel])              \
                                         if frm_sel=='font' and     font_l   else \
-                  None
+                  []
         sel_sel = index_1(list(dct_sel.keys()), val_sel) \
                                         if frm_sel in ('enum_i', 'enum_s')  else \
                   index_1(font_l,               val_sel, len(font_l))            \
