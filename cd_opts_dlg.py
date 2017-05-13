@@ -1519,7 +1519,8 @@ def parse_raw_keys_info(path_to_raw):
         mt  = reFldFr.search(cmnt)
         if mt:
             from_short  = mt.group(1)
-            from_dir    = from_short if os.path.isdir(from_short) else os.path.join(app.app_path(app.APP_DIR_DATA), from_short)
+            from_dir    = from_short if os.path.isabs(from_short) else os.path.join(app.app_path(app.APP_DIR_DATA), from_short)
+            pass;               LOG and log('from_dir={}',(from_dir))
             if not os.path.isdir(from_dir):
                 log(_('No folder "{}" from\n{}'), from_short, cmnt)
             else:
