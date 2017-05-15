@@ -1,7 +1,7 @@
 1.1.17 (2017-05-15)
 added: log changes to status and console
 added: hidden buttons to clear text-filter (&l) and to clear chapter-filter (&e)
-changed: set text-filter and table tab order as tab order neighbors
+changed: set text-filter and table as tab order neighbors
 
 1.1.16 (2017-05-11)
 added: force Cud to apply new settings
