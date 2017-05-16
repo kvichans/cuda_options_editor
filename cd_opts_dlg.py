@@ -2,7 +2,7 @@
 Authors:
     Andrey Kvichansky    (kvichans on github.com)
 Version:
-    '1.1.17 2017-05-15'
+    '1.1.18 2017-05-16'
 ToDo: (see end of file)
 '''
 
@@ -1507,8 +1507,10 @@ def parse_raw_keys_info(path_to_raw):
     l       = '\n'
     
     reTags  = re.compile(r' *\((#\w+,?)+\)')
-    reN2S   = re.compile(r'\s+(\d+): *(.+)')
-    reS2S   = re.compile(r'\s+"(\w*)": *(.+)')
+#   reN2S   = re.compile(r'\s+(\d+): *(.+)')
+#   reS2S   = re.compile(r'\s+"(\w*)": *(.+)')
+    reN2S   = re.compile(r'^\s*(\d+): *(.+)'    , re.M)
+    reS2S   = re.compile(r'^\s*"(\w*)": *(.+)'  , re.M)
     reLike  = re.compile(r' *\(like (\w+)\)')
     reFldFr = re.compile(r'\s*Folders from: (.+)')
     def parse_cmnt(cmnt, frm, kinfs):  
