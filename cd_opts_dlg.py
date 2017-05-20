@@ -2,7 +2,7 @@
 Authors:
     Andrey Kvichansky    (kvichans on github.com)
 Version:
-    '1.1.18 2017-05-16'
+    '1.1.19 2017-05-20'
 ToDo: (see end of file)
 '''
 
@@ -1544,7 +1544,7 @@ def parse_raw_keys_info(path_to_raw):
             if not os.path.isdir(from_dir):
                 log(_('No folder "{}" from\n{}'), from_short, cmnt)
             else:
-                dctF    = {d:d for d in os.listdir(from_dir)}
+                dctF    = {d:d for d in os.listdir(from_dir) if os.path.isdir(from_dir+os.sep+d)}
         frm,\
         dct = ('enum_i', dctN)    if dctN else \
               ('enum_s', dctS)    if dctS else \
@@ -1808,10 +1808,10 @@ ToDo
 [+][kv-kv][02apr17] VERS in Title
 [+][at-kv][02apr17] 'enum' вместо 'enum_i' 
 [ ][kv-kv][02apr17] Save top row in table
-[ ][kv-kv][03apr17] Show stat in Chap-combo and tags check-list
-[ ][kv-kv][03apr17] ? Add chap "(No chapter)"
-[ ][kv-kv][03apr17] ? Add tag "#no_tag"
-[ ][kv-kv][03apr17] Call opts report
+[+][kv-kv][03apr17] Show stat in Chap-combo and tags check-list
+[-][kv-kv][03apr17] ? Add chap "(No chapter)"
+[-][kv-kv][03apr17] ? Add tag "#no_tag"
+[+][kv-kv][03apr17] Call opts report
 [+][at-kv][04apr17] Format 'font'
 [-][at-kv][04apr17] ? FilterListView
 [+][at-kv][04apr17] use new default.json
@@ -1822,6 +1822,6 @@ ToDo
 [+][at-kv][05apr17] Preview for format=font
 [+][kv-kv][06apr17] Spec filter sign: * - to show only modified
 [-][kv-kv][06apr17] Format color
-[ ][kv-kv][24apr17] Sort as Def or as User
+[+][kv-kv][24apr17] Sort as Def or as User
 [ ][kv-kv][05may17] New type "list of str"
 '''
