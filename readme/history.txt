@@ -1,3 +1,6 @@
+1.1.20 (2017-06-16)
+fixed: start without user.json 
+
 1.1.17 (2017-05-15)
 added: log changes to status and console
 added: hidden buttons to clear text-filter (&l) and to clear chapter-filter (&e)
