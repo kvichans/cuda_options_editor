@@ -2,7 +2,7 @@
 Authors:
     Andrey Kvichansky    (kvichans on github.com)
 Version:
-    '1.1.21 2017-06-21'
+    '1.1.22 2017-06-23'
 ToDo: (see end of file)
 '''
 
@@ -249,6 +249,7 @@ def dlg_opt_editor_wr(title, keys_info=None
         as_char = key_sel and (frm_sel in ('int', 'float', 'str', 'json')   or frm_sel=='font' and not bool(font_l))
         as_enum = key_sel and (frm_sel in ('enum_i', 'enum_s')              or frm_sel=='font' and     bool(font_l))
         as_file = key_sel and  frm_sel in ('file')
+        as_hotk = key_sel and  frm_sel in ('hotk')
         font_nm4sz  = key_sel.replace('font_size', 'font_name')
         font_sz4nm  = key_sel.replace('font_name', 'font_size')
         pvw_font_ns = None \
@@ -263,41 +264,42 @@ def dlg_opt_editor_wr(title, keys_info=None
         w_tags  = bool(tags_l)
         pass;                  #LOG and log('(w_chap,w_tags),(as_bool,as_char,as_enum,as_file)={}',((w_chap,w_tags),(as_bool,as_char,as_enum,as_file)))
         cnts    =[                                                                                                                                              # bdgkmopqswxyz
-                # Chapters
-                  dict(            tp='lb'  ,t=5        ,l=15+COL_WS[0] ,w=140          ,cap=_('Se&ction:') ,hint=chap_h            ,vis=w_chap             )   # &c
-                 ,dict( cid='chap',tp='cb-r',t=25       ,l=15+COL_WS[0] ,w=140          ,items=chap_v                       ,act='1',vis=w_chap             )   #
-                 ,dict( cid='-cha',tp='bt'  ,t=0        ,l=0            ,w=0            ,cap='&e'                                   ,vis=w_chap             )   # &e
-                # Tags
-                 ,dict(            tp='lb'  ,t=5        ,l=COL_WS[0]+160,r=DLG_W-10-80  ,cap=_('T&ags:')                            ,vis=w_tags             )   # &a
-                 ,dict( cid='tags',tp='cb-r',t=25       ,l=COL_WS[0]+160,r=DLG_W-10-80  ,items=tags_hl                      ,act='1',vis=w_tags             )   #
-                 ,dict( cid='?tgs',tp='bt'  ,tid='tags' ,l=DLG_W-5-80   ,w=80           ,cap=_('Tag&s…')    ,hint=_('Choose tags')  ,vis=w_tags             )   # &s
-                 ,dict( cid='-tgs',tp='bt'  ,t=57       ,l=DLG_W-5-80   ,w=80           ,cap=_('Clea&r')    ,hint=_('Clear tags')   ,vis=w_tags             )   # &r
-                # Filter
-                 ,dict( cid='-flt',tp='bt'  ,t=0        ,l=0            ,w=0            ,cap='&l'                                                           )   # &l
-                 ,dict( cid='fltr',tp='bt'  ,t=0        ,l=0            ,w=0            ,cap=''                 ,def_bt='1'                                 )   # 
-                 ,dict(            tp='lb'  ,t=5        ,l=5+2          ,w=COL_WS[0]    ,cap=_('&Filter:')  ,hint=fltr_h                                    )   # &f
-                 ,dict( cid='cond',tp='cb'  ,t=25       ,l=5+2          ,w=COL_WS[0]    ,items=cond_hl                                                      )   #
-                # Table of keys+values
-                 ,dict( cid='lvls',tp='lvw' ,t=57       ,l=5 ,h=LST_H   ,w=LST_W        ,items=itms             ,grid='1'   ,act='1'                        )   #
-                # Editors for value
-                 ,dict(            tp='lb'  ,tid='t1st' ,l=l_val-100-5  ,w=100          ,cap=_('>&Value:')                                                  )   # &v 
-                 ,dict( cid='edch',tp='ch'  ,tid='t1st' ,l=l_val+5      ,w=COL_WS[-1]+15,cap=_('O&n')                       ,act='1',vis=as_bool            )   # &n
-                 ,dict( cid='eded',tp='ed'  ,tid='t1st' ,l=l_val+5      ,w=COL_WS[-1]+15-(30 if as_file else 0)                     ,vis=as_char or as_file )   #
-                 ,dict( cid='brow',tp='bt'  ,tid='t1st' ,l=DLG_W-5-80-35,w=30           ,cap=_('&...') ,hint=_('Browse file')       ,vis=as_file            )   # &.
-                 ,dict( cid='setv',tp='bt'  ,tid='t1st' ,l=DLG_W-5-80   ,w=80           ,cap=_('Cha&nge')   ,en=(frm_sel!='json')   ,vis=as_char or as_file )   # &n
-                 ,dict( cid='edcb',tp='cb-r',tid='t1st' ,l=l_val+5      ,w=COL_WS[-1]+15,items=var_sel                      ,act='1',vis=as_enum            )   #
-                # View def-value
-                 ,dict(            tp='lb'  ,tid='dfvl' ,l=l_val-100-5  ,w=100          ,cap=_('>Default value:')                                           )   # 
-                 ,dict( cid='dfvl',tp='ed'  ,t=93+LST_H ,l=l_val+5      ,w=COL_WS[-1]+15                        ,ro_mono_brd='1,0,1'                        )   #
-                 ,dict( cid='setd',tp='bt'  ,tid='dfvl' ,l=DLG_W-5-80   ,w=80           ,cap=_('Reset')     ,en=(dvl_sel!=val_sel and  frm_sel!='json')     )   # 
-                # Comment
-                 ,dict( cid='cmnt',tp='memo',t=125+LST_H,l=5 ,h=CMNT_H-3,w=LST_W                                ,ro_mono_brd='1,1,1'                        )   #
-                # Target json
-                 ,dict( cid='trgt',tp='bt'  ,t=120      ,l=DLG_W-5-80   ,w=80           ,cap=_('&Target…')  ,hint=trgt_h                                    )   # &t
-                 ,dict( cid='cust',tp='bt'  ,t=150      ,l=DLG_W-5-80   ,w=80           ,cap=_('Ad&just…')                                                  )   # &j
-                 ,dict( cid='rprt',tp='bt'  ,t=DLG_H-65 ,l=DLG_W-5-80   ,w=80           ,cap=_('Report…')   ,hint=rprt_h                                    )   # &h
-                 ,dict( cid='-'   ,tp='bt'  ,t=DLG_H-35 ,l=DLG_W-5-80   ,w=80           ,cap=_('Close')                                                     )   #
-                 ,dict( cid='t1st',tp='ch'  ,t=65+LST_H ,l=5            ,w=100          ,cap=t1st_c         ,hint=t1st_h    ,act='1'                        )   # &i
+    # Chapters
+      dict(            tp='lb'  ,t=5        ,l=15+COL_WS[0] ,w=140          ,cap=_('Se&ction:') ,hint=chap_h            ,vis=w_chap             )   # &c
+     ,dict( cid='chap',tp='cb-r',t=25       ,l=15+COL_WS[0] ,w=140          ,items=chap_v                       ,act='1',vis=w_chap             )   #
+     ,dict( cid='-cha',tp='bt'  ,t=0        ,l=0            ,w=0            ,cap='&e'                                   ,vis=w_chap             )   # &e
+    # Tags
+     ,dict(            tp='lb'  ,t=5        ,l=COL_WS[0]+160,r=DLG_W-10-80  ,cap=_('T&ags:')                            ,vis=w_tags             )   # &a
+     ,dict( cid='tags',tp='cb-r',t=25       ,l=COL_WS[0]+160,r=DLG_W-10-80  ,items=tags_hl                      ,act='1',vis=w_tags             )   #
+     ,dict( cid='?tgs',tp='bt'  ,tid='tags' ,l=DLG_W-5-80   ,w=80           ,cap=_('Tag&s…')    ,hint=_('Choose tags')  ,vis=w_tags             )   # &s
+     ,dict( cid='-tgs',tp='bt'  ,t=57       ,l=DLG_W-5-80   ,w=80           ,cap=_('Clea&r')    ,hint=_('Clear tags')   ,vis=w_tags             )   # &r
+    # Filter
+     ,dict( cid='-flt',tp='bt'  ,t=0        ,l=0            ,w=0            ,cap='&l'                                                           )   # &l
+     ,dict( cid='fltr',tp='bt'  ,t=0        ,l=0            ,w=0            ,cap=''                 ,def_bt='1'                                 )   # 
+     ,dict(            tp='lb'  ,t=5        ,l=5+2          ,w=COL_WS[0]    ,cap=_('&Filter:')  ,hint=fltr_h                                    )   # &f
+     ,dict( cid='cond',tp='cb'  ,t=25       ,l=5+2          ,w=COL_WS[0]    ,items=cond_hl                                                      )   #
+    # Table of keys+values
+     ,dict( cid='lvls',tp='lvw' ,t=57       ,l=5 ,h=LST_H   ,w=LST_W        ,items=itms             ,grid='1'   ,act='1'                        )   #
+    # Editors for value
+     ,dict(            tp='lb'  ,tid='t1st' ,l=l_val-100-5  ,w=100          ,cap=_('>&Value:')                                                  )   # &v 
+     ,dict( cid='edch',tp='ch'  ,tid='t1st' ,l=l_val+5      ,w=COL_WS[-1]+15,cap=_('O&n')                       ,act='1',vis=as_bool            )   # &n
+     ,dict( cid='eded',tp='ed'  ,tid='t1st' ,l=l_val+5      ,w=COL_WS[-1]+15-(30 if as_file or as_hotk else 0)          ,vis=as_char or as_file or as_hotk 
+                                                                                                ,en=as_char or as_file)   #
+     ,dict( cid='brow',tp='bt'  ,tid='t1st' ,l=DLG_W-5-80-35,w=30           ,cap=_('&...') ,hint=_('Choose')            ,vis=as_file or as_hotk )   # &.
+     ,dict( cid='setv',tp='bt'  ,tid='t1st' ,l=DLG_W-5-80   ,w=80           ,cap=_('Cha&nge')   ,en=(frm_sel!='json')   ,vis=as_char or as_file )   # &n
+     ,dict( cid='edcb',tp='cb-r',tid='t1st' ,l=l_val+5      ,w=COL_WS[-1]+15,items=var_sel                      ,act='1',vis=as_enum            )   #
+    # View def-value
+     ,dict(            tp='lb'  ,tid='dfvl' ,l=l_val-100-5  ,w=100          ,cap=_('>Default value:')                                           )   # 
+     ,dict( cid='dfvl',tp='ed'  ,t=93+LST_H ,l=l_val+5      ,w=COL_WS[-1]+15                        ,ro_mono_brd='1,0,1'                        )   #
+     ,dict( cid='setd',tp='bt'  ,tid='dfvl' ,l=DLG_W-5-80   ,w=80           ,cap=_('Reset')     ,en=(dvl_sel!=val_sel and  frm_sel!='json')     )   # 
+    # Comment
+     ,dict( cid='cmnt',tp='memo',t=125+LST_H,l=5 ,h=CMNT_H-3,w=LST_W                                ,ro_mono_brd='1,1,1'                        )   #
+    # Target json
+     ,dict( cid='trgt',tp='bt'  ,t=120      ,l=DLG_W-5-80   ,w=80           ,cap=_('&Target…')  ,hint=trgt_h                                    )   # &t
+     ,dict( cid='cust',tp='bt'  ,t=150      ,l=DLG_W-5-80   ,w=80           ,cap=_('Ad&just…')                                                  )   # &j
+     ,dict( cid='rprt',tp='bt'  ,t=DLG_H-65 ,l=DLG_W-5-80   ,w=80           ,cap=_('Report…')   ,hint=rprt_h                                    )   # &h
+     ,dict( cid='-'   ,tp='bt'  ,t=DLG_H-35 ,l=DLG_W-5-80   ,w=80           ,cap=_('Close')                                                     )   #
+     ,dict( cid='t1st',tp='ch'  ,t=65+LST_H ,l=5            ,w=100          ,cap=t1st_c         ,hint=t1st_h    ,act='1'                        )   # &i
                  ]
         if pvw_font_ns: # View commnent with tested font
             [cnt for cnt in cnts if cnt.get('cid')=='cmnt'][0].update(
@@ -314,7 +316,7 @@ def dlg_opt_editor_wr(title, keys_info=None
             vals.update(dict(tags=tags_n))
         if as_bool:
             vals.update(dict(edch=val_sel                               if key_sel else False))
-        if as_char or as_file:
+        if as_char or as_file or as_hotk:
             vals.update(dict(eded=to_str(val_sel, frm_sel, dct_sel)     if key_sel else ''  ))
         if as_enum:
             vals.update(dict(edcb=sel_sel                               if key_sel else False))
@@ -437,10 +439,14 @@ def dlg_opt_editor_wr(title, keys_info=None
                 val_l   = font_l    if frm_sel=='font' else     list(dct_sel.keys())
 #               val_l   = font_l    if frm_sel=='font' else     list(var_sel.keys())
                 k2fdcvt[key_sel]['v'] = val_l[ind]
-            if aid=='brow':
+            if aid=='brow' and as_file:
                 path    = app.dlg_file(True, '', os.path.expanduser(k2fdcvt[key_sel]['v']), '')
                 if not path:  continue#while
                 k2fdcvt[key_sel]['v'] = path
+            if aid=='brow' and as_hotk:
+                hotk    = app.dlg_hotkey(f('{}: {}', key_sel, k2fdcvt[key_sel]['v']))
+                if not hotk:  continue#while
+                k2fdcvt[key_sel]['v'] = hotk
 
             new_val = k2fdcvt[key_sel]['v']
             if old_val != new_val:
@@ -592,6 +598,16 @@ def parse_raw_keys_info(path_to_raw):
     #NOTE: parse_raw
     kinfs    = []
     lines   = open(path_to_raw, encoding='utf8').readlines()
+#   if 'debug'=='debug':        lines = ['  //[FindHotkeys]'
+#                                       ,'  //Hotkeys in Find/Replace dialog'
+#                                       ,'  "find_hotkey_find_first": "Alt+Enter",'
+#                                       ,'  "find_hotkey_replace": "Alt+Z",'
+#                                       ,'  "find_hotkey_find_dlg": "Ctrl+F",'
+#                                       ,'  '
+#                                       ,'  //UI elements font name [has suffix]'
+#                                       ,'  "ui_font_name": "default",'
+#                                       ]
+
     l       = '\n'
     
     reTags  = re.compile(r' *\((#\w+,?)+\)')
@@ -651,6 +667,7 @@ def parse_raw_keys_info(path_to_raw):
     reInt   = re.compile(r' *(-?\d+)')
     reFloat = re.compile(r' *(-?\d+\.\d+)')
     reFontNm= re.compile(r'font\w*_name')
+    reHotkey= re.compile(r'_hotkey_')
     chap    = ''
     ref_cmnt= ''    # Full comment to add to '... smth'
     pre_cmnt= ''
@@ -678,9 +695,11 @@ def parse_raw_keys_info(path_to_raw):
                       ('bool', False        )   if dval_s=='false'                      else \
                       ('float',float(dval_s))   if reFloat.match(dval_s)                else \
                       ('int',  int(  dval_s))   if reInt.match(dval_s)                  else \
-                      ('font', dval_s[1:-1] )   if reFontNm.match(key)                  else \
+                      ('font', dval_s[1:-1] )   if reFontNm.search(key)                 else \
+                      ('hotk', dval_s[1:-1] )   if reHotkey.search(key)                 else \
                       ('str',  jsstr(dval_s))   if dval_s[0]=='"' and dval_s[-1]=='"'   else \
                       ('unk',  dval_s       )
+            pass;              #LOG and log('key,dval_s,frm,dval={}',(key,dval_s,frm,dval))
             
             ref_cmnt= ref_cmnt                                      if cmnt.startswith('...') else cmnt
             kinf    = odict()
@@ -912,4 +931,5 @@ ToDo
 [-][kv-kv][06apr17] Format color
 [+][kv-kv][24apr17] Sort as Def or as User
 [ ][kv-kv][05may17] New type "list of str"
+[ ][kv-kv][23jun17] ? Filter with tag (part of tag?). "smth #my"
 '''
