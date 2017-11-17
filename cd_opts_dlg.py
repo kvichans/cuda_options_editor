@@ -2,7 +2,7 @@
 Authors:
     Andrey Kvichansky    (kvichans on github.com)
 Version:
-    '1.1.22 2017-06-23'
+    '1.1.23 2017-11-17'
 ToDo: (see end of file)
 '''
 
@@ -476,10 +476,14 @@ def dlg_opt_editor_wr(title, keys_info=None
             trgt_l  = []
             trgt_n  = None
             for all_b in (False, True):
+#               trgt_l  = ['lexer '+lxr+'.json' 
+#                           for lxr in app.lexer_proc(app.LEXER_GET_LIST, '').splitlines() 
+#                           if app.lexer_proc(app.LEXER_GET_ENABLED, lxr) and 
+#                           (all_b or os.path.isfile(app.app_path(app.APP_DIR_SETTINGS)+os.sep+'lexer '+lxr+'.json'))
+#                         ]
                 trgt_l  = ['lexer '+lxr+'.json' 
-                            for lxr in app.lexer_proc(app.LEXER_GET_LIST, '').splitlines() 
-                            if app.lexer_proc(app.LEXER_GET_ENABLED, lxr) and 
-                            (all_b or os.path.isfile(app.app_path(app.APP_DIR_SETTINGS)+os.sep+'lexer '+lxr+'.json'))
+                            for lxr in app.lexer_proc(app.LEXER_GET_LEXERS, False) #only shown lexers
+                            if (all_b or os.path.isfile(app.app_path(app.APP_DIR_SETTINGS)+os.sep+'lexer '+lxr+'.json'))
                           ]
                 trgt_l  = ['user.json'] + trgt_l
                 trgt_n  = app.dlg_menu(app.MENU_LIST

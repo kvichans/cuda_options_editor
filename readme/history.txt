@@ -1,3 +1,6 @@
+1.1.23 (2017-11-17)
+fixed: lexer list
+
 1.1.22 (2017-06-23)
 added: hotkey format of value, choose by dlg_hotkey
 
