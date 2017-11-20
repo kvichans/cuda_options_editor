@@ -2,7 +2,7 @@
 Authors:
     Andrey Kvichansky    (kvichans on github.com)
 Version:
-    '1.1.23 2017-11-17'
+    '1.1.24 2017-11-20'
 ToDo: (see end of file)
 '''
 
@@ -197,7 +197,8 @@ def dlg_opt_editor_wr(title, keys_info=None
         fl_kfsvt= [ (knm
                     ,fdcv['f']
                     ,'*' if fdcv['d']!=fdcv['v'] else ''
-                    ,fdcv['v']
+#                   ,fdcv['v']
+                    ,fdcv['v'] if type(fdcv['v'])!=bool else str(fdcv['v']).lower()
                     ,fdcv['t']
                     ,f('{}: ',fdcv['a'])                if chap_l and chap_n==0 and fdcv['a'] else ''
                     ,f(' (#{})',', #'.join(fdcv['g']))  if tags_l and               fdcv['g'] else ''
@@ -411,8 +412,9 @@ def dlg_opt_editor_wr(title, keys_info=None
             # Update json file
             apx.set_opt(key_sel, dvl_sel)
             ed.cmd(cmds.cmd_OpsReloadAndApply)
-            app.msg_status( f(_('Change in {}: "{}": {} (default value)'), trgt_s, key_sel, repr(dvl_sel)))
-            print(          f(_('Change in {}: "{}": {} (default value)'), trgt_s, key_sel, repr(dvl_sel)))
+            dvl_sel_s = repr(dvl_sel) if type(dvl_sel)!=bool else str(dvl_sel).lower()
+            app.msg_status( f(_('Change in {}: "{}": {} (default value)'), trgt_s, key_sel, dvl_sel_s))
+            print(          f(_('Change in {}: "{}": {} (default value)'), trgt_s, key_sel, dvl_sel_s))
         if aid in ('edch', 'eded', 'edcb', 'setv', 'brow'):
             # Changed value
             old_val = k2fdcvt[key_sel]['v']
@@ -463,8 +465,9 @@ def dlg_opt_editor_wr(title, keys_info=None
                         opts[key_sel]   = new_val
                     open(opts_json,'w').write(json.dumps(opts, indent=2))
                 ed.cmd(cmds.cmd_OpsReloadAndApply)
-                app.msg_status( f(_('Change in {}: "{}": {}'), trgt_s, key_sel, repr(new_val)))
-                print(          f(_('Change in {}: "{}": {}'), trgt_s, key_sel, repr(new_val)))
+                new_val_s = repr(new_val) if type(new_val)!=bool else str(new_val).lower()
+                app.msg_status( f(_('Change in {}: "{}": {}'), trgt_s, key_sel, new_val_s))
+                print(          f(_('Change in {}: "{}": {}'), trgt_s, key_sel, new_val_s))
             
         if aid=='rprt':
             htm_file = os.path.join(tempfile.gettempdir(), 'CudaText_option_report.html')
