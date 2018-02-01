@@ -2,7 +2,7 @@
 Authors:
     Andrey Kvichansky    (kvichans on github.com)
 Version:
-    '1.3.02 2017-05-02'
+    '1.3.03 2018-02-01'
 Content
     log                 Logger with timing
     get_translation     i18n
@@ -10,7 +10,7 @@ Content
 ToDo: (see end of file)
 '''
 
-import  sys, os, gettext, logging, inspect, time, collections, json
+import  sys, os, gettext, logging, inspect, time, collections, json, re, subprocess
 from    time        import perf_counter
 
 try:
@@ -255,7 +255,7 @@ def is_running(process):
     except: #Windows
         s = subprocess.Popen(["tasklist", "/v"],stdout=subprocess.PIPE)
     for x in s.stdout:
-        if re.search(process, x):
+        if re.search(process, str(x)):
             return True
     return False
 
