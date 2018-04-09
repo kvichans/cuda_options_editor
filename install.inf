@@ -10,3 +10,9 @@ section=commands
 caption=Options Editor...
 method=dlg_cuda_opts
 ;menu=0
+
+[item20]
+section=commands
+caption=Editor for options...
+method=dlg_cuda_options
+;menu=0
