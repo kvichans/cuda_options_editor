@@ -560,7 +560,7 @@ class OptEdD:
         ,   vals =m.get_vals()
         ,   fid  ='cond'
                                 ,options = {
-                                   #'gen_repro_to_file':'repro_dlg_opted.py'    #NOTE: repro
+                                    'gen_repro_to_file':'repro_dlg_opted.py'    #NOTE: repro
                                 }
         )
         m.ag.show(when_exit)
@@ -718,7 +718,7 @@ class OptEdD:
         cnts    = [0                                                                                                #
     # Hidden buttons                                                                                                                     
  ,('flt-',d(tp='bt' ,t=0        ,l=000          ,w=000      ,cap='&l'               ,sto=False                                  ))  # &l
- ,('fltr',d(tp='bt' ,t=0        ,l=000          ,w=000      ,cap=''                 ,sto=False  ,def_bt='1'                     ))  
+ ,('fltr',d(tp='bt' ,t=0        ,l=000          ,w=000      ,cap=''                 ,sto=False  ,def_bt='1'                     ))  # Enter
  ,('srt0',d(tp='bt' ,t=0        ,l=000          ,w=000      ,cap='&1'               ,sto=False                                  ))  # &1
  ,('srt1',d(tp='bt' ,t=0        ,l=000          ,w=000      ,cap='&2'               ,sto=False                                  ))  # &2
  ,('srt2',d(tp='bt' ,t=0        ,l=000          ,w=000      ,cap='&3'               ,sto=False                                  ))  # &3
@@ -728,34 +728,33 @@ class OptEdD:
  ,('cws-',d(tp='bt' ,t=0        ,l=000          ,w=000      ,cap='&W'               ,sto=False                                  ))  # &w
  ,('help',d(tp='bt' ,t=0        ,l=0            ,w=0        ,cap='&H'               ,sto=False                                  ))  # &h
     # Top-panel                                                                                                                      
- ,('ptop',d(tp='pn'     ,h=270 ,w=m.dlg_w  
-                    ,min_h=270 ,align=app.ALIGN_CLIENT                                                      ))
+ ,('ptop',d(tp='pn' ,h=    270 ,w=m.dlg_w                   ,ali=ALI_CL
+                    ,h_min=270                                                                                                          ))
     # Menu                                                                                                                      
- ,('menu',d(tp='bt' ,tid='cond'                 ,w=25       ,p='ptop'   ,cap='&+'                                              ,_a='LR'   
-                                                                                                                                ,a_l=None,a_r=('', ']'),sp_r=5     ))  # &+
+ ,('menu',d(tp='bt' ,tid='cond' ,l=m.dlg_w-25-5 ,w=25       ,p='ptop'   ,cap='&+'                                              ,a='LR'  ))  # &+
     # Filter                                                                                                                            
- ,('flt_',d(tp='lb' ,tid='cond' ,l=  5          ,w= 60      ,p='ptop'   ,cap=_('>&Filter:')     ,hint=M.FLTR_H                              ))  # &f
- ,('cond',d(tp='cb' ,t=  5      ,l= 70          ,w=200      ,p='ptop'   ,items=m.cond_hl                                                    ))  #
+ ,('flt_',d(tp='lb' ,tid='cond' ,l=  5          ,w= 60      ,p='ptop'   ,cap=_('>&Filter:')     ,hint=M.FLTR_H                          ))  # &f
+ ,('cond',d(tp='cb' ,t=  5      ,l= 70          ,w=200      ,p='ptop'   ,items=m.cond_hl                                                ))  #
     # Table of keys+values                                                                                                              
- ,('lvls',d(tp='lvw',t=35       ,l=5 ,h=160     ,r=m.dlg_w-5,p='ptop'   ,items=m.itms,cols=m.cols   ,grid='1'                  ,a='tBlR'   ))  #
+ ,('lvls',d(tp='lvw',t=35       ,l=5 ,h=160     ,r=m.dlg_w-5,p='ptop'   ,items=m.itms,cols=m.cols   ,grid='1'                  ,a='tBlR'))  #
     # Editors for value                                                                                                                 
- ,('ed__',d(tp='lb' ,t=210      ,l=  5          ,w=110      ,p='ptop'   ,cap=_('>&Value:')                                     ,a='TB'     ))  # &v 
- ,('eded',d(tp='ed' ,tid='ed__' ,l=120  ,r=m.dlg_w-220      ,p='ptop'               ,vis=vis['eded'],en=ens['eded']            ,a='TBlR'               ))  #
- ,('edcb',d(tp='cbr',tid='ed__' ,l=120  ,r=m.dlg_w-220      ,p='ptop'   ,items=its['edcb']      ,vis=vis['edcb']               ,a='TBlR'   ))  #
- ,('edrf',d(tp='rd' ,tid='ed__' ,l=120          ,w= 60      ,p='ptop'   ,cap=_('f&alse')        ,vis=vis['edrf']               ,a='TB'     ))  # &a
- ,('edrt',d(tp='rd' ,tid='ed__' ,l=180          ,w= 60      ,p='ptop'   ,cap=_('tru&e')         ,vis=vis['edrt']               ,a='TB'     ))  # &e
- ,('brow',d(tp='bt' ,tid='ed__' ,l=m.dlg_w-220  ,w= 70      ,p='ptop'   ,cap=_('&...')          ,vis=vis['brow']               ,a='TBLR'   ))  # &.
+ ,('ed__',d(tp='lb' ,t=210      ,l=  5          ,w=110      ,p='ptop'   ,cap=_('>&Value:')                                     ,a='TB'  ))  # &v 
+ ,('eded',d(tp='ed' ,tid='ed__' ,l=120  ,r=m.dlg_w-220      ,p='ptop'                           ,vis=vis['eded'],en=ens['eded'],a='TBlR'))  #
+ ,('edcb',d(tp='cbr',tid='ed__' ,l=120  ,r=m.dlg_w-220      ,p='ptop'   ,items=its['edcb']      ,vis=vis['edcb']               ,a='TBlR'))  #
+ ,('edrf',d(tp='rd' ,tid='ed__' ,l=120          ,w= 60      ,p='ptop'   ,cap=_('f&alse')        ,vis=vis['edrf']               ,a='TB'  ))  # &a
+ ,('edrt',d(tp='rd' ,tid='ed__' ,l=180          ,w= 60      ,p='ptop'   ,cap=_('tru&e')         ,vis=vis['edrt']               ,a='TB'  ))  # &e
+ ,('brow',d(tp='bt' ,tid='ed__' ,l=m.dlg_w-220  ,w= 70      ,p='ptop'   ,cap=_('&...')          ,vis=vis['brow']               ,a='TBLR'))  # &.
     # View def-value                                                                                                                    
- ,('dfv_',d(tp='lb' ,tid='dfvl' ,l=  5          ,w=110      ,p='ptop'   ,cap=_('>Default val&ue:')                             ,a='TB'     ))  # &u
- ,('dfvl',d(tp='ed' ,t=235      ,l=120  ,r=m.dlg_w-220      ,p='ptop'   ,ro_mono_brd='1,0,1'                                   ,a='TBlR'   ))  #
- ,('setd',d(tp='bt' ,tid='dfvl' ,l=m.dlg_w-220  ,w= 70      ,p='ptop'   ,cap=_('Rese&t')                        ,en=ens['setd'],a='TBLR'   ))  # &t
+ ,('dfv_',d(tp='lb' ,tid='dfvl' ,l=  5          ,w=110      ,p='ptop'   ,cap=_('>Default val&ue:')                             ,a='TB'  ))  # &u
+ ,('dfvl',d(tp='ed' ,t=235      ,l=120  ,r=m.dlg_w-220      ,p='ptop'   ,ro_mono_brd='1,0,1'                                   ,a='TBlR'))  #
+ ,('setd',d(tp='bt' ,tid='dfvl' ,l=m.dlg_w-220  ,w= 70      ,p='ptop'   ,cap=_('Rese&t')                        ,en=ens['setd'],a='TBLR'))  # &t
     # For lexer                                                                                                                         
- ,('edlx',d(tp='ch' ,tid='ed__' ,l=m.dlg_w-125  ,w= 90      ,p='ptop'   ,cap=_('For Le&xer')                                   ,a='TBLR'   ))  # &x
- ,('lexr',d(tp='cbr',tid='dfvl' ,l=m.dlg_w-125  ,w=120      ,p='ptop'   ,items=m.lexr_w_l                                      ,a='TBLR'   ))
+ ,('edlx',d(tp='ch' ,tid='ed__' ,l=m.dlg_w-125  ,w= 90      ,p='ptop'   ,cap=_('For Le&xer')                                   ,a='TBLR'))  # &x
+ ,('lexr',d(tp='cbr',tid='dfvl' ,l=m.dlg_w-125  ,w=120      ,p='ptop'   ,items=m.lexr_w_l                                      ,a='TBLR'))
     # Comment                                                                                                                           
- ,('cmsp',d(tp='sp' ,y=cmnt_t-5 ,h=2                        ,align=app.ALIGN_BOTTOM ,sp_l=5,sp_r=5                           ))
- ,('cmnt',d(tp='me' ,t=cmnt_t   ,_l=5   ,h=m.h_cmnt 
-                                    ,min_h=M.CMNT_MHT       ,align=app.ALIGN_BOTTOM ,sp_l=5,sp_r=5,sp_b=5       ,ro_mono_brd='1,1,1'     ))  # &h
+ ,('cmnt',d(tp='me' ,t=cmnt_t   ,h=    m.h_cmnt 
+                                ,h_min=M.CMNT_MHT           ,ali=ALI_BT,sp_lrb=5       ,ro_mono_brd='1,1,1'    ))  # &h
+ ,('cmsp',d(tp='sp' ,y=cmnt_t-5                             ,ali=ALI_BT,sp_lr=5                                      ))
                 ][1:]
         cnts    = odict(cnts)
         cnts['menu']['call']            = m.do_menu

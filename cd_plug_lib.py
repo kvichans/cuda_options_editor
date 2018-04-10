@@ -915,7 +915,7 @@ class BaseDlgAgent:
                         , DLG_CTL_ADD_SET
                         , name=cfg_ctrl['type']
                         , prop=self._prepare_c_pr(name, cfg_ctrl))
-            pass;               cfg_ctrl['_idc']    = ind_c         # While API bug: name isnot work if contorl is in panel
+            pass;              #cfg_ctrl['_idc']    = ind_c         # While API bug: name isnot work if contorl is in panel
             pass;              #log('ind_c,cfg_ctrl[type]={}',(ind_c,cfg_ctrl['type']))
            #for cnt
         
@@ -1156,8 +1156,8 @@ class BaseDlgAgent:
     def _gen_repro_code(self, rerpo_fn):
         # Repro-code
         l       = '\n'
-        cattrs  = [  ('type', 'name', 'tag')
-                    ,('x', 'y', 'w', 'h', 'cap', 'hint', 'p')
+        cattrs  = [  ('type', 'name', 'tag', 'act')
+                    ,('x', 'y', 'w', 'h', 'w_min', 'h_min', 'w_max', 'h_max', 'cap', 'hint', 'p')
                     ,('en', 'vis', 'focused', 'tab_stop', 'tab_order'
                      ,'props', 'ex0', 'ex1', 'ex2', 'ex3', 'ex4', 'ex5', 'ex6', 'ex7', 'ex8', 'ex9'
                      ,'sp_l', 'sp_r', 'sp_t', 'sp_b', 'sp_a', 'a_l', 'a_r', 'a_t', 'a_b', 'align')
@@ -1187,11 +1187,12 @@ class BaseDlgAgent:
             return out
         srp     =    ''
         srp    +=    'idd=dlg_proc(0, DLG_CREATE)'
-        pass;                   log('app.dlg_proc(self.id_dlg, app.DLG_CTL_COUNT)={}',(app.dlg_proc(self.id_dlg, app.DLG_CTL_COUNT)))
+        pass;                  #log('app.dlg_proc(self.id_dlg, app.DLG_CTL_COUNT)={}',(app.dlg_proc(self.id_dlg, app.DLG_CTL_COUNT)))
         for idC in range(app.dlg_proc(self.id_dlg, app.DLG_CTL_COUNT)):
             prC = dlg_proc_wpr(self.id_dlg, app.DLG_CTL_PROP_GET, index=idC)
             if ''==prC.get('hint', ''):                 prC.pop('hint', None)
             if ''==prC.get('tag', ''):                  prC.pop('tag', None)
+            if ''==prC.get('cap', ''):                  prC.pop('cap', None)
             if ''==prC.get('items', None):              prC.pop('items')
             if prC.get('tab_stop', None):               prC.pop('tab_stop')
             if prC['type'] in ('label',):               prC.pop('tab_stop', None)
@@ -1199,9 +1200,11 @@ class BaseDlgAgent:
                                                         ,prC.pop('tab_order', None))
             if prC['type'] not in ('listview'
                                   ,'checklistview'):    prC.pop('columns', None)
-            if prC['val'] in ('label'
-                             ,'bevel'
-                             ,'button'):                prC.pop('val', None)
+            if prC['type'] in ('label'
+                              ,'bevel'
+                              ,'button'):               prC.pop('val', None)
+            if prC['type'] in ('button'):               prC.pop('act', None)
+            if not prC.get('act', False):               prC.pop('act', None)
             if not prC.get('focused', False):           prC.pop('focused', None)
             if prC.get('vis', True):                    prC.pop('vis', None)
             if prC.get('en', True):                     prC.pop('en', None)
@@ -1210,6 +1213,7 @@ class BaseDlgAgent:
             c_pr = self._prepare_it_vl(c_pr, c_pr)
             prC.update({k:v for k,v in c_pr.items() if k not in ('callback','call')})
             srp+=l+f('idc=dlg_proc(idd, DLG_CTL_ADD,"{}")', prC['type'])
+            prC.pop('type', None)
             srp+=l+f('dlg_proc(idd, DLG_CTL_PROP_SET, index=idc, prop={})', out_attrs(prC, cattrs))
         prD     = dlg_proc_wpr(self.id_dlg, app.DLG_PROP_GET)
         prD.update(self.form)
@@ -1260,6 +1264,11 @@ class BaseDlgAgent:
     
    #class BaseDlgAgent
 
+ALI_CL  = app.ALIGN_CLIENT
+ALI_LF  = app.ALIGN_LEFT
+ALI_RT  = app.ALIGN_RIGHT
+ALI_TP  = app.ALIGN_TOP
+ALI_BT  = app.ALIGN_BOTTOM
 class DlgAgent(BaseDlgAgent):
     """ 
     Helper to use dlg_proc(). See wiki.freepascal.org/CudaText_API#dlg_proc
@@ -1447,7 +1456,7 @@ class DlgAgent(BaseDlgAgent):
                         , DLG_CTL_ADD_SET
                         , name=cfg_ctrl['type']
                         , prop=self._prepare_c_pr(cid, cfg_ctrl))
-            pass;               cfg_ctrl['_idc']    = ind_c         # While API bug: name isnot work if contorl is in panel
+            pass;              #cfg_ctrl['_idc']    = ind_c         # While API bug: name isnot work if contorl is in panel
            #for cnt
 
         # Resize callback
@@ -1656,9 +1665,9 @@ class DlgAgent(BaseDlgAgent):
                 trg_w,  \
                 trg_h   = prTrg['w'], prTrg['h']
             prOld   = dlg_proc_wpr(self.id_dlg, app.DLG_CTL_PROP_GET, name=cid)
-            pass;               prOld   = prOld if prOld else \
-                      dlg_proc_wpr(self.id_dlg, app.DLG_CTL_PROP_GET, index=self.ctrls[cid]['_idc'])    # While API bug: name isnot work if contorl is in panel
-#           pass;               log('cid,anc,prOld,trg_h={}',(cid,anc, {k:v for k,v in prOld.items() if k in ('x','y')},trg_h))
+            pass;              #prOld   = prOld if prOld else \
+                     #dlg_proc_wpr(self.id_dlg, app.DLG_CTL_PROP_GET, index=self.ctrls[cid]['_idc'])    # While API bug: name isnot work if contorl is in panel
+            pass;              #log('cid,anc,trg_w,trg_h,prOld={}',(cid,anc,trg_w,trg_h, {k:v for k,v in prOld.items() if k in ('x','y')}))
             prAnc   = {}
             if '-' in anc:
                 # Center by horz
@@ -1763,6 +1772,15 @@ class DlgAgent(BaseDlgAgent):
 
     @staticmethod
     def _preprocessor(cnt, tp):
+        if 'ali' in cnt:
+            cnt['align'] = cnt.pop('ali')
+        if 'sp_lr' in cnt:
+            cnt['sp_l'] = cnt['sp_r']               = cnt.pop('sp_lr')
+        if 'sp_lrt' in cnt:
+            cnt['sp_l'] = cnt['sp_r'] = cnt['sp_t'] = cnt.pop('sp_lrt')
+        if 'sp_lrb' in cnt:
+            cnt['sp_l'] = cnt['sp_r'] = cnt['sp_b'] = cnt.pop('sp_lrb')
+
         if 'sto' in cnt:
             cnt['tab_stop'] = cnt.pop('sto')
         if 'tor' in cnt:
