@@ -114,7 +114,9 @@ def parse_definitions(defn_path:Path)->list:
             if not os.path.isdir(from_dir):
                 log(_('No folder "{}" from\n{}'), from_short, cmnt)
             else:
-                lstF    = [d for d in os.listdir(from_dir) if os.path.isdir(from_dir+os.sep+d)]
+                lstF    = [d for d in os.listdir(from_dir) if os.path.isdir(from_dir+os.sep+d) and d.strip()]
+                lstF    = sorted(lstF)
+                pass;          #LOG and log('lstF={}',(lstF))
         frm,\
         lst = ('strs' , lstF)    if lstF else \
               (frm    , []  )
@@ -560,7 +562,7 @@ class OptEdD:
         ,   vals =m.get_vals()
         ,   fid  ='cond'
                                 ,options = {
-                                    'gen_repro_to_file':'repro_dlg_opted.py'    #NOTE: repro
+                                   #'gen_repro_to_file':'repro_dlg_opted.py'    #NOTE: repro
                                 }
         )
         m.ag.show(when_exit)
@@ -715,22 +717,22 @@ class OptEdD:
 
         # Full dlg controls info    #NOTE: cnts
         cmnt_t  = m.dlg_h-m.h_cmnt-5
-        cnts    = [0                                                                                                #
-    # Hidden buttons                                                                                                                     
- ,('flt-',d(tp='bt' ,t=0        ,l=000          ,w=000      ,cap='&l'               ,sto=False                                  ))  # &l
- ,('fltr',d(tp='bt' ,t=0        ,l=000          ,w=000      ,cap=''                 ,sto=False  ,def_bt='1'                     ))  # Enter
- ,('srt0',d(tp='bt' ,t=0        ,l=000          ,w=000      ,cap='&1'               ,sto=False                                  ))  # &1
- ,('srt1',d(tp='bt' ,t=0        ,l=000          ,w=000      ,cap='&2'               ,sto=False                                  ))  # &2
- ,('srt2',d(tp='bt' ,t=0        ,l=000          ,w=000      ,cap='&3'               ,sto=False                                  ))  # &3
- ,('srt3',d(tp='bt' ,t=0        ,l=000          ,w=000      ,cap='&4'               ,sto=False                                  ))  # &4
- ,('srt4',d(tp='bt' ,t=0        ,l=000          ,w=000      ,cap='&5'               ,sto=False                                  ))  # &5
- ,('srt5',d(tp='bt' ,t=0        ,l=000          ,w=000      ,cap='&6'               ,sto=False                                  ))  # &6
- ,('cws-',d(tp='bt' ,t=0        ,l=000          ,w=000      ,cap='&W'               ,sto=False                                  ))  # &w
- ,('help',d(tp='bt' ,t=0        ,l=0            ,w=0        ,cap='&H'               ,sto=False                                  ))  # &h
-    # Top-panel                                                                                                                      
- ,('ptop',d(tp='pn' ,h=    270 ,w=m.dlg_w                   ,ali=ALI_CL
+        cnts    = [0                                                                                                                        #
+    # Hidden buttons                                                                                                                    
+ ,('flt-',d(tp='bt' ,t=0        ,l=000          ,w=000      ,cap='&l'               ,sto=False                                          ))  # &l
+ ,('fltr',d(tp='bt' ,t=0        ,l=000          ,w=000      ,cap=''                 ,sto=False  ,def_bt='1'                             ))  # Enter
+ ,('srt0',d(tp='bt' ,t=0        ,l=000          ,w=000      ,cap='&1'               ,sto=False                                          ))  # &1
+ ,('srt1',d(tp='bt' ,t=0        ,l=000          ,w=000      ,cap='&2'               ,sto=False                                          ))  # &2
+ ,('srt2',d(tp='bt' ,t=0        ,l=000          ,w=000      ,cap='&3'               ,sto=False                                          ))  # &3
+ ,('srt3',d(tp='bt' ,t=0        ,l=000          ,w=000      ,cap='&4'               ,sto=False                                          ))  # &4
+ ,('srt4',d(tp='bt' ,t=0        ,l=000          ,w=000      ,cap='&5'               ,sto=False                                          ))  # &5
+ ,('srt5',d(tp='bt' ,t=0        ,l=000          ,w=000      ,cap='&6'               ,sto=False                                          ))  # &6
+ ,('cws-',d(tp='bt' ,t=0        ,l=000          ,w=000      ,cap='&W'               ,sto=False                                          ))  # &w
+ ,('help',d(tp='bt' ,t=0        ,l=0            ,w=0        ,cap='&H'               ,sto=False                                          ))  # &h
+    # Top-panel                                                                                                                         
+ ,('ptop',d(tp='pn' ,h=    270 ,w=m.dlg_w                   ,ali=ALI_CL                                                                 
                     ,h_min=270                                                                                                          ))
-    # Menu                                                                                                                      
+    # Menu                                                                                                                              
  ,('menu',d(tp='bt' ,tid='cond' ,l=m.dlg_w-25-5 ,w=25       ,p='ptop'   ,cap='&+'                                              ,a='LR'  ))  # &+
     # Filter                                                                                                                            
  ,('flt_',d(tp='lb' ,tid='cond' ,l=  5          ,w= 60      ,p='ptop'   ,cap=_('>&Filter:')     ,hint=M.FLTR_H                          ))  # &f
@@ -752,15 +754,14 @@ class OptEdD:
  ,('edlx',d(tp='ch' ,tid='ed__' ,l=m.dlg_w-125  ,w= 90      ,p='ptop'   ,cap=_('For Le&xer')                                   ,a='TBLR'))  # &x
  ,('lexr',d(tp='cbr',tid='dfvl' ,l=m.dlg_w-125  ,w=120      ,p='ptop'   ,items=m.lexr_w_l                                      ,a='TBLR'))
     # Comment                                                                                                                           
- ,('cmnt',d(tp='me' ,t=cmnt_t   ,h=    m.h_cmnt 
-                                ,h_min=M.CMNT_MHT           ,ali=ALI_BT,sp_lrb=5       ,ro_mono_brd='1,1,1'    ))  # &h
- ,('cmsp',d(tp='sp' ,y=cmnt_t-5                             ,ali=ALI_BT,sp_lr=5                                      ))
+ ,('cmnt',d(tp='me' ,t=cmnt_t   ,h=    m.h_cmnt                                                                                         
+                                ,h_min=M.CMNT_MHT           ,ali=ALI_BT,sp_lrb=5       ,ro_mono_brd='1,1,1'                             ))
+ ,('cmsp',d(tp='sp' ,y=cmnt_t-5                             ,ali=ALI_BT,sp_lr=5                                                         ))
                 ][1:]
         cnts    = odict(cnts)
         cnts['menu']['call']            = m.do_menu
         cnts['flt-']['call']            = m.do_fltr
         cnts['fltr']['call']            = m.do_fltr
-#       cnts['cond']['call']            = m.do_fltr
         cnts['lexr']['call']            = m.do_lexr
         cnts['edlx']['call']            = m.do_lexr
         cnts['lvls']['call']            = m.do_sele
@@ -779,7 +780,6 @@ class OptEdD:
         cnts['edrf']['call']            = m.do_setv
         cnts['edrt']['call']            = m.do_setv
         cnts['brow']['call']            = m.do_setv
-#       cnts['setv']['call']            = m.do_setv
         cnts['help']['call']            = m.do_help
         return cnts
        #def get_cnts
@@ -984,7 +984,7 @@ class OptEdD:
         M,m,d   = OptEdD,self,dict
         m.col_ws= [ci['wd'] for ci in m.ag.cattr('lvls', 'cols')]
         fid     = ag.fattr('fid')
-        pass;                   LOG and log('aid,fid={}',(aid,fid))
+        pass;                  #LOG and log('aid,fid={}',(aid,fid))
         if aid=='fltr' and fid in ('dfvl', 'eded', 'edrf', 'edrt'):
             # Imitate default button
             return m.do_setv('setd' if fid in ('dfvl',)         else
@@ -1876,7 +1876,11 @@ def parse_raw_keys_info(path_to_raw):
             if not os.path.isdir(from_dir):
                 log(_('No folder "{}" from\n{}'), from_short, cmnt)
             else:
-                dctF    = {d:d for d in os.listdir(from_dir) if os.path.isdir(from_dir+os.sep+d)}
+                dirs    = [d for d in os.listdir(from_dir) if os.path.isdir(from_dir+os.sep+d) and d.strip()]
+                dirs    = sorted(dirs)
+                dctF    = odict([(d,d) for d in dirs])
+#               dctF    = {d:d for d in os.listdir(from_dir) if os.path.isdir(from_dir+os.sep+d)}
+                pass;          #LOG and log('dctF={}',(dctF))
         frm,\
         dct = ('enum_i', dctN)    if dctN else \
               ('enum_s', dctS)    if dctS else \
