@@ -64,6 +64,7 @@ REDUCTIONS  = {'lb'     :'label'
             ,  'gr'     :'group'
             ,  'tvw'    :'treeview'
             ,  'sp'     :'splitter'
+            ,  'sb'     :'statusbar'
             
 #           ,  'fid'    :'focused'
             ,  'cols'   :'columns'
@@ -805,7 +806,18 @@ class BaseDlgAgent:
         BaseDlgAgent._form_acts('save', id_dlg=self.id_dlg, key4store=self.opts.get('form data key'))
         if callbk_on_exit:  callbk_on_exit(self)
         dlg_proc_wpr(self.id_dlg, app.DLG_FREE)
-        ed_caller.focus()
+        
+        ed_to_fcs   = ed_caller \
+                        if 'on_exit_focus_to_ed' not in self.opts else \
+                      self.opts['on_exit_focus_to_ed']
+        pass;                  #log('self.opts={}',(self.opts))
+        pass;                  #log('ed_to_fcs.get_filename()={}',(ed_to_fcs.get_filename()))
+        if ed_to_fcs:
+            ed_to_fcs.focus()
+#           pass;               log('self.opts={}',(self.opts))
+#           self.opts['on_exit_focus_to_ed'].focus()
+#       else:
+#           ed_caller.focus()
        #def show
         
     def fattr(self, attr, live=True, defv=None):
@@ -2265,6 +2277,16 @@ def deep_upd(dcts):
 
 def isint(what):    return isinstance(what, int)
    
+def ed_of_file_open(op_file):
+    if not app.file_open(op_file):
+        return None
+    for h in app.ed_handles(): 
+        op_ed   = app.Editor(h)
+        if op_ed.get_filename() and os.path.samefile(op_file, op_ed.get_filename()):
+            return op_ed
+    return None
+   #def ed_of_file_open
+
 _   = get_translation(__file__) # I18N
 
 if __name__ == '__main__' :     # Tests

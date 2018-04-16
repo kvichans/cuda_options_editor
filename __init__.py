@@ -1,1 +1,1 @@
-from .cd_opts_dlg import Command, dlg_opt_editor
+from .cd_opts_dlg import Command, dlg_opt_editor, OptEdD

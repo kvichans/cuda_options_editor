@@ -6,7 +6,7 @@ Version:
 ToDo: (see end of file)
 '''
 
-import  re, os, sys, json, collections, webbrowser, tempfile, html, pickle
+import  re, os, sys, json, collections, webbrowser, tempfile, html, pickle, time
 from    itertools       import *
 from pathlib import PurePath as PPath
 from pathlib import     Path as  Path
@@ -30,6 +30,8 @@ class odict(collections.OrderedDict):
 pass;                           LOG     = (-1==-1)          # Do or dont logging.
 pass;                           from pprint import pformat
 pass;                           pf=lambda d:pformat(d,width=150)
+pass;                           pf80=lambda d:pformat(d,width=80)
+pass;                           pf60=lambda d:pformat(d,width=60)
 pass;                           ##!! waits correction
 
 _   = get_translation(__file__) # I18N
@@ -45,12 +47,12 @@ MAX_HIST    = apx.get_opt('ui_max_history_edits', 20)
 CFG_JSON    = app.app_path(app.APP_DIR_SETTINGS)+os.sep+'cuda_options_editor.json'
 HTM_RPT_FILE= str(Path(tempfile.gettempdir()) / 'CudaText_option_report.html')
 
-def parse_definitions(defn_path:Path)->list:
+def load_definitions(defn_path:Path)->list:
     """ Return  
             [{  opt:'opt name'
             ,   def:<def val>
             ,   cmt:'full comment'
-            ,   frm:'bool'|'float'|'int'|'int2s'|'str'|'strs'|'str2s'|'font'|'hotk'|'json'      |'unk'
+            ,   frm:'bool'|'float'|'int'|'int2s'|'str'|'strs'|'str2s'|'font'|'hotk'|'file'|'json'      |'unk'
             ,   lst:[str]       for frm==ints
             ,   dct:[(num,str)] for frm==int2s
             ,       [(str,str)] for frm==str2s
@@ -63,17 +65,17 @@ def parse_definitions(defn_path:Path)->list:
     lines   = defn_path.open(encoding='utf8').readlines()
     if lines[0][0]=='[':
         # Data is ready - SKIP parsing
-        return json.loads(defn_path.open().read(), object_pairs_hook=odict)
+        kinfs   = json.loads(defn_path.open(encoding='utf8').read(), object_pairs_hook=odict)
+        for kinf in kinfs:
+            pass;              #LOG and log('opt in kinf={}',('opt' in kinf))
+            if isinstance(kinf['cmt'], list):
+                kinf['cmt'] = '\n'.join(kinf['cmt'])
 
-#   if 'debug'=='debug':        lines = ['  //[FindHotkeys]'
-#                                       ,'  //Hotkeys in Find/Replace dialog'
-#                                       ,'  "find_hotkey_find_first": "Alt+Enter",'
-#                                       ,'  "find_hotkey_replace": "Alt+Z",'
-#                                       ,'  "find_hotkey_find_dlg": "Ctrl+F",'
-#                                       ,'  '
-#                                       ,'  //UI elements font name [has suffix]'
-#                                       ,'  "ui_font_name": "default",'
-#                                       ]
+        upd_cald_vals(kinfs, '+def')
+        for kinf in kinfs:
+            kinf['jdc'] = kinf.get('jdc', kinf.get('dct', []))
+            kinf['jdf'] = kinf.get('jdf', kinf.get('def', ''))
+        return kinfs
 
     l       = '\n'
     
@@ -202,11 +204,11 @@ def parse_definitions(defn_path:Path)->list:
         kinf['jdc'] = kinf.get('jdc', kinf.get('dct', []))
         kinf['jdf'] = kinf.get('jdf', kinf.get('def', ''))
     return kinfs
-   #def parse_definitions
+   #def load_definitions
 
 def load_vals(opt_dfns:list, lexr_json='', full=False)->odict:
     """ Create reformated copy (as odict) of 
-            definitions data opt_dfns (see parse_definitions) 
+            definitions data opt_dfns (see load_definitions) 
         If full==True then append optitions without definition
             but only with 
             {   opt:'opt name'
@@ -230,11 +232,12 @@ def load_vals(opt_dfns:list, lexr_json='', full=False)->odict:
     if lexr_json and os.path.isfile(lexr_json):
         lexr_vals   = apx._json_loads(open(lexr_json, encoding='utf8').read(), object_pairs_hook=odict)
     else:
-        pass;                   LOG and log('no lexr_json={}',(lexr_json))
+        pass;                  #LOG and log('no lexr_json={}',(lexr_json))
     edit_vals       = get_ovrd_ed_opts(ed)
     pass;                      #LOG and log('lexr_vals={}',(lexr_vals))
 
     # Fill vals for defined opt
+    pass;                      #LOG and log('no opt={}',([oi for oi in opt_dfns if 'opt' not in oi]))
     oinf_valed  = odict([(oi['opt'], oi) for oi in opt_dfns])
     for opt, oinf in oinf_valed.items():
         if opt in user_vals:        # Found user-val for defined opt
@@ -340,7 +343,18 @@ class OptEdD:
     COL_MWS = [70, 150, 25, 120, 120, 70]   # Min col widths
     COL_N   = len(COL_MWS)
     CMNT_MHT= 60                            # Min height of Comment
+    STBR_FLT= 10
+    STBR_ALL= 11
+    STBR_MSG= 12
+    STBR_H  = apx.get_opt('ui_statusbar_height',24)
 
+    FONT_L  = ['default'] \
+            + [font 
+                for font in app.app_proc(app.PROC_ENUM_FONTS, '')
+                if not font.startswith('@')] 
+    FILTER_C= _('&Filter')
+    NO_CHAP = _('_no_')
+    CHPS_H  = f(_('Choose section to append in "{}"'), FILTER_C).replace('&', '')
     FLTR_H  = _('Suitable options will contain all specified words.'
               '\r Tips and tricks:'
               '\r • Add "#" to search the words also in comments'
@@ -354,20 +368,14 @@ class OptEdD:
               '\r     Pure "!!" shows all assigned lexer options.'
               '\r • Add "@smth" to show only sections with "smth"'
               '\r • Alt+L - Clear filter')
-    FONT_L  = ['default'] \
-            + [font 
-                for font in app.app_proc(app.PROC_ENUM_FONTS, '')
-                if not font.startswith('@')] 
 
     
     def __init__(self
-        , keys_info=None                    # Ready data
-        , path_raw_keys_info=''             # default.json
-        , path_svd_keys_info=''             # To save parsed default.json
+        , path_keys_info    =''             # default.json or parsed data
         , subset=''                         # To get/set from/to cuda_options_editor.json
         ):
         M,m         = OptEdD,self
-        m.defn_path = Path(path_raw_keys_info)
+        m.defn_path = Path(path_keys_info)
         m.subset    = subset
         m.stores    = json.loads(open(CFG_JSON).read(), object_pairs_hook=odict) \
                         if os.path.exists(CFG_JSON) and os.path.getsize(CFG_JSON) != 0 else \
@@ -384,42 +392,123 @@ class OptEdD:
         m.h_cmnt    = m.stores.get(m.subset+'cmnt_heght', M.CMNT_MHT)
         m.sort      = m.stores.get(m.subset+'sort'      , (-1, True))   # Def sort is no sort
         m.cond_hl   = [s for s in m.stores.get(m.subset+'h.cond', []) if s]
-        m.cond_s      = ''
+        m.cond_s    = ''    # String filter
+        m.ops_only  = []        # Subset to show (future)
         
         m.lexr      = m.stores.get(m.subset+'lxr'       , ed.get_prop(app.PROP_LEXER_CARET))
-        m.all_ops   = 0==1      # Show also options without definition
+        m.all_ops   = m.stores.get(m.subset+'all_ops'   , False)        # Show also options without definition
+
         m.opts_defn = {}        # Meta-info for options: format, comment, dict of values, chapter, tags
         m.opts_full = {}        # Show all options
+        m.chp_tree  = {}        # {'Ui':{ops:[], 'kids':{...}, 'path':'Ui/Tabs'}
+        m.pth2chp   = {}        # path-index for m.chp_tree
+
         # Cache
         m.SKWULs    = []        # Last filtered+sorted
         m.cols      = []        # Last info about listview columns
         m.itms      = []        # Last info about listview cells
         
-        m.bk_files  = {}
+#       m.bk_files  = {}
 #       m.do_file('backup-user')    if m.bk_sets else 0
+        
+        m.cur_op    = ''        # Name of current option
         m.do_file('load-data')
         
         m.in_lexr   = False
-        m.cur_in    = 0
-        m.cur_op    = list(m.opts_full.keys())[0]
-#       m.cur_op    = ''        # Name of current option
+        m.cur_op    = list(m.opts_full.keys())[0] if m.opts_full else ''    # First at start
+        m.cur_in    = 0 if m.cur_op else -1
+        
+        m.stbr      = None
        #def __init__
     
+    def stbr_act(self, tag=None, val='', opts={}):
+        M,m = OptEdD,self
+        if not m.stbr:  return 
+        app.statusbar_proc(m.stbr, app.STATUSBAR_SET_CELL_TEXT, tag=tag, value=str(val))
+       #def stbr_act
+    
     def do_file(self, what, data='', opts={}):
-        M,m,d   = OptEdD,self,dict
+        M,m = OptEdD,self
         if False:pass
         elif what=='load-data':
             pass;              #LOG and log('',)
-            m.opts_defn = parse_definitions(m.defn_path)
-#           pass;               LOG and log('m.opts_defn={}',pf([o for o in m.opts_defn]))
+            m.opts_defn = load_definitions(m.defn_path)
+            pass;              #LOG and log('m.opts_defn={}',pf([o for o in m.opts_defn]))
             pass;              #LOG and log('m.opts_defn={}',pf([o for o in m.opts_defn if '2s' in o['frm']]))
             m.opts_full = load_vals(m.opts_defn, 'lexer '+m.lexr+'.json', m.all_ops)
+            m.cur_op    = m.cur_op if m.cur_op in m.opts_full else ''
             pass;              #LOG and log('m.opts_full={}',pf(m.opts_full))
+            m.do_file('build-chp-tree')
         
-        elif what=='set-dfns':
-            m.defn_path = data
-            m.do_file('load-data')
-            return d(ctrls=odict(m.get_cnts('lvls')))
+        elif what=='build-chp-tree':
+            # Build chapter tree
+            m.chp_tree  = odict(ops=list(m.opts_full.keys())
+                               ,kids=odict()
+                               ,path='')  # {chp:{ops:[], kids:{...}, path:'c1/c2'}
+            m.pth2chp   = {}                                    # {path:chp}
+            for op,oi in m.opts_full.items():
+                chp_s   = oi.get('chp', M.NO_CHAP)
+                chp_s   = chp_s if chp_s else M.NO_CHAP
+                chp_node= m.chp_tree                            # Start root to move
+                kids    = chp_node['kids']
+                path    =''
+                for chp in chp_s.split('/'):
+                    # Move along branch and create nodes if need
+                    chp_node    = kids.setdefault(chp, odict())
+                    path       += ('/'+chp) if path else chp
+                    chp_node['path']= path
+                    m.pth2chp[path] = chp_node
+                    ops_l       = chp_node.setdefault('ops', [])
+                    ops_l      += [op]
+                    if not ('/'+chp_s).endswith('/'+chp):   # not last
+                        kids    = chp_node.setdefault('kids', odict())
+            pass;              #LOG and log('m.chp_tree=¶{}',pf60(m.chp_tree))
+            pass;              #LOG and log('m.pth2chp=¶{}',pf60(m.pth2chp))
+        
+        elif what in ('locate-def', 'locate-opt'):
+            if not m.cur_op:
+                return m.stbr_act(M.STBR_MSG, _('Select option to locate'))
+            oi      = m.opts_full[m.cur_op]
+            pass;              #LOG and log('m.cur_op,oi={}',(m.cur_op,oi))
+            to_open = ''
+            if what=='locate-opt':
+                if 'uval' not in oi and not m.in_lexr:
+                    return m.stbr_act(M.STBR_MSG, f(_('No user value for option "{}"'), m.cur_op))
+                if 'lval' not in oi and     m.in_lexr:
+                    return m.stbr_act(M.STBR_MSG, f(_('No lexer "{}" value for option "{}"'), m.lexr, m.cur_op))
+                to_open = 'lexer '+m.lexr+'.json'   if m.in_lexr else 'user.json'
+                to_open = app.app_path(app.APP_DIR_SETTINGS)+os.sep+to_open
+            else:
+                if 'def' not in oi:
+                    return m.stbr_act(M.STBR_MSG, f(_('No definition for option "{}"'), m.cur_op))
+                to_open = str(m.defn_path)
+            if not os.path.exists(to_open):
+                return log('No file={}',(to_open))
+            app.file_open(to_open)      ##!!
+            app.app_idle()
+            time.sleep(0.3)
+            pass;               log('to_open={}',(to_open))
+            pass;               log('ed.get_filename()={}',(ed.get_filename()))
+#           ed_to_fcs   = m.ag.opts['on_exit_focus_to_ed'] = ed_of_file_open(to_open)
+#           ed_to_fcs.focus()
+            # Locate
+            user_opt= app.app_proc(app.PROC_GET_FIND_OPTIONS, '')
+            find_s  = f('"{}"', m.cur_op)
+#           pass;               log('ed_to_fcs.get_filename()={}',(ed_to_fcs.get_filename()))
+#           pass;               log('ed.get_filename()={}',(ed.get_filename()))
+            pass;               LOG and log('find_s={!r}',(find_s))
+            ed.cmd(cmds.cmd_FinderAction, chr(1).join([]
+                +['findnext']
+                +[find_s]
+                +['']
+                +['fa']    # f - From-caret,  a - Wrapp
+            ))
+            app.app_proc(app.PROC_SET_FIND_OPTIONS, user_opt)
+        
+       #elif what=='set-dfns':
+       #    m.defn_path = data
+       #    m.do_file('load-data')
+       #    return d(ctrls=odict(m.get_cnts('lvls')))
         
         elif what=='set-lexr':
             m.opts_full = load_vals(m.opts_defn, 'lexer '+m.lexr+'.json', m.all_ops)
@@ -443,7 +532,7 @@ class OptEdD:
                 {}  val-attrs
                 {}  items-attrs
         """
-        M,m,d   = OptEdD,self,dict
+        M,m = OptEdD,self
         if opts=='key2ind':
             opt_nm  = nm if nm else m.cur_op
             m.cur_in= index_1([m.SKWULs[row][1] for row in range(len(m.SKWULs))], opt_nm, -1)
@@ -456,22 +545,20 @@ class OptEdD:
         
         if opts=='fid4ed':
             if not m.cur_op:    return 'lvls'
-            frm     = m.opts_full[m.cur_op]['frm']
-            return  'eded'  if frm in ('str', 'int', 'float', 'json')   else \
-                    'edcb'  if frm in ('int2s', 'str2s')                else \
-                    'edrf'  if frm in ('bool',)                         else \
-                    'brow'  if frm in ('hotk', 'file')                  else \
+            frm = m.opts_full[m.cur_op]['frm']
+            fid =   'eded'  if frm in ('str', 'int', 'float', 'json')       else \
+                    'edcb'  if frm in ('int2s', 'str2s', 'strs', 'font')    else \
+                    'edrf'  if frm in ('bool',)                             else \
+                    'brow'  if frm in ('hotk', 'file')                      else \
                     'lvls'
+            pass;              #LOG and log('m.cur_op,frm,fid={}',(m.cur_op,frm,fid))
+            return fid
         
         pass;                  #LOG and log('m.cur_op, m.lexr={}',(m.cur_op, m.lexr))
         vis,ens,vas,its = {},{},{},{}
         
-#       vis['edlx'] = bool(m.lexr)
         ens['eded'] = ens['setd']                                       = False # All un=F
-#       ens['eded'] = ens['setv']=ens['setd']                                       = False # All un=F
-#       ens['eded'] = ens['setv']=ens['setd']=ens['edlx']                           = False # All un=F
         vis['eded'] = vis['edcb']=vis['edrf']=vis['edrt']=vis['brow']   = False # All vi=F
-#       vis['eded'] = vis['setv']=vis['edcb']=vis['edrf']=vis['edrt']=vis['brow']   = False # All vi=F
         vas['eded'] = vas['dfvl']=vas['cmnt']= ''                                           # All ed empty
         vas['edcb'] = -1
         vas['edrf'] = vas['edrt'] = False
@@ -479,7 +566,6 @@ class OptEdD:
         if not m.cur_op:
             # No current option
             vis['eded']     = True
-           #vis['setv']     = True
         else:
             # Current option
             oi              = m.opts_full[m.cur_op]
@@ -494,13 +580,10 @@ class OptEdD:
                                 if m.in_lexr else \
                               vas['uval']                       # Cur val with cur state of "For lexer"
             ens['eded']     = frm not in ('json', 'hotk', 'file')
-#           ens['edlx']     = True
-           #ens['setv']     = frm not in ('json',)
             ens['setd']     = frm not in ('json',) and ulvl_va is not None
             if False:pass
             elif frm in ('str', 'int', 'float', 'json'):
                 vis['eded'] = True
-               #vis['setv'] = True
                 vas['eded'] = str(ulvl_va)
             elif frm in ('hotk', 'file'):
                 vis['eded'] = True
@@ -538,7 +621,7 @@ class OptEdD:
     def show(self
         , title                     # For cap of dlg
         ):
-        M,m,d   = OptEdD,self,dict
+        M,m = OptEdD,self
 #       pass;                   return
 
         def when_exit(ag):
@@ -562,9 +645,22 @@ class OptEdD:
         ,   vals =m.get_vals()
         ,   fid  ='cond'
                                 ,options = {
-                                   #'gen_repro_to_file':'repro_dlg_opted.py'    #NOTE: repro
+                                   #'gen_repro_to_file':'repro_dlg_opted.py',    #NOTE: repro
                                 }
         )
+        m.stbr  = app.dlg_proc(m.ag.id_dlg, app.DLG_CTL_HANDLE, name='stbr')
+        app.statusbar_proc(m.stbr, app.STATUSBAR_ADD_CELL               , tag=M.STBR_FLT)
+        app.statusbar_proc(m.stbr, app.STATUSBAR_SET_CELL_SIZE          , tag=M.STBR_FLT, value=40)
+        app.statusbar_proc(m.stbr, app.STATUSBAR_SET_CELL_ALIGN         , tag=M.STBR_FLT, value='R')
+        app.statusbar_proc(m.stbr, app.STATUSBAR_SET_CELL_HINT          , tag=M.STBR_FLT, value=_('Count of found or filtered'))
+        app.statusbar_proc(m.stbr, app.STATUSBAR_ADD_CELL               , tag=M.STBR_ALL)
+        app.statusbar_proc(m.stbr, app.STATUSBAR_SET_CELL_SIZE          , tag=M.STBR_ALL, value=40)
+        app.statusbar_proc(m.stbr, app.STATUSBAR_SET_CELL_ALIGN         , tag=M.STBR_ALL, value='R')
+        app.statusbar_proc(m.stbr, app.STATUSBAR_SET_CELL_HINT          , tag=M.STBR_ALL, value=_('Count of all options'))
+        app.statusbar_proc(m.stbr, app.STATUSBAR_ADD_CELL               , tag=M.STBR_MSG)
+        app.statusbar_proc(m.stbr, app.STATUSBAR_SET_CELL_AUTOSTRETCH   , tag=M.STBR_MSG, value=True)
+        m.stbr_act(M.STBR_ALL, len(m.opts_full))
+
         m.ag.show(when_exit)
         m.ag    = None
 
@@ -572,6 +668,7 @@ class OptEdD:
         m.stores[m.subset+'col_ws']     = m.col_ws
         m.stores[m.subset+'sort']       = m.sort
         m.stores[m.subset+'h.cond']     = m.cond_hl
+        m.stores[m.subset+'all_ops']    = m.all_ops
         open(CFG_JSON, 'w').write(json.dumps(m.stores, indent=4))
        #def show
     
@@ -579,14 +676,11 @@ class OptEdD:
         M,m         = OptEdD,self
         m.dlg_min_w = 10 + sum(M.COL_MWS) + M.COL_N + M.SCROLL_W
         m.dlg_w     = 10 + sum(m.col_ws)  + M.COL_N + M.SCROLL_W
-#       m.dlg_min_w = 10 + sum(M.COL_MWS) +                   M.SCROLL_W
-#       m.dlg_w     = 10 + sum(m.col_ws)  +                   M.SCROLL_W
-        m.dlg_h     = 270 + m.h_cmnt    +10
-#       pass;                   self.dlg_h  = 25
+        m.dlg_h     = 270 + m.h_cmnt    +10 + M.STBR_H
        #def pre_cnts
     
     def get_cnts(self, what=''):
-        M,m,d   = OptEdD,self,dict
+        M,m = OptEdD,self
         
         reNotWdChar = re.compile(r'\W')
         def test_fltr(fltr_s, op, oi):
@@ -605,32 +699,33 @@ class OptEdD:
                 fltr_s  = ' ' + fltr_s + ' '
                 fltr_s  = fltr_s.replace(' <', ' ·').replace('> ', '· ')
             pass;              #LOG and log('fltr_s, text={}',(fltr_s, text))
-#           return any(map(lambda c:c in text, fltr_s.split()))
             return all(map(lambda c:c in text, fltr_s.split()))
            #def test_fltr
 
         def get_tbl_cols(opts_full, SKWULs, sort, col_ws):
-            stat_o  = f(' ({}/{})', len(SKWULs), len(opts_full))
             sort_cs = ['' if c!=sort[0] else '↑ ' if sort[1] else '↓ ' for c in range(6)] # ▲ ▼ ?
-            cols    = [  d(nm=sort_cs[0]+M.COL_NMS[0]       ,wd=col_ws[0] ,mi=M.COL_MWS[0])
-                        ,d(nm=sort_cs[1]+M.COL_NMS[1]+stat_o,wd=col_ws[1] ,mi=M.COL_MWS[1])
-                        ,d(nm=sort_cs[2]+M.COL_NMS[2]       ,wd=col_ws[2] ,mi=M.COL_MWS[2]   ,al='C')
-                        ,d(nm=sort_cs[3]+M.COL_NMS[3]       ,wd=col_ws[3] ,mi=M.COL_MWS[3])
-                        ,d(nm=sort_cs[4]+M.COL_NMS[4]       ,wd=col_ws[4] ,mi=M.COL_MWS[4])
-                        ,d(nm=sort_cs[5]+M.COL_NMS[5]       ,wd=col_ws[5] ,mi=M.COL_MWS[5])
+            cols    = [  d(nm=sort_cs[0]+M.COL_NMS[0], wd=col_ws[0] ,mi=M.COL_MWS[0])
+                        ,d(nm=sort_cs[1]+M.COL_NMS[1], wd=col_ws[1] ,mi=M.COL_MWS[1])
+                        ,d(nm=sort_cs[2]+M.COL_NMS[2], wd=col_ws[2] ,mi=M.COL_MWS[2]   ,al='C')
+                        ,d(nm=sort_cs[3]+M.COL_NMS[3], wd=col_ws[3] ,mi=M.COL_MWS[3])
+                        ,d(nm=sort_cs[4]+M.COL_NMS[4], wd=col_ws[4] ,mi=M.COL_MWS[4])
+                        ,d(nm=sort_cs[5]+M.COL_NMS[5], wd=col_ws[5] ,mi=M.COL_MWS[5])
                         ]
             return cols
            #def get_tbl_cols
         
-        def get_tbl_data(opts_full, cond_s, sort, col_ws):
+        def get_tbl_data(opts_full, cond_s, ops_only, sort, col_ws):
             # Filter table data
             pass;              #LOG and log('cond_s={}',(cond_s))
             chp_cond    = ''
+            chp_no_c    = False
             if  '@' in cond_s:
                 # Prepare to match chapters
-                chp_cond    = ' '.join([mt.group(1) for mt in re.finditer(r'@(\w*)'    , cond_s)]).upper()
-                cond_s      =                                 re.sub(     r'@(\w*)', '', cond_s)
-            pass;              #LOG and log('chp_cond, cond_s={}',(chp_cond, cond_s))
+                chp_cond    = ' '.join([mt.group(1) for mt in re.finditer(r'@([\w/]+)'    , cond_s)]).upper()   # @s+ not empty chp
+                chp_cond    = chp_cond.replace(M.NO_CHAP.upper(), '').strip()
+                chp_no_c    = '@'+M.NO_CHAP in cond_s
+                cond_s      =                                 re.sub(     r'@([\w/]*)', '', cond_s)             # @s* clear @ and cph
+            pass;              #LOG and log('chp_cond, chp_no_c, cond_s={}',(chp_cond, chp_no_c, cond_s))
             SKWULs  = [  (oi.get('chp','') 
                          ,op
                          ,oi['!']
@@ -640,11 +735,12 @@ class OptEdD:
                          ,oi['frm']
                          )
                             for op,oi in opts_full.items()
-                            if  (not chp_cond   or chp_cond in oi['chp'].upper())
+                            if  (not chp_cond   or chp_cond in oi.get('chp', '').upper())
+                            and (not chp_no_c   or not oi.get('chp', ''))
                             and (not cond_s     or test_fltr(cond_s, op, oi))
+                            and (not ops_only   or op in ops_only)
                       ]
             # Sort table data
-#           sort_cs = ['' if c!=sort[0] else '↑ ' if sort[1] else '↓ ' for c in range(6)] # ▲ ▼ ?
             if -1 != sort[0]:     # With sort col
                 SKWULs      = sorted(SKWULs
                                ,key=lambda it:('_'                                  # Replace '' to '_'
@@ -652,16 +748,9 @@ class OptEdD:
                                                it[sort[0]])                         # to show empties in bottom
                                ,reverse=sort[1])
             # Fill table
-#           stat_o  = f(' ({}/{})', len(SKWULs), len(opts_full))
-            pass;              #LOG and log('M.COL_NMS,sort_cs,col_ws,M.COL_MWS={}',(len(M.COL_NMS),len(sort_cs),len(col_ws),len(M.COL_MWS)))
+            pass;              #LOG and log('M.COL_NMS,col_ws,M.COL_MWS={}',(len(M.COL_NMS),len(col_ws),len(M.COL_MWS)))
             cols    = get_tbl_cols(opts_full, SKWULs, sort, col_ws)
-#           cols    = [  d(nm=sort_cs[0]+M.COL_NMS[0]       ,wd=col_ws[0] ,mi=M.COL_MWS[0])
-#                       ,d(nm=sort_cs[1]+M.COL_NMS[1]+stat_o,wd=col_ws[1] ,mi=M.COL_MWS[1])
-#                       ,d(nm=sort_cs[2]+M.COL_NMS[2]       ,wd=col_ws[2] ,mi=M.COL_MWS[2]   ,al='C')
-#                       ,d(nm=sort_cs[3]+M.COL_NMS[3]       ,wd=col_ws[3] ,mi=M.COL_MWS[3])
-#                       ,d(nm=sort_cs[4]+M.COL_NMS[4]       ,wd=col_ws[4] ,mi=M.COL_MWS[4])
-#                       ,d(nm=sort_cs[5]+M.COL_NMS[5]       ,wd=col_ws[5] ,mi=M.COL_MWS[5])
-#                       ]
+
             itms    = (list(zip([_('Section'),_('Option'), '', _('Default'), _('In user'), _('In lexer')], map(str, col_ws)))
                      #,         [ (sc+' '+fm    ,k         ,w    ,dv           ,uv           ,lv)    # for debug
                       ,         [ (sc           ,k         ,w    ,dv           ,uv           ,lv)    # for user
@@ -673,7 +762,9 @@ class OptEdD:
         if not what or '+lvls' in what:
             m.SKWULs,\
             m.cols  ,\
-            m.itms  = get_tbl_data(m.opts_full, m.cond_s, m.sort, m.col_ws)
+            m.itms  = get_tbl_data(m.opts_full, m.cond_s, m.ops_only, m.sort, m.col_ws)
+            if 'stbr' in dir(m):
+                m.stbr_act(M.STBR_FLT, len(m.SKWULs)   if len(m.SKWULs)!=len(m.opts_full) else '')
 
         if '+cols' in what:
             pass;              #LOG and log('m.col_ws={}',(m.col_ws))
@@ -705,9 +796,6 @@ class OptEdD:
             ,('edrf',d(vis=vis['edrf']                                  ))
             ,('edrt',d(vis=vis['edrt']                                  ))
             ,('brow',d(vis=vis['brow']                                  ))
-           #,('setv',d(vis=vis['setv'],en=ens['setv']                   ))
-#           ,('edlx',d(vis=vis['edlx']                                  ))
-#           ,('edlx',d(vis=vis['edlx'],en=ens['edlx']                   ))
             ,('setd',d(                en=ens['setd']                   ))
             ][1:]
 
@@ -716,50 +804,57 @@ class OptEdD:
             return cnts
 
         # Full dlg controls info    #NOTE: cnts
-        cmnt_t  = m.dlg_h-m.h_cmnt-5
+        cmnt_t  = m.dlg_h-m.h_cmnt-5-M.STBR_H
         cnts    = [0                                                                                                                        #
     # Hidden buttons                                                                                                                    
- ,('flt-',d(tp='bt' ,t=0        ,l=000          ,w=000      ,cap='&l'               ,sto=False                                          ))  # &l
- ,('fltr',d(tp='bt' ,t=0        ,l=000          ,w=000      ,cap=''                 ,sto=False  ,def_bt='1'                             ))  # Enter
- ,('srt0',d(tp='bt' ,t=0        ,l=000          ,w=000      ,cap='&1'               ,sto=False                                          ))  # &1
- ,('srt1',d(tp='bt' ,t=0        ,l=000          ,w=000      ,cap='&2'               ,sto=False                                          ))  # &2
- ,('srt2',d(tp='bt' ,t=0        ,l=000          ,w=000      ,cap='&3'               ,sto=False                                          ))  # &3
- ,('srt3',d(tp='bt' ,t=0        ,l=000          ,w=000      ,cap='&4'               ,sto=False                                          ))  # &4
- ,('srt4',d(tp='bt' ,t=0        ,l=000          ,w=000      ,cap='&5'               ,sto=False                                          ))  # &5
- ,('srt5',d(tp='bt' ,t=0        ,l=000          ,w=000      ,cap='&6'               ,sto=False                                          ))  # &6
- ,('cws-',d(tp='bt' ,t=0        ,l=000          ,w=000      ,cap='&W'               ,sto=False                                          ))  # &w
- ,('help',d(tp='bt' ,t=0        ,l=0            ,w=0        ,cap='&H'               ,sto=False                                          ))  # &h
-    # Top-panel                                                                                                                         
- ,('ptop',d(tp='pn' ,h=    270 ,w=m.dlg_w                   ,ali=ALI_CL                                                                 
-                    ,h_min=270                                                                                                          ))
-    # Menu                                                                                                                              
- ,('menu',d(tp='bt' ,tid='cond' ,l=m.dlg_w-25-5 ,w=25       ,p='ptop'   ,cap='&+'                                              ,a='LR'  ))  # &+
-    # Filter                                                                                                                            
- ,('flt_',d(tp='lb' ,tid='cond' ,l=  5          ,w= 60      ,p='ptop'   ,cap=_('>&Filter:')     ,hint=M.FLTR_H                          ))  # &f
- ,('cond',d(tp='cb' ,t=  5      ,l= 70          ,w=200      ,p='ptop'   ,items=m.cond_hl                                                ))  #
-    # Table of keys+values                                                                                                              
- ,('lvls',d(tp='lvw',t=35       ,l=5 ,h=160     ,r=m.dlg_w-5,p='ptop'   ,items=m.itms,cols=m.cols   ,grid='1'                  ,a='tBlR'))  #
-    # Editors for value                                                                                                                 
- ,('ed__',d(tp='lb' ,t=210      ,l=  5          ,w=110      ,p='ptop'   ,cap=_('>&Value:')                                     ,a='TB'  ))  # &v 
- ,('eded',d(tp='ed' ,tid='ed__' ,l=120  ,r=m.dlg_w-220      ,p='ptop'                           ,vis=vis['eded'],en=ens['eded'],a='TBlR'))  #
- ,('edcb',d(tp='cbr',tid='ed__' ,l=120  ,r=m.dlg_w-220      ,p='ptop'   ,items=its['edcb']      ,vis=vis['edcb']               ,a='TBlR'))  #
- ,('edrf',d(tp='rd' ,tid='ed__' ,l=120          ,w= 60      ,p='ptop'   ,cap=_('f&alse')        ,vis=vis['edrf']               ,a='TB'  ))  # &a
- ,('edrt',d(tp='rd' ,tid='ed__' ,l=180          ,w= 60      ,p='ptop'   ,cap=_('tru&e')         ,vis=vis['edrt']               ,a='TB'  ))  # &e
- ,('brow',d(tp='bt' ,tid='ed__' ,l=m.dlg_w-220  ,w= 70      ,p='ptop'   ,cap=_('&...')          ,vis=vis['brow']               ,a='TBLR'))  # &.
-    # View def-value                                                                                                                    
- ,('dfv_',d(tp='lb' ,tid='dfvl' ,l=  5          ,w=110      ,p='ptop'   ,cap=_('>Default val&ue:')                             ,a='TB'  ))  # &u
- ,('dfvl',d(tp='ed' ,t=235      ,l=120  ,r=m.dlg_w-220      ,p='ptop'   ,ro_mono_brd='1,0,1'                                   ,a='TBlR'))  #
- ,('setd',d(tp='bt' ,tid='dfvl' ,l=m.dlg_w-220  ,w= 70      ,p='ptop'   ,cap=_('Rese&t')                        ,en=ens['setd'],a='TBLR'))  # &t
-    # For lexer                                                                                                                         
- ,('edlx',d(tp='ch' ,tid='ed__' ,l=m.dlg_w-125  ,w= 90      ,p='ptop'   ,cap=_('For Le&xer')                                   ,a='TBLR'))  # &x
- ,('lexr',d(tp='cbr',tid='dfvl' ,l=m.dlg_w-125  ,w=120      ,p='ptop'   ,items=m.lexr_w_l                                      ,a='TBLR'))
-    # Comment                                                                                                                           
- ,('cmnt',d(tp='me' ,t=cmnt_t   ,h=    m.h_cmnt                                                                                         
-                                ,h_min=M.CMNT_MHT           ,ali=ALI_BT,sp_lrb=5       ,ro_mono_brd='1,1,1'                             ))
- ,('cmsp',d(tp='sp' ,y=cmnt_t-5                             ,ali=ALI_BT,sp_lr=5                                                         ))
+ ,('flt-',d(tp='bt' ,cap='&l'   ,sto=False              ,t=0,l=0,w=0))  # &l
+ ,('fltr',d(tp='bt' ,cap=''     ,sto=False  ,def_bt='1' ,t=0,l=0,w=0))  # Enter
+ ,('srt0',d(tp='bt' ,cap='&1'   ,sto=False              ,t=0,l=0,w=0))  # &1
+ ,('srt1',d(tp='bt' ,cap='&2'   ,sto=False              ,t=0,l=0,w=0))  # &2
+ ,('srt2',d(tp='bt' ,cap='&3'   ,sto=False              ,t=0,l=0,w=0))  # &3
+ ,('srt3',d(tp='bt' ,cap='&4'   ,sto=False              ,t=0,l=0,w=0))  # &4
+ ,('srt4',d(tp='bt' ,cap='&5'   ,sto=False              ,t=0,l=0,w=0))  # &5
+ ,('srt5',d(tp='bt' ,cap='&6'   ,sto=False              ,t=0,l=0,w=0))  # &6
+ ,('cws-',d(tp='bt' ,cap='&W'   ,sto=False              ,t=0,l=0,w=0))  # &w
+ ,('help',d(tp='bt' ,cap='&H'   ,sto=False              ,t=0,l=0,w=0))  # &h
+    # Top-panel                                                                                                             
+ ,('ptop',d(tp='pn' ,h=    270 ,w=m.dlg_w               ,ali=ALI_CL                                                         
+                    ,h_min=270                                                                                              ))
+    # Menu                                                                                                                  
+ ,('menu',d(tp='bt' ,tid='cond' ,l=-25-5,w=  25 ,p='ptop'   ,cap='&='                                               ,a='LR' ))  # &=
+    # Filter                                                                                                                
+ ,('chps',d(tp='bt' ,tid='cond' ,l=-250 ,r=-160 ,p='ptop'   ,cap=_('+&Section…')    ,hint=M.CHPS_H                  ,a='LR' ))  # 
+ ,('flt_',d(tp='lb' ,tid='cond' ,l=   5 ,w=  70 ,p='ptop'   ,cap='>'+M.FILTER_C+':' ,hint=M.FLTR_H                          ))  # &f
+ ,('cond',d(tp='cb' ,t=  5      ,l=  78 ,r=-250 ,p='ptop'   ,items=m.cond_hl                                        ,a='lR' ))  #
+    # Table of keys+values                                                                                                  
+ ,('lvls',d(tp='lvw',t= 35,h=160,l=   5 ,r=  -5 ,p='ptop'   ,items=m.itms,cols=m.cols   ,grid='1'                   ,a='tBlR'))  #
+    # Editors for value                                                                                                     
+ ,('ed__',d(tp='lb' ,t=210      ,l=   5 ,w=  70 ,p='ptop'   ,cap=_('>&Value:')                                      ,a='TB'  ))  # &v 
+ ,('eded',d(tp='ed' ,tid='ed__' ,l=  78 ,r=-250 ,p='ptop'                           ,vis=vis['eded'],en=ens['eded'] ,a='TBlR'))  #
+ ,('edcb',d(tp='cbr',tid='ed__' ,l=  78 ,r=-250 ,p='ptop'   ,items=its['edcb']      ,vis=vis['edcb']                ,a='TBlR'))  #
+ ,('edrf',d(tp='rd' ,tid='ed__' ,l=  78 ,w=  60 ,p='ptop'   ,cap=_('f&alse')        ,vis=vis['edrf']                ,a='TB'  ))  # &a
+ ,('edrt',d(tp='rd' ,tid='ed__' ,l= 140 ,w=  60 ,p='ptop'   ,cap=_('tru&e')         ,vis=vis['edrt']                ,a='TB'  ))  # &e
+ ,('brow',d(tp='bt' ,tid='ed__' ,l=-250 ,w=  90 ,p='ptop'   ,cap=_('&...')          ,vis=vis['brow']                ,a='TBLR'))  # &.
+    # View def-value                                                                                                        
+ ,('dfv_',d(tp='lb' ,tid='dfvl' ,l=   5 ,w=  70 ,p='ptop'   ,cap=_('>Defa&ult:')                                    ,a='TB'  ))  # &u
+ ,('dfvl',d(tp='ed' ,t=235      ,l=  78 ,r=-250 ,p='ptop'   ,ro_mono_brd='1,0,1'    ,sto=False                      ,a='TBlR'))  #
+ ,('setd',d(tp='bt' ,tid='dfvl' ,l=-250 ,w=  90 ,p='ptop'   ,cap=_('Rese&t')                        ,en=ens['setd'] ,a='TBLR'))  # &t
+    # For lexer                                                                                                             
+ ,('edlx',d(tp='ch' ,tid='ed__' ,l=-125 ,w=  90 ,p='ptop'   ,cap=_('For Le&xer')                                    ,a='TBLR'))  # &x
+ ,('lexr',d(tp='cbr',tid='dfvl' ,l=-125 ,w= 120 ,p='ptop'   ,items=m.lexr_w_l                                       ,a='TBLR'))
+    # Comment                                                                                                               
+ ,('cmsp',d(tp='sp' ,y=cmnt_t-5                         ,ali=ALI_BT,sp_lr=5                                                 ))
+ ,('cmnt',d(tp='me' ,t=cmnt_t   ,h=    m.h_cmnt                                                                             
+                                ,h_min=M.CMNT_MHT       ,ali=ALI_BT,sp_lrb=5       ,ro_mono_brd='1,1,1'                     ))
+ ,('stbr',d(tp='sb' ,y=m.dlg_h-M.STBR_H
+                    ,h=M.STBR_H                         ,ali=ALI_BT                                                         ))
                 ][1:]
         cnts    = odict(cnts)
+        for cnt in cnts.values():
+            if 'l' in cnt:  cnt['l']    = m.dlg_w+cnt['l'] if cnt['l']<0 else cnt['l']
+            if 'r' in cnt:  cnt['r']    = m.dlg_w+cnt['r'] if cnt['r']<0 else cnt['r']
         cnts['menu']['call']            = m.do_menu
+        cnts['chps']['call']            = m.do_menu
         cnts['flt-']['call']            = m.do_fltr
         cnts['fltr']['call']            = m.do_fltr
         cnts['lexr']['call']            = m.do_lexr
@@ -773,7 +868,6 @@ class OptEdD:
         cnts['srt4']['call']            = m.do_sort
         cnts['cmsp']['call']            = m.do_cust
         cnts['cws-']['call']            = m.do_cust
-#       cnts['lvls']['on_click']        = m.do_setv   #lambda idd,idc,data:print('on dbl d=', data)
         cnts['lvls']['on_click_dbl']    = m.do_dbcl   #lambda idd,idc,data:print('on dbl d=', data)
         cnts['setd']['call']            = m.do_setv
         cnts['edcb']['call']            = m.do_setv
@@ -785,13 +879,14 @@ class OptEdD:
        #def get_cnts
     
     def get_vals(self, what=''):
-        M,m,d   = OptEdD,self,dict
+        M,m = OptEdD,self
         m.cur_in    = m._prep_opt('key2ind')
         if not what or 'cur' in what:
             vis,ens,vas,its = m._prep_opt()
         if not what:
             # all
-            return dict(lvls=m.cur_in
+            return dict(cond=m.cond_s
+                       ,lvls=m.cur_in
                        ,eded=vas['eded']
                        ,edcb=vas['edcb']
                        ,edrf=vas['edrf']
@@ -846,7 +941,8 @@ class OptEdD:
        #def get_vals
     
     def do_resize(self, ag):
-        M,m,d   = OptEdD,self,dict
+        M,m = OptEdD,self
+        m.stbr_act(M.STBR_MSG, '')
         f_w     = ag.fattr('w')
         l_w     = ag.cattr('lvls', 'w')
         pass;                  #LOG and log('f_w,l_w={}',(f_w,l_w))
@@ -871,7 +967,8 @@ class OptEdD:
        #def do_resize
     
     def do_cust(self, aid, ag, data=''):
-        M,m,d   = OptEdD,self,dict
+        M,m = OptEdD,self
+        m.stbr_act(M.STBR_MSG, '')
         pass;                  #LOG and log('aid={}',(aid))
         if False:pass
         elif aid=='cmsp':
@@ -888,31 +985,27 @@ class OptEdD:
        #def do_cust
     
     def do_menu(self, aid, ag, data=''):
-        M,m,d   = OptEdD,self,dict
+        pass;                  #LOG and log('aid={}',(aid))
+        M,m = OptEdD,self
+        m.stbr_act(M.STBR_MSG, '')
         scam    = app.app_proc(app.PROC_GET_KEYSTATE, '')
         if scam=='c' and aid=='menu':
-            return dlg_valign_consts()
+            dlg_valign_consts()
+            return []
 
         def wnen_menu(ag, tag):
             pass;              #LOG and log('tag={}',(tag))
             if False:pass
+            elif tag[:3]=='ch:':
+                return m.do_fltr('chps', ag, tag[3:])
+
             elif tag=='srt-':
                 return m.do_sort('', ag, -1)
             elif tag[:3]=='srt':
                 return m.do_sort('', ag, int(tag[3]))
             
-#           elif tag=='hcmt':
-#               h_cmnt_s    = app.dlg_input(f(_('Height of the Comment (min={})'), M.CMNT_MHT), str(m.h_cmnt))
-#               if h_cmnt_s is None or not re.match(r'\d+', h_cmnt_s):   return []
-#               m.h_cmnt    = max(int(h_cmnt_s), M.CMNT_MHT)
-#               m.stores[m.subset+'cmnt_heght'] = m.h_cmnt
-#               return []
-            
             elif tag=='cws-':
                 return m.do_cust(tag, ag)
-#               m.col_ws    = M.COL_MWS[:]
-#               m.stores.pop(m.subset+'col_ws', None)
-#               return d(ctrls=odict(m.get_cnts('+lvls')))
             
 #           elif tag=='lubk':
 #               if app.ID_OK != app.msg_box(
@@ -928,29 +1021,65 @@ class OptEdD:
 #               m.stores[m.subset+'bk_sets'] = m.bk_sets = not m.bk_sets
 #               return []
             
-            elif tag=='dfns':
-                m.col_ws    = [ci['wd'] for ci in m.ag.cattr('lvls', 'cols')]
-                new_file    = app.dlg_file(True, m.defn_path.name, str(m.defn_path.parent), 'JSONs|*.json')
-                if not new_file or not os.path.isfile(new_file):    return []
-                return m.do_file('set-dfns', new_file)
+        #   elif tag=='dfns':
+        #       m.col_ws    = [ci['wd'] for ci in m.ag.cattr('lvls', 'cols')]
+        #       new_file    = app.dlg_file(True, m.defn_path.name, str(m.defn_path.parent), 'JSONs|*.json')
+        #       if not new_file or not os.path.isfile(new_file):    return []
+        #       return m.do_file('set-dfns', new_file)
             elif tag=='full':
                 m.col_ws    = [ci['wd'] for ci in m.ag.cattr('lvls', 'cols')]
                 m.all_ops   = not m.all_ops
                 m.opts_full = load_vals(m.opts_defn, 'lexer '+m.lexr+'.json', m.all_ops)
-                return d(ctrls=odict(m.get_cnts('+lvls')))
+                m.cur_op    = m.cur_op if m.cur_op in m.opts_full else ''
+                m.do_file('build-chp-tree')
+                m.stbr_act(M.STBR_ALL, len(m.opts_full))
+                return d(ctrls=odict(m.get_cnts('+lvls +cur')))
             
+            elif tag=='locv':
+                m.do_file('locate-opt')
+            elif tag=='locd':
+                m.do_file('locate-def')
+
             elif tag=='rprt':
                 m.do_file('out-rprt')
             elif tag=='help':
                 return m.do_help('', ag)
             return []
+           #def wnen_menu
         pass;                  #LOG and log('',())
-        mn_its  = [0
-            ,d(                 cap=_('File') ,sub=[0
-                ,d( tag='rprt', cap=_('Create HTML report about all options')               ,cmd=wnen_menu)
-                ,d(             cap='-')
-                ,d( tag='full', cap=_('Show all options for user and lexer'),ch=m.all_ops   ,cmd=wnen_menu)
-                ,d( tag='dfns', cap=_('Choose file with definitions of options...')         ,cmd=wnen_menu)
+
+        if aid=='chps':
+            def tree2menu(node, chp=''):
+                mn_l    = [    d( tag='ch:'+       node['path']
+                                , cap=f(_('{} ({})'), chp     , len(node['ops'])) 
+                                , cmd=wnen_menu)
+                              ,d( cap='-')
+                          ] if chp else []
+                kids    = node['kids']
+                for chp,kid in kids.items():
+                    mn_l   +=([d( cap=f('{} ({})', chp, len(kid['ops']))               
+                                , sub=tree2menu(kid, chp))
+                              ]
+                                if 'kids' in kid else
+                              [d( tag='ch:'+       kid['path']
+                                , cap=f('{} ({})', chp, len(kid['ops']))               
+                                , cmd=wnen_menu)]
+                             )  
+                return mn_l
+               #def tree2menu
+            mn_its  = tree2menu(m.chp_tree)
+            ag.show_menu('chps', mn_its)
+
+        if aid=='menu':
+            locv_c  = f(_('Locate "{}" into user/lexer file'), m.cur_op)
+            locd_c  = f(_('Locate "{}" into definition file'), m.cur_op)
+            mn_its  = [0
+            ,d(     tag='full', cap=_('Show all options from user/lexer')   ,ch=m.all_ops   ,cmd=wnen_menu)
+            ,d(     tag='locv', cap=locv_c                              ,en=bool(m.cur_op)  ,cmd=wnen_menu)
+            ,d(     tag='locd', cap=locd_c                              ,en=bool(m.cur_op)  ,cmd=wnen_menu)
+#           ,d(                 cap=_('File') ,sub=[0
+#               ,d(             cap='-')
+#               ,d( tag='dfns', cap=_('Choose file with definitions of options...')         ,cmd=wnen_menu)
 #               ,d(             cap='-')
 #               ,d( tag='dobk', cap=_('Create backup copy of user/lexer settings')  
 #                                                                       ,ch=m.bk_sets       ,cmd=wnen_menu)
@@ -960,29 +1089,30 @@ class OptEdD:
 #               ,d( tag='llbk', cap=f(_('Restore lexer "{}" settings...'), m.lexr)
 #                                                                   ,en=m.lexr and m.bk_files.get(m.lexr,'')
 #                                                                                           ,cmd=wnen_menu)
-                ][1:])
-            ,d(                 cap=_('Sorting') ,sub=[
-                 d( tag='srt'+str(cn), cap=f(_('By column "{}"'), cs)   ,ch=m.sort[0]==cn   ,key='Alt+'+str(1+cn)
+#               ][1:])
+            ,d(                 cap='-')
+            ,d(                 cap=_('Table') ,sub=[
+                 d( tag='srt'+str(cn), cap=f(_('Sort by column "{}"'), cs)  ,ch=m.sort[0]==cn   ,key='Alt+'+str(1+cn)
                                                                                             ,cmd=wnen_menu)
                  for cn, cs in enumerate(M.COL_NMS)
                 ]+[0
-                ,d(             cap='-')
                 ,d( tag='srt-', cap=_('Clear sorting')  ,en=(m.sort[0]!=-1)                 ,cmd=wnen_menu)
-                ][1:])
-            ,d(                 cap=_('Fit dialog') ,sub=[0
-#               ,d( tag='hcmt', cap=_('Set comment height (need restart)...')               ,cmd=wnen_menu)
+                ,d(             cap='-')
                 ,d( tag='cws-', cap=_('Set default columns widths')         ,key='Alt+W'    ,cmd=wnen_menu)
                 ][1:])
             ,d(                 cap='-')
+            ,d(     tag='rprt', cap=_('Create HTML report about all options')               ,cmd=wnen_menu)
             ,d(     tag='help', cap=_('Help...')                            ,key='Alt+H'    ,cmd=wnen_menu)
             ][1:]
-        ag.show_menu(aid,mn_its)
+            ag.show_menu(aid, mn_its)
         return []
        #def do_menu
 
     def do_fltr(self, aid, ag, data=''):
-        M,m,d   = OptEdD,self,dict
+        M,m = OptEdD,self
+        m.stbr_act(M.STBR_MSG, '')
         m.col_ws= [ci['wd'] for ci in m.ag.cattr('lvls', 'cols')]
+
         fid     = ag.fattr('fid')
         pass;                  #LOG and log('aid,fid={}',(aid,fid))
         if aid=='fltr' and fid in ('dfvl', 'eded', 'edrf', 'edrt'):
@@ -1001,6 +1131,16 @@ class OptEdD:
             m.cond_hl   = add_to_history(m.cond_s, m.cond_hl, MAX_HIST, unicase=False)  if m.cond_s else m.cond_hl
         if aid=='flt-':
             m.cond_s    = ''
+
+        if aid=='chps':
+            # Append selected chapter as filter value
+            path        = '@'+data
+            if path not in m.cond_s:
+                m.cond_s    = re.sub(r'@([\w/]*)', '', m.cond_s).strip()    # del old 
+                m.cond_s    = (m.cond_s+' '+path).strip()                   # add new
+                m.cond_hl   = add_to_history(m.cond_s, m.cond_hl, MAX_HIST, unicase=False)
+        
+
         # Select old/new op
         m.cur_op= m._prep_opt('ind2key')
         ctrls   = m.get_cnts('+lvls')
@@ -1018,7 +1158,8 @@ class OptEdD:
     def do_sort(self, aid, ag, col=-1):
         pass;                  #LOG and log('col={}',(col))
         pass;                  #return []
-        M,m,d   = OptEdD,self,dict
+        M,m = OptEdD,self
+        m.stbr_act(M.STBR_MSG, '')
         m.col_ws= [ci['wd'] for ci in m.ag.cattr('lvls', 'cols')]
         
         col     = int(aid[3]) if aid[:3]=='srt' else col
@@ -1043,7 +1184,8 @@ class OptEdD:
        #def do_sort
 
     def do_sele(self, aid, ag, data=''):
-        M,m,d   = OptEdD,self,dict
+        M,m = OptEdD,self
+        m.stbr_act(M.STBR_MSG, '')
         pass;                  #LOG and log('',())
         m.cur_op= m._prep_opt('ind2key')
         return d(ctrls=odict(m.get_cnts('+cur'))
@@ -1052,7 +1194,8 @@ class OptEdD:
        #def do_sele
     
     def do_lexr(self, aid, ag, data=''):
-        M,m,d   = OptEdD,self,dict
+        M,m = OptEdD,self
+        m.stbr_act(M.STBR_MSG, '')
         pass;                  #LOG and log('aid={}',(aid))
         m.col_ws= [ci['wd'] for ci in m.ag.cattr('lvls', 'cols')]
 
@@ -1063,7 +1206,6 @@ class OptEdD:
             return d(ctrls=m.get_cnts('+cur')
                     ,vals =m.get_vals('cur')
                     ,form =d(fid=m._prep_opt('fid4ed'))
-#           return d(vals =m.get_vals('cur')
                     )
         elif aid=='lexr':
             # Changed "For lexer"
@@ -1078,7 +1220,8 @@ class OptEdD:
        #def do_lexr
     
     def do_dbcl(self, aid, ag, data=''):
-        M,m,d   = OptEdD,self,dict
+        M,m = OptEdD,self
+        m.stbr_act(M.STBR_MSG, '')
         pass;                  #LOG and log('data={}',(data))
         m.col_ws= [ci['wd'] for ci in m.ag.cattr('lvls', 'cols')]
 
@@ -1100,6 +1243,8 @@ class OptEdD:
             pass;              #LOG and log('skip as no opt',())
         elif -1==op_c:
             pass;              #LOG and log('skip as miss col',())
+        elif 3==op_c:
+            return d(form =d(fid='setd'))
         elif 4==op_c and     m.in_lexr:
             # Switch to user vals
             m.in_lexr   = False
@@ -1113,7 +1258,8 @@ class OptEdD:
        #def do_dbcl
     
     def do_setv(self, aid, ag, data=''):
-        M,m,d   = OptEdD,self,dict
+        M,m = OptEdD,self
+        m.stbr_act(M.STBR_MSG, '')
         pass;                  #LOG and log('aid,m.cur_op={}',(aid,m.cur_op))
         if not m.cur_op:   return []
         m.col_ws= [ci['wd'] for ci in m.ag.cattr('lvls', 'cols')]
@@ -1130,6 +1276,7 @@ class OptEdD:
         lval= oi.get('lval', '')
         ulvl= lval if m.in_lexr else uval
         newv= None
+        scam= app.app_proc(app.PROC_GET_KEYSTATE, '')
         if False:pass
         elif aid=='lvls':
             # Dbl-click
@@ -1148,17 +1295,28 @@ class OptEdD:
             if -1==op_c:
                 pass;           LOG and log('skip as miss col',())
             return []
-        elif aid=='setd':
+        
+        elif aid=='setd' and ulvl:
             # Remove from user/lexer
+            if  scam!='c' and \
+                app.ID_OK != app.msg_box(f(_('Reset {} settings "{}" to default value?') 
+                                                if dval else 
+                                           _('Remove {} settings "{}"?')
+                                          ,'Lexer' if m.in_lexr else 'User'
+                                          ,op
+                                          )
+                                        , app.MB_OKCANCEL+app.MB_ICONQUESTION): return []
             newv= None
         
         elif aid=='brow' and frm=='hotk':
-            app.msg_status_alt(f(_('Default value: "{}", Old value: "{}"'), dval, ulvl), 20)
+            m.stbr_act(M.STBR_MSG, f(_('Default value: "{}". Old value: "{}"'), dval, ulvl))
+#           app.msg_status_alt(f(_('Default value: "{}", Old value: "{}"'), dval, ulvl), 20)
             if frm=='hotk': # Choose Hotkey
                 newv    = app.dlg_hotkey(op)
             if frm=='file': # Choose File
                 newv    = app.dlg_file(True, '', os.path.expanduser(ulvl), '')
-            app.msg_status_alt('', 0)
+#           app.msg_status_alt('', 0)
+            m.stbr_act(M.STBR_MSG, '')
             if not newv:    return []
         
         elif aid in ('edcb', 'setv', 'edrf', 'edrt'):   # Add/Set opt into user/lexer
@@ -1209,7 +1367,8 @@ class OptEdD:
        #def do_setv
     
     def do_help(self, aid, ag, data=''):
-        M,m,d   = OptEdD,self,dict
+        M,m = OptEdD,self
+        m.stbr_act(M.STBR_MSG, '')
         pass;                   LOG and log('',())
         dlg_wrapper('Help'
         ,   510, 410 
@@ -1221,16 +1380,23 @@ class OptEdD:
    )
    +M.FLTR_H+
   _('\r '
-    '\rMore tips.'
-    '\r • ENTER to apply filter and to change or reset value.'
+    '\rOther tips.'
+    '\r • ENTER to filter table and to change or reset value.'
     '\r • Double click on any cell in columns'
     '\r     "{c_usr}"'
     '\r     "{c_lxr}"'
-    '\r   to switch "{in_lxr}".'
+    '\r   to switch "{in_lxr}" if need and focus on a control to edit value.'
+    '\r • Double click on any cell in columns'
+    '\r     "{c_def}"'
+    '\r   to focus on "{reset}".'
+    '\r • Click on "{reset}" will ask to confirm.'
+    '\r   Hold Ctrl to skip the ask.'
    )             , c_usr=M.COL_NMS[M.COL_USR]
                  , c_lxr=M.COL_NMS[M.COL_LXR]
+                 , c_def=M.COL_NMS[M.COL_DEF]
                  , fltr = ag.cattr('flt_', 'cap', live=False).replace('&', '').strip(':')
                  , in_lxr=ag.cattr('edlx', 'cap', live=False).replace('&', '')
+                 , reset= ag.cattr('setd', 'cap', live=False).replace('&', '')
                  ))
         )
         return []
@@ -1246,12 +1412,12 @@ class Command:
         pass;                  #dlg_opt_editor('CudaText options', '')
         pass;                  #return 
         OptEdD(
-          keys_info=None
-#       , path_raw_keys_info=apx.get_def_setting_dir()          +os.sep+'kv-default.json'
-        , path_raw_keys_info=apx.get_def_setting_dir()          +os.sep+'default.json'
-        , path_svd_keys_info=app.app_path(app.APP_DIR_SETTINGS) +os.sep+'_default_keys_info.json'
+                                #path_keys_info=r'c:\Programs\CudaText\py\cuda_find_in_files\fif_opts_def.json'
+                               #,subset='fif-df.'
+#                                path_keys_info=apx.get_def_setting_dir()          +os.sep+'kv-default.json'   #NOTE: srcs
+          path_keys_info=apx.get_def_setting_dir()          +os.sep+'default.json'
         , subset='df.'
-        ).show('CudaText options')
+        ).show(_('CudaText options'))
        #def dlg_cuda_options
 
     def dlg_cuda_opts(self):
@@ -1946,7 +2112,7 @@ def parse_raw_keys_info(path_to_raw):
                 if frm in ('enum_i','enum_s'):
                     kinf['format']  = frm
                 if dct:
-                    log('Too few variants ({}) for key {}',len(dct), key) if len(dct)<2 else None
+                   #log('Too few variants ({}) for key {}',len(dct), key) if len(dct)<2 else None
                     kinf['dct']     = dct
                 if tags:
                     kinf['tags']    = tags
@@ -2166,11 +2332,13 @@ ToDo
 [ ][kv-kv][23jun17] ? Filter with tag (part of tag?). "smth #my"
 [ ][kv-kv][15mar18] ? Filter with all text=key+comment
 [ ][kv-kv][19mar18] ? First "+" to filter with comment
-[ ][kv-kv][19mar18] Point the fact if value is overed in ed
+[ ][kv-kv][19mar18] !! Point the fact if value is overed in ed
 [ ][kv-kv][20mar18] Allow to add/remove opt in user/lex
 [ ][kv-kv][21mar18] ? Allow to meta keys in user.json: 
                         "_fif_LOG__comment":"Comment for fif_LOG"
 [ ][kv-kv][22mar18] Set conrol's tab_order to always work Alt+E for "Valu&e"
 [ ][kv-kv][26mar18] Use editor for comment
-[ ][kv-kv][26mar18] Increase w for one col when user increases w of dlg (if no h-scroll)
+[+][kv-kv][26mar18] Increase w for one col when user increases w of dlg (if no h-scroll)
+[ ][kv-kv][13arp18] DClick on Def-col - focus to Reset
+[ ][kv-kv][16arp18] Open in tag for fmt=json
 '''
