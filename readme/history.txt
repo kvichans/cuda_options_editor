@@ -1,8 +1,8 @@
-1.1.24 (2017-11-20)
-fixed: show bool vals as in json - true/false
+2.1.3 (2018-04-25)
+added: Column for File settings
 
-1.1.23 (2017-11-17)
-fixed: lexer list
+2.1.1 (2018-04-17)
+added: new dlg to edit settings
 
 1.1.22 (2017-06-23)
 added: hotkey format of value, choose by dlg_hotkey

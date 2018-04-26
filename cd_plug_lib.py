@@ -62,9 +62,11 @@ REDUCTIONS  = {'lb'     :'label'
             ,  'fr'     :'bevel'
             ,  'pn'     :'panel'
             ,  'gr'     :'group'
-            ,  'tvw'    :'treeview'
             ,  'sp'     :'splitter'
+
+            ,  'tvw'    :'treeview'
             ,  'sb'     :'statusbar'
+            ,  'bte'    :'button_ex'
             
 #           ,  'fid'    :'focused'
             ,  'cols'   :'columns'
@@ -1135,6 +1137,15 @@ class BaseDlgAgent:
         pass;                  #log('ctrls={}',(ctrls))
         pass;                  #log('form={}',(form))
         pass;                  #log('focused={}',(focused))
+        if form:
+            self.form.update(form)
+            pass;              #log('form={}',(self.fattrs(live=F)))
+            pass;              #log('form={}',(self.fattrs()))
+            pass;              #log('form={}',(form))
+            dlg_proc_wpr(   self.id_dlg
+                        , app.DLG_PROP_SET
+                        , prop=form)
+
         for name, new_ctrl in ctrls.items():
             pass;              #log('name, new_ctrl={}',(name, new_ctrl))
                 
@@ -1149,15 +1160,6 @@ class BaseDlgAgent:
                         , prop=c_prop
                         )
         
-        if form:
-            self.form.update(form)
-            pass;              #log('form={}',(self.fattrs(live=F)))
-            pass;              #log('form={}',(self.fattrs()))
-            pass;              #log('form={}',(form))
-            dlg_proc_wpr(   self.id_dlg
-                        , app.DLG_PROP_SET
-                        , prop=form)
-
         if focused in self.ctrls:
             self.form['focused']    = focused
             app.dlg_proc(   self.id_dlg
@@ -1595,6 +1597,9 @@ class DlgAgent(BaseDlgAgent):
             pass;              #log('it[tag]={}',(it['tag']))
             u_callbk= it['cmd']
             upds    = u_callbk(self, it.get('tag', ''))
+            if upds is None:                                        # To hide/close
+                app.dlg_proc(self.id_dlg, app.DLG_HIDE)
+                return
             if not upds:    return  # No changes
             self._update_on_call(upds)
            #def da_mn_callbk
