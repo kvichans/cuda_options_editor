@@ -1532,9 +1532,12 @@ class DlgAgent(BaseDlgAgent):
         def get_proxy_cb(u_callbk, event):
             def da_c_callbk(idd, idc, data):
                 pass;          #log('ev,idc,cid,data={}',(event,idc,cid,data))
-                if tp in ('listview',) and type(data) in (tuple, list) and not data[1]:
-                    # Skip event "selection loss"
-                    return
+                if tp in ('listview',) and type(data) in (tuple, list):
+                    if not data[1]: return  # Skip event "selection loss"
+                    # Crutch for Linux! Wait fix in core
+                    event_val   = app.dlg_proc(idd, app.DLG_CTL_PROP_GET, index=idc)['val']
+                    if event_val!=data[0]:
+                        app.dlg_proc(idd, app.DLG_CTL_PROP_SET, index=idc, prop={'val':data[0]})
                 pass;          #log('?? u_callbk',())
                 upds    = u_callbk(cid, self, data)
                 pass;          #log('ok u_callbk upds={}',(upds))
