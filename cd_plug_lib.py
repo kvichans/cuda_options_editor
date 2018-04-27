@@ -2005,8 +2005,8 @@ def dlg_valign_consts():
                 
             ,('lb9' ,dict(tp='lb'    ,t=250              ,l=  5  ,w=100  ,cap='==============='                          ))
             ,('rd9' ,dict(tp='rd'    ,t=250+fits['_sp9'] ,l=115  ,w=100  ,cap='=======?'            ,hint=hints['_sp9']     ,val=F))
-            ,('up9' ,dict(tp='bt'    ,t=250-3            ,l=230  ,w=50   ,cap=UP ,call=lambda cid,ag,d: up_dn(ag,'ch9',-1) ))
-            ,('dn9' ,dict(tp='bt'    ,t=250-3            ,l=280  ,w=50   ,cap=DN ,call=lambda cid,ag,d: up_dn(ag,'ch9', 1) ))
+            ,('up9' ,dict(tp='bt'    ,t=250-3            ,l=230  ,w=50   ,cap=UP ,call=lambda cid,ag,d: up_dn(ag,'rd9',-1) ))
+            ,('dn9' ,dict(tp='bt'    ,t=250-3            ,l=280  ,w=50   ,cap=DN ,call=lambda cid,ag,d: up_dn(ag,'rd9', 1) ))
                 
             ,('save',dict(tp='bt'    ,t=DLG_H-30         ,l=115  ,w=100  ,cap=_('&Save')     ,call=lambda cid,ag,d: save()
                                                                                 ,hint=_('Apply the fittings to controls of all dialogs.'
