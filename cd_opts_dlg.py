@@ -922,14 +922,14 @@ class OptEdD:
  ,('edcb',d(tp='cbr',tid='ed_s' ,l=  78 ,r=-270 ,p='ptop'   ,items=its['edcb']      ,vis=vis['edcb']                ,a='TBlR'   ))  #
  ,('edrf',d(tp='rd' ,tid='ed_s' ,l=  78 ,w=  60 ,p='ptop'   ,cap=_('f&alse')        ,vis=vis['edrf']                ,a='TB'     ))  # &a
  ,('edrt',d(tp='rd' ,tid='ed_s' ,l= 140 ,w=  60 ,p='ptop'   ,cap=_('t&rue')         ,vis=vis['edrt']                ,a='TB'     ))  # &r
- ,('brow',d(tp='bt' ,tid='ed_s' ,l=-250 ,w=  90 ,p='ptop'   ,cap=_('&...')          ,vis=vis['brow']                ,a='TBLR'   ))  # &.
- ,('toop',d(tp='bt' ,tid='ed_s' ,l=-250 ,w=  90 ,p='ptop'   ,cap=_('&GoTo')         ,vis=vis['toop'],hint=M.TOOP_H  ,a='TBLR'   ))  # &g
+ ,('brow',d(tp='bt' ,tid='ed_s' ,l=-270 ,w=  90 ,p='ptop'   ,cap=_('&...')          ,vis=vis['brow']                ,a='TBLR'   ))  # &.
+ ,('toop',d(tp='bt' ,tid='ed_s' ,l=-270 ,w=  90 ,p='ptop'   ,cap=_('&GoTo')         ,vis=vis['toop'],hint=M.TOOP_H  ,a='TBLR'   ))  # &g
     # View def-value                                                                                                            
  ,('dfv_',d(tp='lb' ,tid='dfvl' ,l=   5 ,w=  70 ,p='ptop'   ,cap=_('>Defa&ult:')    ,hint=m.cur_op                  ,a='TB'     ))  # &u
  ,('dfvl',d(tp='ed' ,t=235      ,l=  78 ,r=-270 ,p='ptop'   ,ro_mono_brd='1,0,1'    ,sto=False                      ,a='TBlR'   ))  #
  ,('setd',d(tp='bt' ,tid='dfvl' ,l=-270 ,w=  90 ,p='ptop'   ,cap=_('Rese&t')                        ,en=ens['setd'] ,a='TBLR'   ))  # &t
     # For lexer                                                                                                                 
- ,('to__',d(tp='lb' ,tid='ed_s' ,l=-165 ,w=  35 ,p='ptop'   ,cap=_('>For:')                                         ,a='TBLR'   ))  # 
+ ,('to__',d(tp='lb' ,tid='ed_s' ,l=-170 ,w=  35 ,p='ptop'   ,cap=_('>For:')                                         ,a='TBLR'   ))  # 
  ,('tolx',d(tp='ch' ,tid='ed_s' ,l=-145 ,w=  70 ,p='ptop'   ,cap=_('Le&xer')                                        ,a='TBLR'   ))  # &x
  ,('tofi',d(tp='ch' ,tid='ed_s' ,l=- 95 ,w=  80 ,p='ptop'   ,cap=_('F&ile')         ,hint=tofi_c                    ,a='TBLR'   ))  # &i
  ,('lexr',d(tp='cbr',tid='dfvl' ,l=-165 ,w= 160 ,p='ptop'   ,items=m.lexr_w_l                                       ,a='TBLR'   ))

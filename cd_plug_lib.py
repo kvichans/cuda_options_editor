@@ -1965,48 +1965,49 @@ def dlg_valign_consts():
 #       return {'ctrls':[dict(cid=cid ,t=ag.cattr(cid, 't')+sht ,l=ag.cattr(cid, 'l') ,w=ag.cattr(cid, 'w') ,hint=hints[sp] )]}
        #def up_dn
 
+    cs      = ctrls
     cnts    = \
-            [('lb1' ,dict(tp='lb'    ,t= 10              ,l=  5  ,w=100  ,cap='==============='                          ))
+            [('lb1' ,dict(tp='lb'    ,t= 10              ,l=  5  ,w=100  ,cap=cs[0]+' ==============='                          ))
             ,('ch1' ,dict(tp='ch'    ,t= 10+fits['_sp1'] ,l=115  ,w=100  ,cap='=======?'            ,hint=hints['_sp1']     ,val=F))
             ,('up1' ,dict(tp='bt'    ,t= 10-3            ,l=230  ,w=50   ,cap=UP ,call=lambda cid,ag,d: up_dn(ag,'ch1',-1) ))
             ,('dn1' ,dict(tp='bt'    ,t= 10-3            ,l=280  ,w=50   ,cap=DN ,call=lambda cid,ag,d: up_dn(ag,'ch1', 1) ))
                 
-            ,('lb2' ,dict(tp='lb'    ,t= 40              ,l=  5  ,w=100  ,cap='==============='                          ))
+            ,('lb2' ,dict(tp='lb'    ,t= 40              ,l=  5  ,w=100  ,cap=cs[1]+' ==============='                          ))
             ,('ed2' ,dict(tp='ed'    ,t= 40+fits['_sp2'] ,l=115  ,w=100                             ,hint=hints['_sp2']     ,val='=======?'))
             ,('up2' ,dict(tp='bt'    ,t= 40-3            ,l=230  ,w=50   ,cap=UP ,call=lambda cid,ag,d: up_dn(ag,'ed2',-1) ))
             ,('dn2' ,dict(tp='bt'    ,t= 40-3            ,l=280  ,w=50   ,cap=DN ,call=lambda cid,ag,d: up_dn(ag,'ed2', 1) ))
                 
-            ,('lb3' ,dict(tp='lb'    ,t= 70              ,l=  5  ,w=100  ,cap='==============='                          ))
+            ,('lb3' ,dict(tp='lb'    ,t= 70              ,l=  5  ,w=100  ,cap=cs[2]+' ==============='                          ))
             ,('bt3' ,dict(tp='bt'    ,t= 70+fits['_sp3'] ,l=115  ,w=100  ,cap='=======?'            ,hint=hints['_sp3']     ))
             ,('up3' ,dict(tp='bt'    ,t= 70-3            ,l=230  ,w=50   ,cap=UP ,call=lambda cid,ag,d: up_dn(ag,'bt3',-1) ))
             ,('dn3' ,dict(tp='bt'    ,t= 70-3            ,l=280  ,w=50   ,cap=DN ,call=lambda cid,ag,d: up_dn(ag,'bt3', 1) ))
                 
-            ,('lb4' ,dict(tp='lb'    ,t=100              ,l=  5  ,w=100  ,cap='==============='                          ))
+            ,('lb4' ,dict(tp='lb'    ,t=100              ,l=  5  ,w=100  ,cap=cs[3]+' ==============='                          ))
             ,('cbo4',dict(tp='cb-ro' ,t=100+fits['_sp4'] ,l=115  ,w=100  ,items=['=======?']        ,hint=hints['_sp4']     ,val=0))
             ,('up4' ,dict(tp='bt'    ,t=100-3            ,l=230  ,w=50   ,cap=UP ,call=lambda cid,ag,d: up_dn(ag,'cbo4',-1)))
             ,('dn4' ,dict(tp='bt'    ,t=100-3            ,l=280  ,w=50   ,cap=DN ,call=lambda cid,ag,d: up_dn(ag,'cbo4', 1)))
                 
-            ,('lb5' ,dict(tp='lb'    ,t=130              ,l=  5  ,w=100  ,cap='==============='                          ))
+            ,('lb5' ,dict(tp='lb'    ,t=130              ,l=  5  ,w=100  ,cap=cs[4]+' ==============='                          ))
             ,('cb5' ,dict(tp='cb'    ,t=130+fits['_sp5'] ,l=115  ,w=100  ,items=['=======?']        ,hint=hints['_sp5']     ,val='=======?'))
             ,('up5' ,dict(tp='bt'    ,t=130-3            ,l=230  ,w=50   ,cap=UP ,call=lambda cid,ag,d: up_dn(ag,'cb5',-1) ))
             ,('dn5' ,dict(tp='bt'    ,t=130-3            ,l=280  ,w=50   ,cap=DN ,call=lambda cid,ag,d: up_dn(ag,'cb5', 1) ))
                 
-            ,('lb6' ,dict(tp='lb'    ,t=160              ,l=  5  ,w=100  ,cap='==============='                          ))
+            ,('lb6' ,dict(tp='lb'    ,t=160              ,l=  5  ,w=100  ,cap=cs[5]+' ==============='                          ))
             ,('chb6',dict(tp='ch-bt' ,t=160+fits['_sp6'] ,l=115  ,w=100  ,cap='=======?'            ,hint=hints['_sp6']     ,val=0))
             ,('up6' ,dict(tp='bt'    ,t=160-3            ,l=230  ,w=50   ,cap=UP ,call=lambda cid,ag,d: up_dn(ag,'chb6',-1)))
             ,('dn6' ,dict(tp='bt'    ,t=160-3            ,l=280  ,w=50   ,cap=DN ,call=lambda cid,ag,d: up_dn(ag,'chb6', 1)))
                 
-            ,('lb7', dict(tp='lb'    ,t=190              ,l=  5  ,w=100  ,cap='==============='                          ))
+            ,('lb7', dict(tp='lb'    ,t=190              ,l=  5  ,w=100  ,cap=cs[6]+' ==============='                          ))
             ,('lnb7',dict(tp='ln-lb' ,t=190+fits['_sp7'] ,l=115  ,w=100  ,cap='=======?'            ,props=hints['_sp7']    ))
             ,('up7' ,dict(tp='bt'    ,t=190-3            ,l=230  ,w=50   ,cap=UP ,call=lambda cid,ag,d: up_dn(ag,'lnb7',-1)))
             ,('dn7' ,dict(tp='bt'    ,t=190-3            ,l=280  ,w=50   ,cap=DN ,call=lambda cid,ag,d: up_dn(ag,'lnb7', 1)))
                 
-            ,('lb8' ,dict(tp='lb'    ,t=220              ,l=  5  ,w=100  ,cap='4444444444444444'                         ))
+            ,('lb8' ,dict(tp='lb'    ,t=220              ,l=  5  ,w=100  ,cap=cs[7]+' 4444444444444444'                         ))
             ,('sp8' ,dict(tp='sp-ed' ,t=220+fits['_sp8'] ,l=115  ,w=100  ,props='0,4444444,1'       ,hint=hints['_sp8']     ,val=4444444))
             ,('up8' ,dict(tp='bt'    ,t=220-3            ,l=230  ,w=50   ,cap=UP ,call=lambda cid,ag,d: up_dn(ag,'sp8',-1) ))
             ,('dn8' ,dict(tp='bt'    ,t=220-3            ,l=280  ,w=50   ,cap=DN ,call=lambda cid,ag,d: up_dn(ag,'sp8', 1) ))
                 
-            ,('lb9' ,dict(tp='lb'    ,t=250              ,l=  5  ,w=100  ,cap='==============='                          ))
+            ,('lb9' ,dict(tp='lb'    ,t=250              ,l=  5  ,w=100  ,cap=cs[8]+' ==============='                          ))
             ,('rd9' ,dict(tp='rd'    ,t=250+fits['_sp9'] ,l=115  ,w=100  ,cap='=======?'            ,hint=hints['_sp9']     ,val=F))
             ,('up9' ,dict(tp='bt'    ,t=250-3            ,l=230  ,w=50   ,cap=UP ,call=lambda cid,ag,d: up_dn(ag,'rd9',-1) ))
             ,('dn9' ,dict(tp='bt'    ,t=250-3            ,l=280  ,w=50   ,cap=DN ,call=lambda cid,ag,d: up_dn(ag,'rd9', 1) ))
