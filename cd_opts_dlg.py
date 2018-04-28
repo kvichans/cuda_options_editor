@@ -431,6 +431,7 @@ class OptEdD:
         
         m.cur_op    = m.stores.get(m.subset+'cur_op'    , '')           # Name of current option
         m.col_ws    = m.stores.get(m.subset+'col_ws'    , M.COL_MWS[:])
+        m.col_ws    = m.col_ws if M.COL_N==len(m.col_ws) else M.COL_MWS[:]
         m.h_cmnt    = m.stores.get(m.subset+'cmnt_heght', M.CMNT_MHT)
         m.sort      = m.stores.get(m.subset+'sort'      , (-1, True))   # Def sort is no sort
         m.cond_hl   = [s for s in m.stores.get(m.subset+'h.cond', []) if s]
