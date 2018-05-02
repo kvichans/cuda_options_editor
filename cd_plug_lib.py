@@ -1909,6 +1909,7 @@ class DlgAgent(BaseDlgAgent):
 #pass;                           from cudatext import *
 def dlg_valign_consts():
     pass;                      #log('ok')
+    rsp     = False
     UP,DN   = '↑↑','↓↓'
     DLG_W,  \
     DLG_H   = 335, 310
@@ -1927,6 +1928,7 @@ def dlg_valign_consts():
     hints   = {sp:nc+': '+str(fits[sp]) for sp, nc in ctrls_sp}
 
     def save():
+        nonlocal rsp
         scam        = app.app_proc(app.PROC_GET_KEYSTATE, '') if app.app_api_version()>='1.0.143' else ''
         if not scam:#aid_m=='save':
             for sp, nc in ctrls_sp:
@@ -1935,6 +1937,7 @@ def dlg_valign_consts():
                 apx.set_opt('dlg_wrapper_fit_va_for_'+nc, fit)
                #for ic, nc
             fit_top_by_env__clear()
+            rsp = True
             return None#break#while
             
         if scam=='c':#aid_m=='c/save': # Report
@@ -2021,6 +2024,7 @@ def dlg_valign_consts():
                        ,ctrls=cnts ,fid = '-'
                                #,options={'gen_repro_to_file':'repro_dlg_valign_consts.py'}
             ).show()    #NOTE: dlg_valign
+    return rsp
    #def dlg_valign_consts
 
 

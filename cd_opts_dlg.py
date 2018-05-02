@@ -2,7 +2,7 @@
 Authors:
     Andrey Kvichansky    (kvichans on github.com)
 Version:
-    '2.1.4 2018-04-27'
+    '2.1.5 2018-05-02'
 ToDo: (see end of file)
 '''
 
@@ -905,6 +905,7 @@ class OptEdD:
  ,('srt4',d(tp='bt' ,cap='&5'   ,sto=False              ,t=0,l=0,w=0))  # &5
  ,('srt5',d(tp='bt' ,cap='&6'   ,sto=False              ,t=0,l=0,w=0))  # &6
  ,('cws-',d(tp='bt' ,cap='&W'   ,sto=False              ,t=0,l=0,w=0))  # &w
+ ,('cpnm',d(tp='bt' ,cap='&C'   ,sto=False              ,t=0,l=0,w=0))  # &c
  ,('help',d(tp='bt' ,cap='&H'   ,sto=False              ,t=0,l=0,w=0))  # &h
     # Top-panel                                                                                                             
  ,('ptop',d(tp='pn' ,h=    270 ,w=m.dlg_w               ,ali=ALI_CL                                                         
@@ -930,7 +931,7 @@ class OptEdD:
  ,('dfvl',d(tp='ed' ,t=235      ,l=  78 ,r=-270 ,p='ptop'   ,ro_mono_brd='1,0,1'    ,sto=False                      ,a='TBlR'   ))  #
  ,('setd',d(tp='bt' ,tid='dfvl' ,l=-270 ,w=  90 ,p='ptop'   ,cap=_('Rese&t')                        ,en=ens['setd'] ,a='TBLR'   ))  # &t
     # For lexer                                                                                                                 
- ,('to__',d(tp='lb' ,tid='ed_s' ,l=-170 ,w=  35 ,p='ptop'   ,cap=_('>For:')                                         ,a='TBLR'   ))  # 
+ ,('to__',d(tp='lb' ,tid='ed_s' ,l=-170 ,w=  30 ,p='ptop'   ,cap=_('>For:')                                         ,a='TBLR'   ))  # 
  ,('tolx',d(tp='ch' ,tid='ed_s' ,l=-145 ,w=  70 ,p='ptop'   ,cap=_('Le&xer')                                        ,a='TBLR'   ))  # &x
  ,('tofi',d(tp='ch' ,tid='ed_s' ,l=- 95 ,w=  80 ,p='ptop'   ,cap=_('F&ile')         ,hint=tofi_c                    ,a='TBLR'   ))  # &i
  ,('lexr',d(tp='cbr',tid='dfvl' ,l=-165 ,w= 160 ,p='ptop'   ,items=m.lexr_w_l                                       ,a='TBLR'   ))
@@ -1081,6 +1082,11 @@ class OptEdD:
             m.stores.pop(m.subset+'col_ws', None)
             return d(ctrls=m.get_cnts('+cols'))
 
+        elif aid=='vali':
+            if dlg_valign_consts():
+                return d(ctrls=m.get_cnts())
+            return []
+
         elif aid=='rslt':
             # Restore dlg/ctrls sizes
             fpr         = ag.fattrs()
@@ -1112,14 +1118,15 @@ class OptEdD:
         pass;                  #LOG and log('aid={}',(aid))
         M,m = OptEdD,self
         m.stbr_act(M.STBR_MSG, '')
+
         scam    = app.app_proc(app.PROC_GET_KEYSTATE, '')
         if scam=='c' and aid=='menu':
-            dlg_valign_consts()
-            return []
+            return m.do_cust('vali', ag)
 
         def wnen_menu(ag, tag):
             pass;              #LOG and log('tag={}',(tag))
             if False:pass
+            
             elif tag[:3]=='ch:':
                 return m.do_fltr('chps', ag, tag[3:])
 
@@ -1129,6 +1136,8 @@ class OptEdD:
                 return m.do_sort('', ag, int(tag[3]))
             
             elif tag=='cws-':
+                return m.do_cust(tag, ag)
+            elif tag=='vali':
                 return m.do_cust(tag, ag)
             
 #           elif tag=='lubk':
@@ -1245,32 +1254,37 @@ class OptEdD:
             lts_l   = m.stores.get(m.subset+'layouts', [])  # [{nm:Nm, dlg_h:H, dlg_w:W, ...}]
             pass;              #lts_l   = [d(nm='Nm1'), d(nm='Nm2')]
             mn_its  = \
-    [ d(    tag='full'          ,cap=_('Show &all options from user/lexer')  ,ch=m.all_ops
+    [ d(    tag='full'          ,cap=_('&All options from User/Lexer')      ,ch=m.all_ops
     ),d(                         cap='-'
-    ),d(    tag='cpnm'          ,cap=_('Copy option &name')
-    ),d(    tag='locv'          ,cap=locv_c                              ,en=bool(m.cur_op)
-    ),d(    tag='locd'          ,cap=locd_c                              ,en=bool(m.cur_op)
-    ),d(                         cap='-'
-    ),d(                         cap=_('&Table')            ,sub=
-        [ d(tag='srt'+str(cn)       ,cap=f(_('Sort by column "{}"'), cs)    ,ch=m.sort[0]==cn   ,key='Alt+'+str(1+cn))
-                                                            for cn, cs in enumerate(M.COL_NMS)
-        ]+
-        [ d(                         cap='-'
-        ),d(tag='srt-'              ,cap=_('Clear sorting')  ,en=(m.sort[0]!=-1)
-        )]
-    ),d(                             cap=_('&Layout')       ,sub=
-        [ d(tag='cws-'              ,cap=_('Set default columns &widths')                       ,key='Alt+W'
+    ),d(                         cap=_('&Layout')           ,sub=
+        [ d(tag='svlt'              ,cap=_('&Save current layout...')
         ),d(                         cap='-'
-        ),d(tag='svlt'              ,cap=_('&Save current layout...')
         )]+     (
         [ d(tag='rslt'+str(nlt)     ,cap=f(_('Restore layout "{}"'), lt['nm']))         for nlt, lt in enumerate(lts_l)
         ]+
         [ d(                         cap=_('&Forget layout'),sub=
             [ d(tag='rmlt'+str(nlt)     ,cap=f(_('Forget layout "{}"...'), lt['nm']))   for nlt, lt in enumerate(lts_l)
             ])
-        ]       if lts_l else [])
+        ]       if lts_l else []) +
+        [ d(                         cap='-'
+        ),d(tag='vali'              ,cap=_('Adjust vertical alignments...')
+        ),d(tag='cws-'              ,cap=_('Set default columns &widths')                       ,key='Alt+W'
+        )]
+    ),d(                         cap=_('&Table')            ,sub=
+        [ d(tag='srt'+str(cn)       ,cap=f(_('Sort by column "{}"'), cs)    ,ch=m.sort[0]==cn   ,key='Alt+'+str(1+cn))
+                                                            for cn, cs in enumerate(M.COL_NMS)
+        ]+
+        [ d(                         cap='-'
+        ),d(tag='srt-'              ,cap=_('Clear sorting')                 ,en=(m.sort[0]!=-1)
+        )]
+    ),d(                         cap=_('More..&.')          ,sub=
+        [ d(tag='locv'              ,cap=locv_c                              ,en=bool(m.cur_op)
+        ),d(tag='locd'              ,cap=locd_c                              ,en=bool(m.cur_op)
+        ),d(tag='cpnm'              ,cap=_('&Copy option name')                                 ,key='Alt+C'
+        )]
     ),d(                         cap='-'
-    ),d(    tag='rprt'          ,cap=_('Create HTML &report about all options')
+    ),d(    tag='rprt'          ,cap=_('Create HTML &report')
+    ),d(                         cap='-'
     ),d(    tag='help'          ,cap=_('&Help...')                                              ,key='Alt+H'
     )]
             pass;              #LOG and log('mn_its=¶{}',pf(mn_its))
