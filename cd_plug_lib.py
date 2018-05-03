@@ -36,6 +36,7 @@ REDUCTIONS  = {'lb'     :'label'
             ,  'ed'     :'edit'             # ro_mono_brd
             ,  'ed_pw'  :'edit_pwd'
             ,  'sp-ed'  :'spinedit'         # min_max_inc
+            ,  'sed'    :'spinedit'         # min_max_inc
             ,  'me'     :'memo'             # ro_mono_brd
             ,  'bt'     :'button'           # def_bt
             ,  'rd'     :'radio'
@@ -2026,7 +2027,6 @@ def dlg_valign_consts():
             ).show()    #NOTE: dlg_valign
     return rsp
    #def dlg_valign_consts
-
 
 def get_hotkeys_desc(cmd_id, ext_id=None, keys_js=None, def_ans=''):
     """ Read one or two hotkeys for command 

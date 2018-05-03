@@ -410,11 +410,13 @@ class OptEdD:
     
     def __init__(self
         , path_keys_info    =''             # default.json or parsed data
-        , subset=''                         # To get/set from/to cuda_options_editor.json
+        , subset            =''             # To get/set from/to cuda_options_editor.json
+        , how               ={}             # Details to work
         ):
         M,m         = OptEdD,self
         
         m.ed        = ed
+        m.how       = how
         
         m.defn_path = Path(path_keys_info)
         m.subset    = subset
@@ -894,6 +896,7 @@ class OptEdD:
         # Full dlg controls info    #NOTE: cnts
         cmnt_t  = m.dlg_h-m.h_cmnt-5-M.STBR_H
         tofi_c  = m.ed.get_prop(app.PROP_TAB_TITLE)
+        tofi_en = not m.how.get('only_for_ul', False)                   # Forbid to switch fo File ops
         cnts    = [0                                                                                                                        #
     # Hidden buttons                                                                                                                    
  ,('flt-',d(tp='bt' ,cap='&l'   ,sto=False              ,t=0,l=0,w=0))  # &l
@@ -933,7 +936,7 @@ class OptEdD:
     # For lexer                                                                                                                 
  ,('to__',d(tp='lb' ,tid='ed_s' ,l=-170 ,w=  30 ,p='ptop'   ,cap=_('>For:')                                         ,a='TBLR'   ))  # 
  ,('tolx',d(tp='ch' ,tid='ed_s' ,l=-145 ,w=  70 ,p='ptop'   ,cap=_('Le&xer')                                        ,a='TBLR'   ))  # &x
- ,('tofi',d(tp='ch' ,tid='ed_s' ,l=- 95 ,w=  80 ,p='ptop'   ,cap=_('F&ile')         ,hint=tofi_c                    ,a='TBLR'   ))  # &i
+ ,('tofi',d(tp='ch' ,tid='ed_s' ,l=- 95 ,w=  80 ,p='ptop'   ,cap=_('F&ile')         ,hint=tofi_c    ,en=tofi_en     ,a='TBLR'   ))  # &i
  ,('lexr',d(tp='cbr',tid='dfvl' ,l=-165 ,w= 160 ,p='ptop'   ,items=m.lexr_w_l                                       ,a='TBLR'   ))
     # Comment                                                                                                               
  ,('cmsp',d(tp='sp' ,y=cmnt_t-5                         ,ali=ALI_BT,sp_lr=5                                                     ))
@@ -1252,9 +1255,10 @@ class OptEdD:
             locv_c  = f(M.LOCV_C, m.cur_op)
             locd_c  = f(M.LOCD_C, m.cur_op)
             lts_l   = m.stores.get(m.subset+'layouts', [])  # [{nm:Nm, dlg_h:H, dlg_w:W, ...}]
+            full_en = not m.how.get('only_with_def', False) # Forbid to switch fo User+Lexer ops
             pass;              #lts_l   = [d(nm='Nm1'), d(nm='Nm2')]
             mn_its  = \
-    [ d(    tag='full'          ,cap=_('&All options from User/Lexer')      ,ch=m.all_ops
+    [ d(    tag='full'          ,cap=_('&All options from User/Lexer')      ,ch=m.all_ops   ,en=full_en
     ),d(                         cap='-'
     ),d(                         cap=_('&Layout')           ,sub=
         [ d(tag='svlt'              ,cap=_('&Save current layout...')

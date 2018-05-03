@@ -4,15 +4,16 @@ desc=View and change options from user.json
 type=cudatext-plugin
 subdir=cuda_options_editor
 homepage=https://github.com/kvichans/cuda_options_editor
+api=1.0.237
 
 [item10]
 section=commands
 caption=Options Editor...
-method=dlg_cuda_opts
+method=dlg_cuda_options
 ;menu=0
 
 [item20]
 section=commands
-caption=Editor for options...
-method=dlg_cuda_options
-;menu=0
+caption=Options Editor (deprecated)...
+method=dlg_cuda_opts
+menu=0
