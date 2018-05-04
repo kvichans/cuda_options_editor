@@ -689,7 +689,7 @@ def _os_scale(id_dialog, id_action, prop='', index=-1, index2=-1, name=''):
    #def os_scale
 
 gui_height_cache= { 'button'            :0
-#                 , 'label'             :0
+                  , 'label'             :0
 #                 , 'linklabel'         :0
                   , 'combo'             :0
                   , 'combo_ro'          :0
@@ -716,21 +716,24 @@ def get_gui_height(ctrl_type):
     if 0 == gui_height_cache['button']:
         for tpc in gui_height_cache:
             gui_height_cache[tpc]   = app.app_proc(app.PROC_GET_GUI_HEIGHT, tpc)
-        pass;                   log('gui_height_cache={}',(gui_height_cache))
+        pass;                  #log('gui_height_cache={}',(gui_height_cache))
         idd=app.dlg_proc(         0,    app.DLG_CREATE)
         for tpc in gui_height_cache:
             idc=app.dlg_proc(   idd,    app.DLG_CTL_ADD, tpc)
             pass;              #log('tpc,idc={}',(tpc,idc))
-            app.dlg_proc(       idd,    app.DLG_CTL_PROP_SET, index=idc, prop={'name':tpc, 'x':0, 'y':0, 'w':1
-                , 'h':gui_height_cache[tpc]})
+            prc = {'name':tpc, 'x':0, 'y':0, 'w':1, 'cap':tpc
+                , 'h':gui_height_cache[tpc]}
+            if tpc in ('combo' 'combo_ro'):
+                prc['items']='item0'
+            app.dlg_proc(       idd,    app.DLG_CTL_PROP_SET, index=idc, prop=prc)
         app.dlg_proc(           idd,    app.DLG_PROP_SET, prop={'x':-1000, 'y':-1000, 'w':100, 'h':100})
         app.dlg_proc(           idd,    app.DLG_SHOW_NONMODAL)
         for tpc in gui_height_cache:
             prc = app.dlg_proc( idd,    app.DLG_CTL_PROP_GET, name=tpc)
-            pass;               log('prc={}',(prc))
+            pass;              #log('prc={}',(prc))
             gui_height_cache[tpc]   = prc['h']
         app.dlg_proc(           idd,    app.DLG_FREE)
-        pass;                   log('gui_height_cache={}',(gui_height_cache))
+        pass;                  #log('gui_height_cache={}',(gui_height_cache))
     
     return gui_height_cache.get(ctrl_type, app.app_proc(app.PROC_GET_GUI_HEIGHT, ctrl_type))
    #def get_gui_height
