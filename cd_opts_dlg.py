@@ -2,7 +2,7 @@
 Authors:
     Andrey Kvichansky    (kvichans on github.com)
 Version:
-    '2.1.5 2018-05-02'
+    '2.1.7 2018-05-04'
 ToDo: (see end of file)
 '''
 
@@ -2385,9 +2385,11 @@ pre {
 }
 td.nxt {
     color:          grey;
+    word-break:     break-all;
 }
 td.win {
     font-weight:    bold;
+    word-break:     break-all;
 }
     </style>
 </head>
@@ -2399,6 +2401,30 @@ RPT_FOOT = '''
 '''
 
 def do_report(fn, lex='', ed_=ed):
+    def hard_word_wrap(text, rmax):
+        reShift     = re.compile(r'\s*')
+        reHeadTail  = re.compile(r'(.{' + str(rmax) + r'}\S*)\s*(.*)')
+        src_lines   = text.splitlines()
+        pass;                  #print('src_lines=',src_lines)
+        trg_lines   = []
+        for line in src_lines:
+            pass;              #print('line=', line, 'len=', len(line.rstrip()))
+            if len(line.rstrip()) <= rmax: 
+                trg_lines.append(line)
+                continue
+            shift   = reShift.match(line).group(0)
+            head,   \
+            tail    = reHeadTail.match(line).group(1, 2)
+            if not tail:
+                tail= line.split()[-1]
+                head= line[:-len(tail)]
+            pass;              #print('head=', head, 'tail=', tail)
+            trg_lines.append(head)
+            trg_lines.append(shift+tail)
+        pass;                  #print('trg_lines=',trg_lines)
+        return '\n'.join(trg_lines)
+       #def hard_word_wrap
+       
 #   lex         = ed_.get_prop(app.PROP_LEXER_CARET)
     def_json    = apx.get_def_setting_dir()         +os.sep+'default.json'
     usr_json    = app.app_path(app.APP_DIR_SETTINGS)+os.sep+'user.json'
@@ -2432,7 +2458,7 @@ def do_report(fn, lex='', ed_=ed):
 
     with open(fn, 'w', encoding='utf8') as f:
         f.write(RPT_HEAD)
-        f.write('<h4>High priority: editor options</h4>')
+        f.write('<h4>High priority: editor options</h4>\n')
         f.write('<table>\n')
         f.write(    '<tr>\n')
         f.write(    '<th>Option name</th>\n')
@@ -2454,20 +2480,21 @@ def do_report(fn, lex='', ed_=ed):
             f.write(    '<td class="{}">{}</td>\n'.format('win' if winner=='usr' else 'nxt', usr_opts.get(opt, '')))
             f.write(    '<td class="{}">{}</td>\n'.format('win' if winner=='lex' else 'nxt', lex_opts.get(opt, '')))    if lex else None
             f.write(    '<td class="{}">{}</td>\n'.format('win' if winner=='fil' else 'nxt', fil_opts.get(opt, '')))
-            f.write(    '<td><pre>{}</pre></td>\n'.format(cmt_opts.get(opt, '')))
+#           f.write(    '<td><pre>{}</pre></td>\n'.format(cmt_opts.get(opt, '')))
+            f.write(    '<td><pre>{}</pre></td>\n'.format(hard_word_wrap(cmt_opts.get(opt, ''), 50)))
             f.write(    '</tr>\n')
             def_opts.pop(opt, None)
             usr_opts.pop(opt, None)
             lex_opts.pop(opt, None)                                                                                     if lex else None
         f.write('</table><br/>\n')
-        f.write('<h4>Overridden default options</h4>')
+        f.write('<h4>Overridden default options</h4>\n')
         f.write('<table>\n')
         f.write(    '<tr>\n')
-        f.write(    '<th>Option name</th>\n')
-        f.write(    '<th>Value in<br>default</th>\n')
-        f.write(    '<th>Value in<br>user</th>\n')
-        f.write(    '<th>Value in<br>{}<br></th>\n'.format(lex))                                                        if lex else None
-        f.write(    '<th>Comment</th>\n')
+        f.write(    '<th width="15%">Option name</th>\n')
+        f.write(    '<th width="20%">Value in<br>default</th>\n')
+        f.write(    '<th width="20%">Value in<br>user</th>\n')
+        f.write(    '<th width="10%">Value in<br>{}<br></th>\n'.format(lex))                                            if lex else None
+        f.write(    '<th width="35%">Comment</th>\n')
         f.write(    '</tr>\n')
         for opt in def_opts.keys():
             winner  = 'def'
@@ -2479,7 +2506,7 @@ def do_report(fn, lex='', ed_=ed):
             f.write(    '<td class="{}">{}</td>\n'.format('win' if winner=='def' else 'nxt', def_opts.get(opt, '')))
             f.write(    '<td class="{}">{}</td>\n'.format('win' if winner=='usr' else 'nxt', usr_opts.get(opt, '')))
             f.write(    '<td class="{}">{}</td>\n'.format('win' if winner=='lex' else 'nxt', lex_opts.get(opt, '')))    if lex else None
-            f.write(    '<td><pre>{}</pre></td>\n'.format(cmt_opts.get(opt, '')))
+            f.write(    '<td><pre>{}</pre></td>\n'.format(hard_word_wrap(cmt_opts.get(opt, ''), 50)))
             f.write(    '</tr>\n')
             usr_opts.pop(opt, None)
             lex_opts.pop(opt, None)                                                                                     if lex else None
@@ -2557,7 +2584,7 @@ ToDo
 [+][kv-kv][04apr17] Restore Sec and Tags
 [+][kv-kv][04apr17] ro-combo hitory for Tags
 [+][kv-kv][05apr17] Add "default" to fonts if def_val=="default"
-[+][at-kv][05apr17] Preview for format=font
+[+][at-kv][05apr17] Preview for format=fontmay
 [+][kv-kv][06apr17] Spec filter sign: * - to show only modified
 [-][kv-kv][06apr17] Format color
 [+][kv-kv][24apr17] Sort as Def or as User
@@ -2572,7 +2599,9 @@ ToDo
 [ ][kv-kv][22mar18] Set conrol's tab_order to always work Alt+E for "Valu&e"
 [ ][kv-kv][26mar18] Use editor for comment
 [+][kv-kv][26mar18] Increase w for one col when user increases w of dlg (if no h-scroll)
-[ ][kv-kv][13arp18] DClick on Def-col - focus to Reset
-[ ][kv-kv][16arp18] Open in tag for fmt=json
-[ ][kv-kv][23arp18] ? Show opt from cur line if ed(default.json)
+[ ][kv-kv][13apr18] DClick on Def-col - focus to Reset
+[ ][kv-kv][16apr18] Open in tag for fmt=json
+[ ][kv-kv][23apr18] ? Show opt from cur line if ed(default.json)
+[ ][at-kv][03may18] Rework ask to confirm removing user/lex opt
+[ ][at-kv][04may18] Report to console all changes
 '''

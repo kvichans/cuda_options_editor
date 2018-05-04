@@ -1,3 +1,9 @@
+2.1.7 (2018-05-04)
+fixed: width of table in HTML report
+
+2.1.6 (2018-05-04)
+fixed: vertical alignments on Linux/Mac/...
+
 2.1.5 (2018-05-02)
 added: Call "Adjust vertical alignments" dlg from local menu
 
