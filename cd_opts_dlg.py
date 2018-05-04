@@ -914,7 +914,7 @@ class OptEdD:
  ,('ptop',d(tp='pn' ,h=    270 ,w=m.dlg_w               ,ali=ALI_CL                                                         
                     ,h_min=270                                                                                                  ))
     # Menu                                                                                                                      
- ,('menu',d(tp='bt' ,tid='cond' ,l=-25-5,w=  25 ,p='ptop'   ,cap='&='                                               ,a='LR'     ))  # &=
+ ,('menu',d(tp='bt' ,tid='cond' ,l=-30-5,w=  30 ,p='ptop'   ,cap='&='                                               ,a='LR'     ))  # &=
     # Filter                                                                                                                    
  ,('chps',d(tp='bt' ,tid='cond' ,l=-270 ,r=-180 ,p='ptop'   ,cap=_('+&Section…')    ,hint=M.CHPS_H                  ,a='LR'     ))  # 
  ,('flt_',d(tp='lb' ,tid='cond' ,l=   5 ,w=  70 ,p='ptop'   ,cap='>'+M.FILTER_C+':' ,hint=M.FLTR_H                              ))  # &f
