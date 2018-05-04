@@ -2,7 +2,7 @@
 Authors:
     Andrey Kvichansky    (kvichans on github.com)
 Version:
-    '2.1.14 2018-03-13'
+    '2.1.15 2018-05-04'
 Content
     log                 Logger with timing
     get_translation     i18n
@@ -687,6 +687,53 @@ def _os_scale(id_dialog, id_action, prop='', index=-1, index2=-1, name=''):
         elif id_action==app.DLG_CTL_PROP_GET and ''!=name:  restore_or_scale_dn(prop, name)
 #       pass;                   print('a={}, ok pr={}'.format(DLG_PROC_I2S[id_action], {k:prop[k] for k in prop if k in _SCALED_KEYS or k=='name'}))
    #def os_scale
+
+gui_height_cache= { 'button'            :0
+#                 , 'label'             :0
+#                 , 'linklabel'         :0
+                  , 'combo'             :0
+                  , 'combo_ro'          :0
+                  , 'edit'              :0
+                  , 'spinedit'          :0
+                  , 'check'             :0
+                  , 'radio'             :0
+                  , 'checkbutton'       :0
+                  , 'filter_listbox'    :0
+                  , 'filter_listview'   :0
+#                 , 'scrollbar'         :0
+                  }
+def get_gui_height(ctrl_type):
+    """ Return real OS-specific height of some control
+             'button'
+             'label' 'linklabel'
+             'combo' 'combo_ro'
+             'edit' 'spinedit'
+             'check' 'radio' 'checkbutton'
+             'filter_listbox' 'filter_listview'
+             'scrollbar'
+    """
+    global gui_height_cache
+    if 0 == gui_height_cache['button']:
+        for tpc in gui_height_cache:
+            gui_height_cache[tpc]   = app.app_proc(app.PROC_GET_GUI_HEIGHT, tpc)
+        pass;                   log('gui_height_cache={}',(gui_height_cache))
+        idd=app.dlg_proc(         0,    app.DLG_CREATE)
+        for tpc in gui_height_cache:
+            idc=app.dlg_proc(   idd,    app.DLG_CTL_ADD, tpc)
+            pass;              #log('tpc,idc={}',(tpc,idc))
+            app.dlg_proc(       idd,    app.DLG_CTL_PROP_SET, index=idc, prop={'name':tpc, 'x':0, 'y':0, 'w':1
+                , 'h':gui_height_cache[tpc]})
+        app.dlg_proc(           idd,    app.DLG_PROP_SET, prop={'x':-1000, 'y':-1000, 'w':100, 'h':100})
+        app.dlg_proc(           idd,    app.DLG_SHOW_NONMODAL)
+        for tpc in gui_height_cache:
+            prc = app.dlg_proc( idd,    app.DLG_CTL_PROP_GET, name=tpc)
+            pass;               log('prc={}',(prc))
+            gui_height_cache[tpc]   = prc['h']
+        app.dlg_proc(           idd,    app.DLG_FREE)
+        pass;                   log('gui_height_cache={}',(gui_height_cache))
+    
+    return gui_height_cache.get(ctrl_type, app.app_proc(app.PROC_GET_GUI_HEIGHT, ctrl_type))
+   #def get_gui_height
 
 def dlg_proc_wpr(id_dialog, id_action, prop='', index=-1, index2=-1, name=''):
     """ Wrapper on app.dlg_proc 
@@ -1751,7 +1798,8 @@ class DlgAgent(BaseDlgAgent):
                             , 'filter_listbox', 'filter_listview'
                             ):
             # OS specific control height
-            cnt['h']    = app.app_proc(app.PROC_GET_GUI_HEIGHT, cnt['type'])
+            cnt['h']    = get_gui_height(cnt['type'])
+#           cnt['h']    = app.app_proc(app.PROC_GET_GUI_HEIGHT, cnt['type'])
 
         if 'l' in cnt:
             prP['x']    = cnt['l']
