@@ -1,8 +1,8 @@
-﻿''' Plugin for CudaText editor
+''' Plugin for CudaText editor
 Authors:
     Andrey Kvichansky    (kvichans on github.com)
 Version:
-    '2.1.7 2018-05-04'
+    '2.1.8 2018-05-05'
 ToDo: (see end of file)
 '''
 
@@ -1576,6 +1576,16 @@ class OptEdD:
                        ,ed_cfg  =None
                        ,lexer   =m.lexr
                        )
+            
+            if newv is None:
+                text = 'Reset option: "{}"'.format(op)
+            else:
+                s_val = repr(newv)
+                if type(newv)==bool: s_val = s_val.lower()
+                text = 'Changed option: "{}": {}'.format(op, s_val)
+                
+            print(text)
+            ed.cmd(cmds.cmd_OpsReloadAndApply)
         
         # Change dlg data
         pass;                  #LOG and log('?? oi={}',(oi))
