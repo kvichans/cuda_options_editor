@@ -1589,6 +1589,7 @@ class OptEdD:
                 return d(form=d(fid='eded'))
         elif aid in ('edrf', 'edrt'):       # Add/Set opt for user/lexer/file
             newv    = aid=='edrt'
+            newv    = not newv if newv==ulfvl else newv
         elif aid=='edcb':                   # Add/Set opt into user/lexer/file
             pass;              #LOG and log('oi={}',(oi))
             vl_l    = M.FONT_L \
