@@ -690,7 +690,7 @@ def _os_scale(id_dialog, id_action, prop='', index=-1, index2=-1, name=''):
 
 gui_height_cache= { 'button'            :0
                   , 'label'             :0
-#                 , 'linklabel'         :0
+                  , 'linklabel'         :0
                   , 'combo'             :0
                   , 'combo_ro'          :0
                   , 'edit'              :0
@@ -1598,7 +1598,9 @@ class DlgAgent(BaseDlgAgent):
                 elif not upds:                                          # No changes
                     return
                 pass;          #log('upds={}',(upds))
+                pass;          #log('?? _update_on_call',())
                 self._update_on_call(upds)
+                pass;          #log('ok _update_on_call',())
                #def da_c_callbk
             return da_c_callbk
            #def get_proxy_cb

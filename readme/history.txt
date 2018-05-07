@@ -1,3 +1,16 @@
+2.1.7 (2018-05-07)
+added: Report of change steps. Each step to status. All steps to message with Alt+O.
+added: Dialog setting "Apply changes on exit" to call OpsReloadAndApply only on exit (to optimize responsiveness)
+added: Command "Apply changes now" (Alt+Y) to call OpsReloadAndApply now
+added: Dialog setting to update FILE option after user/lex changed
+fixed: Always show FILE options in table
+fixed: Show !!! only if FILE option doesnot same with overridden def/user/lex value
+fixed: Block []File for option without ed.prop
+fixed: Allow sort by File column
+fixed: Show non-empty options at head of table after sort
+fixed: Replace radio-buttons to check-buttons (as Linux bug)
+fixed: Rename old command to dlg_cuda_opts_deprecated
+
 2.1.7 (2018-05-04)
 fixed: width of table in HTML report
 

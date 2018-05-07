@@ -15,5 +15,5 @@ method=dlg_cuda_options
 [item20]
 section=commands
 caption=Options Editor (deprecated)...
-method=dlg_cuda_opts
+method=dlg_cuda_opts_deprecated
 menu=0
