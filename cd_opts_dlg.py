@@ -2,7 +2,7 @@
 Authors:
     Andrey Kvichansky    (kvichans on github.com)
 Version:
-    '2.1.8 2018-05-07'
+    '2.2.0 2018-05-08'
 ToDo: (see end of file)
 '''
 
@@ -624,13 +624,12 @@ class OptEdD:
         its['edcb'] = []
         
         ens['dfvl']         = True
+        ens['tofi']         = m.cur_op in apx.OPT2PROP
         if m.for_ulf=='l' and m.lexr not in m.lexr_l:
             # Not selected lexer
             vis['eded']     = True
             ens['dfvl']     = False
             return vis,ens,vas,its
-        
-        ens['tofi']         = m.cur_op in apx.OPT2PROP
         
         if m.for_ulf=='f' and m.cur_op not in apx.OPT2PROP:
             # No the option for File
@@ -1676,7 +1675,7 @@ class OptEdD:
         M,m = OptEdD,self
         
         if 0==len(m.chng_rpt):
-            rpt = f('Start to change options at {:%Y-%m-%d %H:%M:%S}', datetime.datetime.now())
+            rpt = f('Starting to change options at {:%Y-%m-%d %H:%M:%S}', datetime.datetime.now())
 #           print(rpt)
             m.chng_rpt += [rpt]
         
@@ -1737,8 +1736,12 @@ class OptEdD:
     '\r • Use double click on any cell in column'
     '\r     "{c_def}"'
     '\r   to put focus on "{reset}".'
-    '\r • Click on "{reset}" will ask to confirm.'
+    '\r • Click on "{reset}" will ask to confirm for User and Lexer options.'
     '\r   Hold Ctrl to skip confirmation.'
+    '\r • If currrent options is not visible see its name in tooltip'
+    '\r   when cursor over label User/Lexer/File'
+    '\r • See name of file (or name of tag) in tooltip'
+    '\r   when cursor over checkbutton File'
    )             , c_usr=M.COL_NMS[M.COL_USR]
                  , c_lxr=M.COL_NMS[M.COL_LXR]
                  , c_fil=M.COL_NMS[M.COL_FIL]
@@ -2719,11 +2722,11 @@ ToDo
 [+][kv-kv][13apr18] DClick on Def-col - focus to Reset
 [-][kv-kv][16apr18] Open in tag for fmt=json
 [?][kv-kv][23apr18] ? Show opt from cur line if ed(default.json)
-[ ][at-kv][03may18] Rework ask to confirm removing user/lex opt
-[ ][at-kv][04may18] Report to console all changes
-[ ][at-kv][05may18] Call OpsReloadAndApply
-[ ][kv-kv][05may18] Rework radio to checks (Linux bug: always set one of radio-buttons)
-[ ][kv-kv][05may18] Ask "Set also for current file?" if ops is ed.prop
+[+][at-kv][03may18] Rework ask to confirm removing user/lex opt
+[+][at-kv][04may18] Report to console all changes
+[+][at-kv][05may18] Call OpsReloadAndApply
+[+][kv-kv][05may18] Rework radio to checks (Linux bug: always set one of radio-buttons)
+[-][kv-kv][05may18] Ask "Set also for current file?" if ops is ed.prop
 [+][kv-kv][06may18] Menu command "Show changes"
 [+][kv-kv][06may18] Show all file opt value. !!! only if val!=over-val
 [+][kv-kv][06may18] Rework Sort

@@ -1,3 +1,7 @@
+2.2.0 (2018-05-08)
+fixed: Work with usaved tab
+fixed: Help dialog
+
 2.1.7 (2018-05-07)
 added: Report of change steps. Each step to status. All steps to message with Alt+O.
 added: Dialog setting "Apply changes on exit" to call OpsReloadAndApply only on exit (to optimize responsiveness)
