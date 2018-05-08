@@ -1,18 +1,18 @@
 2.2.0 (2018-05-08)
-fixed: Work with usaved tab
+fixed: Work with unsaved tabs
 fixed: Help dialog
 
 2.1.7 (2018-05-07)
-added: Report of change steps. Each step to status. All steps to message with Alt+O.
-added: Dialog setting "Apply changes on exit" to call OpsReloadAndApply only on exit (to optimize responsiveness)
-added: Command "Apply changes now" (Alt+Y) to call OpsReloadAndApply now
-added: Dialog setting to update FILE option after user/lex changed
-fixed: Always show FILE options in table
-fixed: Show !!! only if FILE option doesnot same with overridden def/user/lex value
-fixed: Block []File for option without ed.prop
+added: Reporting of change steps. Each step is shown in the statusbar. All steps are shown in the dialog, hotkey Alt+O.
+added: Dialog setting "Apply changes on exit" to call command OpsReloadAndApply only on exit (to optimize responsiveness)
+added: Command "Apply changes now" (Alt+Y) to call command OpsReloadAndApply now
+added: Dialog setting to update FILE option after user/lexer option changed
+fixed: Always show FILE options in the table
+fixed: Show !!! only if FILE option is not the same as overridden def/user/lexer value
+fixed: Block File-checkbox for options which cannot be set per tab
 fixed: Allow sort by File column
-fixed: Show non-empty options at head of table after sort
-fixed: Replace radio-buttons to check-buttons (as Linux bug)
+fixed: Show non-empty options in the header of table after sort
+fixed: Replace radio-buttons to check-buttons (needed because of Linux issue)
 fixed: Rename old command to dlg_cuda_opts_deprecated
 
 2.1.7 (2018-05-04)
@@ -22,23 +22,23 @@ fixed: width of table in HTML report
 fixed: vertical alignments on Linux/Mac/...
 
 2.1.5 (2018-05-02)
-added: Call "Adjust vertical alignments" dlg from local menu
+added: Call "Adjust vertical alignments" dialog from local menu
 
 2.1.4 (2018-04-27)
-added: show title of ed in header File
+added: show title of file-tab in the table header 'File'
 fixed: create HTML report
 
 2.1.3 (2018-04-25)
 added: Column for File settings
 
 2.1.1 (2018-04-17)
-added: new dlg to edit settings
+added: all new dialog to edit settings
 
 1.1.22 (2017-06-23)
-added: hotkey format of value, choose by dlg_hotkey
+added: hotkey-values are changed via dlg_hotkey API func
 
 1.1.20 (2017-06-16)
-fixed: start without user.json 
+fixed: can work without user.json 
 
 1.1.17 (2017-05-15)
 added: log changes to status and console
