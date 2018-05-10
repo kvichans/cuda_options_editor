@@ -2,7 +2,7 @@
 Authors:
     Andrey Kvichansky    (kvichans on github.com)
 Version:
-    '2.2.0 2018-05-08'
+    '2.2.01 2018-05-10'
 ToDo: (see end of file)
 '''
 
@@ -48,13 +48,17 @@ VERSION_D   = VERSION.split(' ')
 MAX_HIST    = apx.get_opt('ui_max_history_edits', 20)
 CFG_JSON    = app.app_path(app.APP_DIR_SETTINGS)+os.sep+'cuda_options_editor.json'
 HTM_RPT_FILE= str(Path(tempfile.gettempdir()) / 'CudaText_option_report.html')
+FONT_LST    = ['default'] \
+            + [font 
+                for font in app.app_proc(app.PROC_ENUM_FONTS, '')
+                if not font.startswith('@')] 
 
 def load_definitions(defn_path:Path)->list:
     """ Return  
             [{  opt:'opt name'
             ,   def:<def val>
             ,   cmt:'full comment'
-            ,   frm:'bool'|'float'|'int'|'int2s'|'str'|'strs'|'str2s'|'font'|'hotk'|'file'|'json'      |'unk'
+            ,   frm:'bool'|'float'|'int'|'int2s'|'str'|'strs'|'str2s'|'font'|'font-e'|'hotk'|'file'|'json'      |'unk'
             ,   lst:[str]       for frm==ints
             ,   dct:[(num,str)] for frm==int2s
             ,       [(str,str)] for frm==str2s
@@ -175,6 +179,8 @@ def load_definitions(defn_path:Path)->list:
                       ('unk',  dval_s       )
             pass;              #LOG and log('key,dval_s,dfrm,dval={}',(key,dval_s,dfrm,dval))
             
+            dfrm    = 'font-e' if dfrm=='font' and 'Empty string is allowed' in cmnt   else dfrm
+            
             cmnt    = cmnt.strip(l)     if cmnt else pre_cmnt
             ref_frm = cmnt[:3]=='...'
             pre_cmnt= cmnt              if cmnt else pre_cmnt
@@ -198,6 +204,10 @@ def load_definitions(defn_path:Path)->list:
                     kinf['lst'] = lst
                 if tags:
                     kinf['tgs'] = tags
+            if dfrm=='font':
+                kinf['lst']     = FONT_LST
+            if dfrm=='font-e':
+                kinf['lst']     = [''] + FONT_LST
             if chap:
                 kinf['chp']     = chap
             
@@ -378,10 +388,6 @@ class OptEdD:
     STBR_MSG= 12
     STBR_H  = apx.get_opt('ui_statusbar_height',24)
 
-    FONT_L  = ['default'] \
-            + [font 
-                for font in app.app_proc(app.PROC_ENUM_FONTS, '')
-                if not font.startswith('@')] 
     FILTER_C= _('&Filter')
     NO_CHAP = _('_no_')
     CHPS_H  = f(_('Choose section to append in "{}"'), FILTER_C).replace('&', '')
@@ -604,11 +610,11 @@ class OptEdD:
         if opts=='fid4ed':
             if not m.cur_op:    return 'lvls'
             frm = m.opts_full[m.cur_op]['frm']
-            fid =   'eded'  if frm in ('str', 'int', 'float')               else \
-                    'edcb'  if frm in ('int2s', 'str2s', 'strs', 'font')    else \
-                    'edrf'  if frm in ('bool',)                             else \
-                    'brow'  if frm in ('hotk', 'file')                      else \
-                    'toop'  if frm in ('json')                              else \
+            fid =   'eded'  if frm in ('str', 'int', 'float')                       else \
+                    'edcb'  if frm in ('int2s', 'str2s', 'strs', 'font', 'font-e')  else \
+                    'edrf'  if frm in ('bool',)                                     else \
+                    'brow'  if frm in ('hotk', 'file')                              else \
+                    'toop'  if frm in ('json')                                      else \
                     'lvls'
             pass;              #LOG and log('m.cur_op,frm,fid={}',(m.cur_op,frm,fid))
             return fid
@@ -674,18 +680,14 @@ class OptEdD:
                 vis['edrt'] = True
                 vas['edrf'] = ulfvl_va==False
                 vas['edrt'] = ulfvl_va==True
-            elif frm in ('font',):
-                vis['edcb'] = True
-                ens['edcb'] = True
-                its['edcb'] = M.FONT_L
-                vas['edcb'] = index_1(its['edcb'], ulfvl_va, -1)
             elif frm in ('int2s', 'str2s'):
                 vis['edcb'] = True
                 ens['edcb'] = True
                 its['edcb'] = oi['jdc']
                 vas['edcb'] = index_1([k for (k,v) in oi['dct']], ulfvl_va, -1)
                 pass;          #LOG and log('ulfvl_va, vas[edcb]={}',(ulfvl_va,vas['edcb']))
-            elif frm in ('strs',):
+            elif frm in ('strs','font','font-e'):
+#           elif frm in ('strs',):
                 vis['edcb'] = True
                 ens['edcb'] = True
                 its['edcb'] = oi['lst']
@@ -1591,9 +1593,7 @@ class OptEdD:
             newv    = not newv if newv==ulfvl else newv
         elif aid=='edcb':                   # Add/Set opt into user/lexer/file
             pass;              #LOG and log('oi={}',(oi))
-            vl_l    = M.FONT_L \
-                        if frm=='font' else \
-                      [k for k,v in oi.get('dct', [])]  if 'dct' in oi else oi.get('lst', [])
+            vl_l    = [k for k,v in oi.get('dct', [])]  if 'dct' in oi else oi.get('lst', [])
             pass;              #LOG and log('vl_l={}',(vl_l))
             pass;              #LOG and log('m.ag.cval(edcb)={}',(m.ag.cval('edcb')))
             newv    = vl_l[m.ag.cval('edcb')]

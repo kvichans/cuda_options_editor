@@ -1,3 +1,6 @@
+2.2.01 (2018-05-10)
+added: Font name with allow empty value
+
 2.2.0 (2018-05-08)
 fixed: Work with unsaved tabs
 fixed: Help dialog
