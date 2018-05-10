@@ -52,6 +52,7 @@ FONT_LST    = ['default'] \
             + [font 
                 for font in app.app_proc(app.PROC_ENUM_FONTS, '')
                 if not font.startswith('@')] 
+pass;                          #FONT_LST=FONT_LST[:3]
 
 def load_definitions(defn_path:Path)->list:
     """ Return  
@@ -179,13 +180,14 @@ def load_definitions(defn_path:Path)->list:
                       ('unk',  dval_s       )
             pass;              #LOG and log('key,dval_s,dfrm,dval={}',(key,dval_s,dfrm,dval))
             
-            dfrm    = 'font-e' if dfrm=='font' and 'Empty string is allowed' in cmnt   else dfrm
-            
             cmnt    = cmnt.strip(l)     if cmnt else pre_cmnt
             ref_frm = cmnt[:3]=='...'
             pre_cmnt= cmnt              if cmnt else pre_cmnt
             pass;              #LOG and log('ref_frm,pre_cmnt,cmnt={}',(ref_frm,pre_cmnt,cmnt))
             cmnt    = cmnt.lstrip('.'+l)
+
+            dfrm    = 'font-e' if dfrm=='font' and 'Empty string is allowed' in cmnt   else dfrm
+            
             kinf    = odict()
             kinfs  += [kinf]
             kinf['opt']         = key
@@ -207,6 +209,7 @@ def load_definitions(defn_path:Path)->list:
             if dfrm=='font':
                 kinf['lst']     = FONT_LST
             if dfrm=='font-e':
+#               kinf['lst']     = FONT_LST + ['']
                 kinf['lst']     = [''] + FONT_LST
             if chap:
                 kinf['chp']     = chap
