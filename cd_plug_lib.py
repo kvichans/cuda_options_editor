@@ -2,7 +2,7 @@
 Authors:
     Andrey Kvichansky    (kvichans on github.com)
 Version:
-    '2.1.15 2018-05-04'
+    '2.1.16 2018-05-14'
 Content
     log                 Logger with timing
     get_translation     i18n
@@ -66,6 +66,7 @@ REDUCTIONS  = {'lb'     :'label'
             ,  'sp'     :'splitter'
 
             ,  'tvw'    :'treeview'
+            ,  'edr'    :'editor'
             ,  'sb'     :'statusbar'
             ,  'bte'    :'button_ex'
             
@@ -296,7 +297,7 @@ ENV2FITS= {'win':
             ,'button'     :-4
             ,'combo_ro'   :-4
             ,'combo'      :-3
-            ,'checkbutton':-4
+            ,'checkbutton':-5
             ,'linklabel'  : 0
             ,'spinedit'   :-3
             }
@@ -342,6 +343,9 @@ def fit_top_by_env(what_tp, base_tp='label'):
     fit     = 0
     if base_tp=='label':
         fit = apx.get_opt('dlg_wrapper_fit_va_for_'+what_tp, fit4lb.get(what_tp, 0))
+        pass;                  #fit_o=fit
+        fit = _os_scale(0, app.DLG_PROP_GET, {'y':fit})['y']
+        pass;                  #log('what_tp,fit_o,fit,h={}',(what_tp,fit_o,fit,get_gui_height(what_tp)))
     else:
         fit = fit_top_by_env(what_tp) - fit_top_by_env(base_tp)
     pass;                      #log('what_tp, base_tp, fit={}',(what_tp, base_tp, fit))
@@ -647,11 +651,14 @@ _SCALED_KEYS = ('x', 'y', 'w', 'h'
             ,  'sp_l', 'sp_r', 'sp_t', 'sp_b', 'sp_a'
             )
 _scale_store = {}       # {id_dialog:{id_dialog:{}, id_ctrl:{}, name_ctrl:{}}}
-def _os_scale(id_dialog, id_action, prop='', index=-1, index2=-1, name=''):
+def _os_scale(id_dialog, id_action, prop=None, index=-1, index2=-1, name=''):
+    pass;                      #return prop
+    pass;                      #log('prop={}',({k:prop[k] for k in prop if k in ('x','y')}))
     ppi     = app.app_proc(app.PROC_GET_SYSTEM_PPI, '')
     if ppi==96:
-        return
+        return prop
     scale   = ppi/96
+    pass;                      #log('id_dialog, id_action,scale={}',(id_dialog, DLG_PROC_I2S[id_action],scale))
     if False:pass
     elif id_action==app.DLG_CREATE:
         _scale_store[id_dialog]  = {}
@@ -659,34 +666,60 @@ def _os_scale(id_dialog, id_action, prop='', index=-1, index2=-1, name=''):
     elif id_action==app.DLG_FREE:
         _scale_store.pop(id_dialog, None)
     
-    elif id_action in (app.DLG_PROP_SET, app.DLG_PROP_GET, app.DLG_CTL_PROP_SET, app.DLG_CTL_PROP_GET):
-        dlg_store   = _scale_store.setdefault(id_dialog, {})
-#       pass;                   print('a={}, st={}'.format(DLG_PROC_I2S[id_action], dlg_store))
-        
+    elif id_action in (app.DLG_PROP_SET     , app.DLG_PROP_GET
+                      ,app.DLG_CTL_PROP_SET , app.DLG_CTL_PROP_GET
+                      ,'scale', 'unscale'):
+
         def save_and_scale_up(prop_dct, store_key):
+            dlg_store   = _scale_store.setdefault(id_dialog, {})
+            pass;              #print('a={}, st={}'.format(DLG_PROC_I2S[id_action], dlg_store))
             xywh_p  = {k:prop_dct[k] for k in prop_dct if k in _SCALED_KEYS}
             xywh_s  = dlg_store.setdefault(store_key, {})
             xywh_s.update(xywh_p)                                               # Save!
             for k in _SCALED_KEYS:
-                if k in prop_dct:
-                    prop_dct[k]   =               int(prop_dct[k] * scale)      # Scale!
+                if k in prop_dct and '_ready_'+k not in prop_dct:
+#               if k in prop_dct:
+                    prop_dct[k]   =             round(prop_dct[k] * scale)      # Scale!
+#                   prop_dct[k]   =               int(prop_dct[k] * scale)      # Scale!
+
+        def scale_up(prop_dct):
+            for k in _SCALED_KEYS:
+                if k in prop_dct and '_ready_'+k not in prop_dct:
+#               if k in prop_dct:
+                    prop_dct[k]   =             round(prop_dct[k] * scale)      # Scale!
+#                   prop_dct[k]   =               int(prop_dct[k] * scale)      # Scale!
         
         def restore_or_scale_dn(prop_dct, store_key):
+            dlg_store   = _scale_store.setdefault(id_dialog, {})
+            pass;              #print('a={}, st={}'.format(DLG_PROC_I2S[id_action], dlg_store))
             xywh_s  = dlg_store.get(store_key, {})
             for k in _SCALED_KEYS:
-                if k in prop_dct:
-                    prop_dct[k]   = xywh_s.get(k, int(prop_dct[k] / scale))     # Restore or UnScale!
+                if k in prop_dct and '_ready_'+k not in prop_dct:
+#               if k in prop_dct:
+                    prop_dct[k]   = xywh_s.get(k, round(prop_dct[k] / scale))   # Restore or UnScale!
+#                   prop_dct[k]   = xywh_s.get(k, int(prop_dct[k] / scale))     # Restore or UnScale!
+
+        def scale_dn(prop_dct):
+            for k in _SCALED_KEYS:
+                if k in prop_dct and '_ready_'+k not in prop_dct:
+#               if k in prop_dct:
+                    prop_dct[k]   =             round(prop_dct[k] / scale)      # UnScale!
+#                   prop_dct[k]   =               int(prop_dct[k] / scale)      # UnScale!
         
 #       pass;                   print('a={}, ?? pr={}'.format(DLG_PROC_I2S[id_action], {k:prop[k] for k in prop if k in _SCALED_KEYS or k=='name'}))
         if False:pass
         elif id_action==app.DLG_PROP_SET:                   save_and_scale_up(prop, id_dialog)
-        elif id_action==app.DLG_PROP_GET:                   restore_or_scale_dn(prop, id_dialog)
         elif id_action==app.DLG_CTL_PROP_SET and -1!=index: save_and_scale_up(prop, index)
         elif id_action==app.DLG_CTL_PROP_SET and ''!=name:  save_and_scale_up(prop, name)
+        elif id_action==app.DLG_PROP_GET:                              scale_dn(prop)
         elif id_action==app.DLG_CTL_PROP_GET and -1!=index: restore_or_scale_dn(prop, index)
         elif id_action==app.DLG_CTL_PROP_GET and ''!=name:  restore_or_scale_dn(prop, name)
+
+        elif id_action==  'scale':                                     scale_up(prop)
+        elif id_action=='unscale':                                     scale_dn(prop)
 #       pass;                   print('a={}, ok pr={}'.format(DLG_PROC_I2S[id_action], {k:prop[k] for k in prop if k in _SCALED_KEYS or k=='name'}))
-   #def os_scale
+        return prop
+   #def _os_scale
 
 gui_height_cache= { 'button'            :0
                   , 'label'             :0
@@ -762,13 +795,14 @@ def dlg_proc_wpr(id_dialog, id_action, prop='', index=-1, index2=-1, name=''):
     if id_action==DLG_CTL_ADD_SET:  # Join ADD and SET for a control
         res = ctl_ind = \
         app.dlg_proc(id_dialog, app.DLG_CTL_ADD, name, -1, -1, '')       # type in name
-        if name in ('label', 'button', 'checkbutton') and 'h' not in prop:
-            prop['h'] = app.dlg_proc(id_dialog, app.DLG_CTL_PROP_GET, index=ctl_ind)['h']
+#       if name in ('label', 'button', 'checkbutton') and 'h' not in prop:
+#           prop['h'] = app.dlg_proc(id_dialog, app.DLG_CTL_PROP_GET, index=ctl_ind)['h']
         _os_scale(   id_dialog, app.DLG_CTL_PROP_SET, prop, ctl_ind, -1, '')
         app.dlg_proc(id_dialog, app.DLG_CTL_PROP_SET, prop, ctl_ind, -1, '')
     else:
         _os_scale(         id_dialog, id_action, prop, index, index2, name) if scale_on_set else 0
         res = app.dlg_proc(id_dialog, id_action, prop, index, index2, name)
+        pass;                  #log('res={}',({k:res[k] for k in res if k in ('x','y')})) if id_action==app.DLG_PROP_GET else 0
     
     _os_scale(id_dialog, id_action, res, index, index2, name)               if scale_on_get else 0
     return res
@@ -1578,8 +1612,6 @@ class DlgAgent(BaseDlgAgent):
         c_pr.update(self._prep_pos_attrs(cfg_ctrl, cid, opts.get('ctrls')))                    # l,r,t,b,tid -> x,y,w,h
         pass;                  #log('c_pr={}',(c_pr))
 
-#       def get_proxy_cb(_u_callbk):
-#           u_callbk    = _u_callbk()
         def get_proxy_cb(u_callbk, event):
             def da_c_callbk(idd, idc, data):
                 pass;          #log('ev,idc,cid,data={}',(event,idc,cid,data))
@@ -1647,7 +1679,12 @@ class DlgAgent(BaseDlgAgent):
         pr      = self.cattrs(cid, ('x','y','w','h'))
         x, y    = pr['x']+(pr['w'] if '+w' in where else 0) \
                 , pr['y']+(pr['h'] if '+h' in where else 0)
+        pass;                  #log('x, y={}',(x, y))
+        prXY    = _os_scale(0, 'scale', {'x':x, 'y':y})
+        x, y    = prXY['x'], prXY['y']
+        pass;                  #log('x, y={}',(x, y))
         x, y    = app.dlg_proc(self.id_dlg, app.DLG_COORD_LOCAL_TO_SCREEN, index=x, index2=y)
+        pass;                  #log('x, y={}',(x, y))
         
         def da_mn_callbk(it):
             pass;              #log('it[tag]={}',(it['tag']))
@@ -1804,6 +1841,7 @@ class DlgAgent(BaseDlgAgent):
                             ):
             # OS specific control height
             cnt['h']    = get_gui_height(cnt['type'])
+            prP['_ready_h'] = True
 #           cnt['h']    = app.app_proc(app.PROC_GET_GUI_HEIGHT, cnt['type'])
 
         if 'l' in cnt:
@@ -2025,47 +2063,47 @@ def dlg_valign_consts():
     cs      = ctrls
     cnts    = \
             [('lb1' ,dict(tp='lb'    ,t= 10              ,l=  5  ,w=100  ,cap=cs[0]+' ==============='                          ))
-            ,('ch1' ,dict(tp='ch'    ,t= 10+fits['_sp1'] ,l=115  ,w=100  ,cap='=======?'            ,hint=hints['_sp1']     ,val=F))
+            ,('ch1' ,dict(tp='ch'    ,t= 10+fits['_sp1'] ,l=115  ,w=100  ,cap='=================',hint=hints['_sp1']     ,val=F))
             ,('up1' ,dict(tp='bt'    ,t= 10-3            ,l=230  ,w=50   ,cap=UP ,call=lambda cid,ag,d: up_dn(ag,'ch1',-1) ))
             ,('dn1' ,dict(tp='bt'    ,t= 10-3            ,l=280  ,w=50   ,cap=DN ,call=lambda cid,ag,d: up_dn(ag,'ch1', 1) ))
                 
             ,('lb2' ,dict(tp='lb'    ,t= 40              ,l=  5  ,w=100  ,cap=cs[1]+' ==============='                          ))
-            ,('ed2' ,dict(tp='ed'    ,t= 40+fits['_sp2'] ,l=115  ,w=100                             ,hint=hints['_sp2']     ,val='=======?'))
+            ,('ed2' ,dict(tp='ed'    ,t= 40+fits['_sp2'] ,l=115  ,w=100                          ,hint=hints['_sp2']     ,val='================='))
             ,('up2' ,dict(tp='bt'    ,t= 40-3            ,l=230  ,w=50   ,cap=UP ,call=lambda cid,ag,d: up_dn(ag,'ed2',-1) ))
             ,('dn2' ,dict(tp='bt'    ,t= 40-3            ,l=280  ,w=50   ,cap=DN ,call=lambda cid,ag,d: up_dn(ag,'ed2', 1) ))
                 
             ,('lb3' ,dict(tp='lb'    ,t= 70              ,l=  5  ,w=100  ,cap=cs[2]+' ==============='                          ))
-            ,('bt3' ,dict(tp='bt'    ,t= 70+fits['_sp3'] ,l=115  ,w=100  ,cap='=======?'            ,hint=hints['_sp3']     ))
+            ,('bt3' ,dict(tp='bt'    ,t= 70+fits['_sp3'] ,l=115  ,w=100  ,cap='=================',hint=hints['_sp3']     ))
             ,('up3' ,dict(tp='bt'    ,t= 70-3            ,l=230  ,w=50   ,cap=UP ,call=lambda cid,ag,d: up_dn(ag,'bt3',-1) ))
             ,('dn3' ,dict(tp='bt'    ,t= 70-3            ,l=280  ,w=50   ,cap=DN ,call=lambda cid,ag,d: up_dn(ag,'bt3', 1) ))
                 
             ,('lb4' ,dict(tp='lb'    ,t=100              ,l=  5  ,w=100  ,cap=cs[3]+' ==============='                          ))
-            ,('cbo4',dict(tp='cb-ro' ,t=100+fits['_sp4'] ,l=115  ,w=100  ,items=['=======?']        ,hint=hints['_sp4']     ,val=0))
+            ,('cbo4',dict(tp='cb-ro' ,t=100+fits['_sp4'] ,l=115  ,w=100  ,items=['============='],hint=hints['_sp4']     ,val=0))
             ,('up4' ,dict(tp='bt'    ,t=100-3            ,l=230  ,w=50   ,cap=UP ,call=lambda cid,ag,d: up_dn(ag,'cbo4',-1)))
             ,('dn4' ,dict(tp='bt'    ,t=100-3            ,l=280  ,w=50   ,cap=DN ,call=lambda cid,ag,d: up_dn(ag,'cbo4', 1)))
                 
             ,('lb5' ,dict(tp='lb'    ,t=130              ,l=  5  ,w=100  ,cap=cs[4]+' ==============='                          ))
-            ,('cb5' ,dict(tp='cb'    ,t=130+fits['_sp5'] ,l=115  ,w=100  ,items=['=======?']        ,hint=hints['_sp5']     ,val='=======?'))
+            ,('cb5' ,dict(tp='cb'    ,t=130+fits['_sp5'] ,l=115  ,w=100  ,items=['============='],hint=hints['_sp5']     ,val='============='))
             ,('up5' ,dict(tp='bt'    ,t=130-3            ,l=230  ,w=50   ,cap=UP ,call=lambda cid,ag,d: up_dn(ag,'cb5',-1) ))
             ,('dn5' ,dict(tp='bt'    ,t=130-3            ,l=280  ,w=50   ,cap=DN ,call=lambda cid,ag,d: up_dn(ag,'cb5', 1) ))
                 
             ,('lb6' ,dict(tp='lb'    ,t=160              ,l=  5  ,w=100  ,cap=cs[5]+' ==============='                          ))
-            ,('chb6',dict(tp='ch-bt' ,t=160+fits['_sp6'] ,l=115  ,w=100  ,cap='=======?'            ,hint=hints['_sp6']     ,val=0))
+            ,('chb6',dict(tp='ch-bt' ,t=160+fits['_sp6'] ,l=115  ,w=100  ,cap='==========='      ,hint=hints['_sp6']     ,val=0))
             ,('up6' ,dict(tp='bt'    ,t=160-3            ,l=230  ,w=50   ,cap=UP ,call=lambda cid,ag,d: up_dn(ag,'chb6',-1)))
             ,('dn6' ,dict(tp='bt'    ,t=160-3            ,l=280  ,w=50   ,cap=DN ,call=lambda cid,ag,d: up_dn(ag,'chb6', 1)))
                 
             ,('lb7', dict(tp='lb'    ,t=190              ,l=  5  ,w=100  ,cap=cs[6]+' ==============='                          ))
-            ,('lnb7',dict(tp='ln-lb' ,t=190+fits['_sp7'] ,l=115  ,w=100  ,cap='=======?'            ,props=hints['_sp7']    ))
+            ,('lnb7',dict(tp='ln-lb' ,t=190+fits['_sp7'] ,l=115  ,w=100  ,cap='=================',props=hints['_sp7']    ))
             ,('up7' ,dict(tp='bt'    ,t=190-3            ,l=230  ,w=50   ,cap=UP ,call=lambda cid,ag,d: up_dn(ag,'lnb7',-1)))
             ,('dn7' ,dict(tp='bt'    ,t=190-3            ,l=280  ,w=50   ,cap=DN ,call=lambda cid,ag,d: up_dn(ag,'lnb7', 1)))
                 
             ,('lb8' ,dict(tp='lb'    ,t=220              ,l=  5  ,w=100  ,cap=cs[7]+' 4444444444444444'                         ))
-            ,('sp8' ,dict(tp='sp-ed' ,t=220+fits['_sp8'] ,l=115  ,w=100  ,props='0,4444444,1'       ,hint=hints['_sp8']     ,val=4444444))
+            ,('sp8' ,dict(tp='sp-ed' ,t=220+fits['_sp8'] ,l=115  ,w=100  ,props='0,444444444,1'  ,hint=hints['_sp8']     ,val=444444444))
             ,('up8' ,dict(tp='bt'    ,t=220-3            ,l=230  ,w=50   ,cap=UP ,call=lambda cid,ag,d: up_dn(ag,'sp8',-1) ))
             ,('dn8' ,dict(tp='bt'    ,t=220-3            ,l=280  ,w=50   ,cap=DN ,call=lambda cid,ag,d: up_dn(ag,'sp8', 1) ))
                 
             ,('lb9' ,dict(tp='lb'    ,t=250              ,l=  5  ,w=100  ,cap=cs[8]+' ==============='                          ))
-            ,('rd9' ,dict(tp='rd'    ,t=250+fits['_sp9'] ,l=115  ,w=100  ,cap='=======?'            ,hint=hints['_sp9']     ,val=F))
+            ,('rd9' ,dict(tp='rd'    ,t=250+fits['_sp9'] ,l=115  ,w=100  ,cap='=================',hint=hints['_sp9']     ,val=F))
             ,('up9' ,dict(tp='bt'    ,t=250-3            ,l=230  ,w=50   ,cap=UP ,call=lambda cid,ag,d: up_dn(ag,'rd9',-1) ))
             ,('dn9' ,dict(tp='bt'    ,t=250-3            ,l=280  ,w=50   ,cap=DN ,call=lambda cid,ag,d: up_dn(ag,'rd9', 1) ))
                 

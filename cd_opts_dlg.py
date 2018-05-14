@@ -2,7 +2,7 @@
 Authors:
     Andrey Kvichansky    (kvichans on github.com)
 Version:
-    '2.2.01 2018-05-10'
+    '2.2.02 2018-05-14'
 ToDo: (see end of file)
 '''
 
@@ -443,8 +443,9 @@ class OptEdD:
         m.col_ws    = m.col_ws if M.COL_N==len(m.col_ws) else M.COL_MWS[:]
         m.h_cmnt    = m.stores.get(m.subset+'cmnt_heght', M.CMNT_MHT)
         m.sort      = m.stores.get(m.subset+'sort'      , (-1, True))   # Def sort is no sort
-        m.cond_hl   = [s for s in m.stores.get(m.subset+'h.cond', []) if s]
-        m.cond_s    = ''    # String filter
+        m.live_fltr = m.stores.get(m.subset+'live_fltr' , False)        # To filter after each change and no History
+        m.cond_hl   = [s for s in m.stores.get(m.subset+'h.cond', []) if s] if not m.live_fltr else []
+        m.cond_s    = ''        # String filter
         m.ops_only  = []        # Subset to show (future)
         
         m.lexr      = m.ed.get_prop(app.PROP_LEXER_CARET)
@@ -766,7 +767,8 @@ class OptEdD:
         m.stores[m.subset+'cur_op']     = m.cur_op
         m.stores[m.subset+'col_ws']     = m.col_ws
         m.stores[m.subset+'sort']       = m.sort
-        m.stores[m.subset+'h.cond']     = m.cond_hl
+        if not m.live_fltr:
+            m.stores[m.subset+'h.cond'] = m.cond_hl
         m.stores[m.subset+'all_ops']    = m.all_ops
         open(CFG_JSON, 'w').write(json.dumps(m.stores, indent=4))
        #def show
@@ -849,9 +851,11 @@ class OptEdD:
             cols    = get_tbl_cols(opts_full, SKWULFs, sort, col_ws)
 
             itms    = (list(zip([_('Section'),_('Option'), '', _('Default'), _('User'), _('Lexer'), _('File')], map(str, col_ws)))
+                     #,         [ (str(n)+':'+sc,k         ,w    ,dv           ,uv         ,lv          ,fv)    # for debug
                      #,         [ (sc+' '+fm    ,k         ,w    ,dv           ,uv         ,lv          ,fv)    # for debug
                       ,         [ (sc           ,k         ,w    ,dv           ,uv         ,lv          ,fv)    # for user
-                        for  (     sc           ,k         ,w    ,dv           ,uv         ,lv          ,fv, fm) in SKWULFs ]
+                        for  n,(   sc           ,k         ,w    ,dv           ,uv         ,lv          ,fv, fm) in enumerate(SKWULFs) ]
+#                       for  (     sc           ,k         ,w    ,dv           ,uv         ,lv          ,fv, fm) in SKWULFs ]
                       )
             return SKWULFs, cols, itms
            #def get_tbl_data
@@ -951,10 +955,11 @@ class OptEdD:
  ,('dfv_',d(tp='lb' ,tid='dfvl' ,l=   5 ,w=  70 ,p='ptop'   ,cap=_('>Defa&ult:')    ,hint=m.cur_op                  ,a='TB'     ))  # &u
  ,('dfvl',d(tp='ed' ,t=235      ,l=  78 ,r=-270 ,p='ptop'   ,ro_mono_brd='1,0,1'    ,sto=False                      ,a='TBlR'   ))  #
  ,('setd',d(tp='bt' ,tid='dfvl' ,l=-270 ,w=  90 ,p='ptop'   ,cap=_('Rese&t')                        ,en=ens['setd'] ,a='TBLR'   ))  # &t
-    # For lexer                                                                                                                 
- ,('to__',d(tp='lb' ,tid='ed_s' ,l=-170 ,w=  30 ,p='ptop'   ,cap=_('>For:')                                         ,a='TBLR'   ))  # 
- ,('tolx',d(tp='ch' ,tid='ed_s' ,l=-145 ,w=  70 ,p='ptop'   ,cap=_('Le&xer')                                        ,a='TBLR'   ))  # &x
- ,('tofi',d(tp='ch' ,tid='ed_s' ,l=- 95 ,w=  80 ,p='ptop'   ,cap=_('F&ile')         ,hint=tofi_c    ,en=tofi_en     ,a='TBLR'   ))  # &i
+    # For lexer/file                                                                                                            
+#,('to__',d(tp='lb' ,tid='ed_s' ,l=-170 ,w=  30 ,p='ptop'   ,cap=_('>For:')                                         ,a='TBLR'   ))  # 
+ ,('to__',d(tp='lb' ,tid='ed_s' ,l=-165 ,w=  30 ,p='ptop'   ,cap=_('For:')                                          ,a='TBLR'   ))  # 
+ ,('tolx',d(tp='ch' ,tid='ed_s' ,l=-140 ,w=  70 ,p='ptop'   ,cap=_('Le&xer')                                        ,a='TBLR'   ))  # &x
+ ,('tofi',d(tp='ch' ,tid='ed_s' ,l=- 85 ,w=  70 ,p='ptop'   ,cap=_('F&ile')         ,hint=tofi_c    ,en=tofi_en     ,a='TBLR'   ))  # &i
  ,('lexr',d(tp='cbr',tid='dfvl' ,l=-165 ,w= 160 ,p='ptop'   ,items=m.lexr_w_l                                       ,a='TBLR'   ))
     # Comment                                                                                                               
  ,('cmsp',d(tp='sp' ,y=cmnt_t-5                         ,ali=ALI_BT,sp_lr=5                                                     ))
@@ -968,6 +973,7 @@ class OptEdD:
             if 'l' in cnt:  cnt['l']    = m.dlg_w+cnt['l'] if cnt['l']<0 else cnt['l']
             if 'r' in cnt:  cnt['r']    = m.dlg_w+cnt['r'] if cnt['r']<0 else cnt['r']
             if 'y' in cnt:  cnt['y']    = m.dlg_h+cnt['y'] if cnt['y']<0 else cnt['y']
+        
         cnts['menu']['call']            = m.do_menu
         cnts['chps']['call']            = m.do_menu
         cnts['cpnm']['call']            = m.do_menu
@@ -975,6 +981,8 @@ class OptEdD:
         cnts['apnw']['call']            = m.do_menu
         cnts['flt-']['call']            = m.do_fltr
         cnts['fltr']['call']            = m.do_fltr
+        if m.live_fltr:
+            cnts['cond']['call']        = m.do_fltr
         cnts['lexr']['call']            = m.do_lxfi
         cnts['tolx']['call']            = m.do_lxfi
         cnts['tofi']['call']            = m.do_lxfi
@@ -1202,12 +1210,20 @@ class OptEdD:
                 m.auto4file = not m.auto4file
                 m.stores[m.subset+'auto4file']  = m.auto4file
         
+            if tag=='lifl':
+                m.live_fltr = not m.live_fltr
+                m.stores[m.subset+'live_fltr']  = m.live_fltr
+                m.cond_hl   = [s for s in m.stores.get(m.subset+'h.cond', []) if s] if not m.live_fltr else []
+                return d(ctrls=m.get_cnts()
+                        ,form =d(fid='cond')
+                        )
+        
             elif tag=='cpnm':
                 app.app_proc(app.PROC_SET_CLIP, m.cur_op)
             elif tag=='erpt':
                 body    = '\n'.join(m.chng_rpt)
 #               app.msg_box('\n'.join(m.chng_rpt), app.MB_OK)
-                dlg_wrapper(_('Сhange steps')       ,500+10     ,400+10, 
+                dlg_wrapper(_('Сhanging steps')       ,500+10     ,400+10, 
                     [ dict(cid='body',tp='me' ,l=5,w=500  ,t=5,h=400, ro_mono_brd='1,0,0')]
                     , dict(body=body), focus_cid='body')
             elif tag=='locv':
@@ -1331,6 +1347,9 @@ class OptEdD:
         ),d(tag='apnw'              ,cap=_('Appl&y changes now')            ,en=m.apply_need    ,key='Alt+Y'
         ),d(tag='aufi'              ,cap=_('Auto-update FILE options')      ,ch=m.auto4file
         ),d(                         cap='-'
+        ),d(tag='lifl'              ,cap=_('Directly filter (w/o Enter, no History)')
+                                                                            ,ch=m.live_fltr
+        ),d(                         cap='-'
         ),d(tag='cpnm'              ,cap=_('&Copy option name')                                 ,key='Alt+C'
         )]
     ),d(                         cap='-'
@@ -1366,10 +1385,11 @@ class OptEdD:
         if aid=='cond':
             pass;              #LOG and log('ag.cval(cond)={}',(ag.cval('cond')))
             m.cond_s    = ag.cval('cond')
-            fid         = 'lvls'
+            fid         = '' if m.live_fltr else 'lvls'
+#           fid         = 'lvls'
         if aid=='fltr':
             m.cond_s    = ag.cval('cond')
-            m.cond_hl   = add_to_history(m.cond_s, m.cond_hl, MAX_HIST, unicase=False)  if m.cond_s else m.cond_hl
+            m.cond_hl   = add_to_history(m.cond_s, m.cond_hl)       if m.cond_s and not m.live_fltr else m.cond_hl
             fid         = 'lvls'
         if aid=='flt-':
             m.cond_s    = ''
@@ -1381,7 +1401,7 @@ class OptEdD:
             if path not in m.cond_s:
                 m.cond_s    = re.sub(r'@([\w/]*)', '', m.cond_s).strip()    # del old 
                 m.cond_s    = (m.cond_s+' '+path).strip()                   # add new
-                m.cond_hl   = add_to_history(m.cond_s, m.cond_hl, MAX_HIST, unicase=False)
+                m.cond_hl   = add_to_history(m.cond_s, m.cond_hl)   if not m.live_fltr else m.cond_hl
             fid         = 'cond'
 
         # Select old/new op
@@ -1430,8 +1450,9 @@ class OptEdD:
     def do_sele(self, aid, ag, data=''):
         M,m = OptEdD,self
         m.stbr_act(M.STBR_MSG, '')
-        pass;                  #LOG and log('',())
+        pass;                  #LOG and log('data,m.cur_op,m.cur_in={}',(data,m.cur_op,m.cur_in))
         m.cur_op= m._prep_opt('ind2key')
+        pass;                  #LOG and log('m.cur_op,m.cur_in={}',(m.cur_op,m.cur_in))
         return d(ctrls=odict(m.get_cnts('+cur'))
                 ,vals =      m.get_vals('cur')
                 )
@@ -1478,7 +1499,7 @@ class OptEdD:
     def do_dbcl(self, aid, ag, data=''):
         M,m = OptEdD,self
         m.stbr_act(M.STBR_MSG, '')
-        pass;                  #LOG and log('data={}',(data))
+        pass;                  #LOG and log('data,m.cur_op,m.cur_in={}',(data,m.cur_op,m.cur_in))
         m.col_ws= [ci['wd'] for ci in m.ag.cattr('lvls', 'cols')]
 
         if aid!='lvls':     return []
@@ -1493,23 +1514,31 @@ class OptEdD:
                   , enumerate(accumulate(m.col_ws))         # (n_col, sum(col<=n))
                   ), [-1, -1
                   ])[0]
+        pass;                  #LOG and log('op_r,op_c,m.cur_op,m.cur_in={}',(op_r,op_c,m.cur_op,m.cur_in))
         pass;                  #LOG and log('op_r,op_c={}',(op_r,op_c))
         if False:pass
+        elif op_c not in (M.COL_DEF,M.COL_USR,M.COL_LXR,M.COL_FIL):
+            return []
         elif -1==op_r:
             pass;              #LOG and log('skip as no opt',())
+            return []
         elif -1==op_c:
             pass;              #LOG and log('skip as miss col',())
-        elif 3==op_c:
+            return []
+        elif M.COL_DEF==op_c:
             return d(form =d(fid='setd'))
-        elif 4==op_c and m.for_ulf!='u':
+        elif M.COL_USR==op_c and m.for_ulf!='u':
             # Switch to user vals
             m.for_ulf   = 'u'
-        elif 5==op_c and m.for_ulf!='l':
+        elif M.COL_LXR==op_c and m.for_ulf!='l':
             # Switch to lexer vals
             m.for_ulf   = 'l'
-        elif 6==op_c and m.for_ulf!='f':
+        elif M.COL_FIL==op_c and m.for_ulf!='f':
             # Switch to lexer vals
             m.for_ulf   = 'f'
+        else:
+            return []
+        pass;                   LOG and log('op_r,op_c,m.for_ulf={}',(op_r,op_c,m.for_ulf))
         return d(ctrls=m.get_cnts('+cur')
                 ,vals =m.get_vals('+cur+inlxfi')
                 ,form =d(fid=m._prep_opt('fid4ed'))
@@ -2249,7 +2278,7 @@ def dlg_opt_editor_wr(title, keys_info=None
        #while
    #def dlg_opt_editor_wr
 
-def add_to_history(val:str, lst:list, max_len:int, unicase=True)->list:
+def add_to_history(val:str, lst:list, max_len=MAX_HIST, unicase=False)->list:
     """ Add/Move val to list head. """
     lst_u = [ s.upper() for s in lst] if unicase else lst
     val_u = val.upper()               if unicase else val
@@ -2733,4 +2762,7 @@ ToDo
 [+][kv-kv][06may18] Menu command "Show changes"
 [+][kv-kv][06may18] Show all file opt value. !!! only if val!=over-val
 [+][kv-kv][06may18] Rework Sort
+[ ][kv-kv][14may18] Scale def col widths
+[ ][at-kv][14may18] DClick over 1-2-3 is bad
+[ ][at-kv][14may18] Allow to refresh table on each changong of filter 
 '''
