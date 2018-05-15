@@ -650,75 +650,45 @@ _SCALED_KEYS = ('x', 'y', 'w', 'h'
             ,  'w_min', 'w_max', 'h_min', 'h_max'
             ,  'sp_l', 'sp_r', 'sp_t', 'sp_b', 'sp_a'
             )
-_scale_store = {}       # {id_dialog:{id_dialog:{}, id_ctrl:{}, name_ctrl:{}}}
 def _os_scale(id_dialog, id_action, prop=None, index=-1, index2=-1, name=''):
     pass;                      #return prop
     pass;                      #log('prop={}',({k:prop[k] for k in prop if k in ('x','y')}))
+    pass;                      #logb=name in ('tolx', 'tofi') and id_action==app.DLG_CTL_PROP_GET
+    pass;                      #log('name,prop={}',(name,{k:prop[k] for k in prop if k in ('h','_ready_h')})) if logb else 0
     ppi     = app.app_proc(app.PROC_GET_SYSTEM_PPI, '')
     if ppi==96:
         return prop
     scale   = ppi/96
     pass;                      #log('id_dialog, id_action,scale={}',(id_dialog, DLG_PROC_I2S[id_action],scale))
     if False:pass
-    elif id_action==app.DLG_CREATE:
-        _scale_store[id_dialog]  = {}
-    
-    elif id_action==app.DLG_FREE:
-        _scale_store.pop(id_dialog, None)
-    
     elif id_action in (app.DLG_PROP_SET     , app.DLG_PROP_GET
                       ,app.DLG_CTL_PROP_SET , app.DLG_CTL_PROP_GET
                       ,'scale', 'unscale'):
 
-        def save_and_scale_up(prop_dct, store_key):
-            dlg_store   = _scale_store.setdefault(id_dialog, {})
-            pass;              #print('a={}, st={}'.format(DLG_PROC_I2S[id_action], dlg_store))
-            xywh_p  = {k:prop_dct[k] for k in prop_dct if k in _SCALED_KEYS}
-            xywh_s  = dlg_store.setdefault(store_key, {})
-            xywh_s.update(xywh_p)                                               # Save!
-            for k in _SCALED_KEYS:
-                if k in prop_dct and '_ready_'+k not in prop_dct:
-#               if k in prop_dct:
-                    prop_dct[k]   =             round(prop_dct[k] * scale)      # Scale!
-#                   prop_dct[k]   =               int(prop_dct[k] * scale)      # Scale!
-
         def scale_up(prop_dct):
             for k in _SCALED_KEYS:
                 if k in prop_dct and '_ready_'+k not in prop_dct:
-#               if k in prop_dct:
                     prop_dct[k]   =             round(prop_dct[k] * scale)      # Scale!
-#                   prop_dct[k]   =               int(prop_dct[k] * scale)      # Scale!
         
-        def restore_or_scale_dn(prop_dct, store_key):
-            dlg_store   = _scale_store.setdefault(id_dialog, {})
-            pass;              #print('a={}, st={}'.format(DLG_PROC_I2S[id_action], dlg_store))
-            xywh_s  = dlg_store.get(store_key, {})
-            for k in _SCALED_KEYS:
-                if k in prop_dct and '_ready_'+k not in prop_dct:
-#               if k in prop_dct:
-                    prop_dct[k]   = xywh_s.get(k, round(prop_dct[k] / scale))   # Restore or UnScale!
-#                   prop_dct[k]   = xywh_s.get(k, int(prop_dct[k] / scale))     # Restore or UnScale!
-
         def scale_dn(prop_dct):
             for k in _SCALED_KEYS:
                 if k in prop_dct and '_ready_'+k not in prop_dct:
-#               if k in prop_dct:
                     prop_dct[k]   =             round(prop_dct[k] / scale)      # UnScale!
-#                   prop_dct[k]   =               int(prop_dct[k] / scale)      # UnScale!
         
 #       pass;                   print('a={}, ?? pr={}'.format(DLG_PROC_I2S[id_action], {k:prop[k] for k in prop if k in _SCALED_KEYS or k=='name'}))
         if False:pass
-        elif id_action==app.DLG_PROP_SET:                   save_and_scale_up(prop, id_dialog)
-        elif id_action==app.DLG_CTL_PROP_SET and -1!=index: save_and_scale_up(prop, index)
-        elif id_action==app.DLG_CTL_PROP_SET and ''!=name:  save_and_scale_up(prop, name)
-        elif id_action==app.DLG_PROP_GET:                              scale_dn(prop)
-        elif id_action==app.DLG_CTL_PROP_GET and -1!=index: restore_or_scale_dn(prop, index)
-        elif id_action==app.DLG_CTL_PROP_GET and ''!=name:  restore_or_scale_dn(prop, name)
+        elif id_action==app.DLG_PROP_SET:                   scale_up(prop)
+        elif id_action==app.DLG_CTL_PROP_SET and -1!=index: scale_up(prop)
+        elif id_action==app.DLG_CTL_PROP_SET and ''!=name:  scale_up(prop)
+        elif id_action==app.DLG_PROP_GET:                   scale_dn(prop)
+        elif id_action==app.DLG_CTL_PROP_GET and -1!=index: scale_dn(prop)
+        elif id_action==app.DLG_CTL_PROP_GET and ''!=name:  scale_dn(prop)
 
-        elif id_action==  'scale':                                     scale_up(prop)
-        elif id_action=='unscale':                                     scale_dn(prop)
-#       pass;                   print('a={}, ok pr={}'.format(DLG_PROC_I2S[id_action], {k:prop[k] for k in prop if k in _SCALED_KEYS or k=='name'}))
-        return prop
+        elif id_action==  'scale':                          scale_up(prop)
+        elif id_action=='unscale':                          scale_dn(prop)
+        pass;                  #print('a={}, ok pr={}'.format(DLG_PROC_I2S[id_action], {k:prop[k] for k in prop if k in _SCALED_KEYS or k=='name'}))
+    pass;                      #log('name,prop={}',(name,{k:prop[k] for k in prop if k in ('h','_ready_h')})) if logb else 0
+    return prop
    #def _os_scale
 
 gui_height_cache= { 'button'            :0
@@ -1777,7 +1747,12 @@ class DlgAgent(BaseDlgAgent):
             prOld   = dlg_proc_wpr(self.id_dlg, app.DLG_CTL_PROP_GET, name=cid)
             pass;              #prOld   = prOld if prOld else \
                      #dlg_proc_wpr(self.id_dlg, app.DLG_CTL_PROP_GET, index=self.ctrls[cid]['_idc'])    # While API bug: name isnot work if contorl is in panel
-            pass;              #log('cid,anc,trg_w,trg_h,prOld={}',(cid,anc,trg_w,trg_h, {k:v for k,v in prOld.items() if k in ('x','y')}))
+            pass;               logb=cid in ('tolx', 'tofi')
+            pass;              #nat_prOld=app.dlg_proc(self.id_dlg, app.DLG_CTL_PROP_GET, name=cid)
+            pass;              #log('cid,nat-prOld={}',(cid,{k:v for k,v in nat_prOld.items() if k in ('x','y','w','h','_ready_h')})) if logb else 0
+            pass;              #log('cid,    prOld={}',(cid,{k:v for k,v in     prOld.items() if k in ('x','y','w','h','_ready_h')})) if logb else 0
+            pass;              #log('cid,anc,trg_w,trg_h,prOld={}',(cid,anc,trg_w,trg_h, {k:v for k,v in prOld.items() if k in ('x','y','w','h')})) \
+                               #    if logb else 0
             prAnc   = {}
             if '-' in anc:
                 # Center by horz
@@ -1785,14 +1760,17 @@ class DlgAgent(BaseDlgAgent):
                                   ,a_r=(aid, '-')))
             if 'L' in anc and 'R' in anc:
                 # Both left/right to form right
+                pass;          #log('+L +R') if logb else 0
                 prAnc.update(dict( a_l=None                                             # (aid, ']'), sp_l=trg_w-prOld['x']
                                   ,a_r=(aid, ']'), sp_r=trg_w-prOld['x']-prOld['w']))
             if 'L' in anc and 'R' not in anc:
                 # Left to form right
+                pass;          #log('+L -R') if logb else 0
                 prAnc.update(dict( a_l=(aid, '['), sp_l=trg_w-prOld['x']
                                   ,a_r=None))
             if 'l' in anc and 'R' in anc:
                 # Left to form left. Right to form right.
+                pass;          #log('+l +R') if logb else 0
                 prAnc.update(dict( a_l=(aid, '['), sp_l=      prOld['x']
                                   ,a_r=(aid, ']'), sp_r=trg_w-prOld['x']-prOld['w']))
             if '|' in anc:
@@ -1801,18 +1779,21 @@ class DlgAgent(BaseDlgAgent):
                                   ,a_b=(aid, '-')))
             if 'T' in anc and 'B' in anc:
                 # Both top/bottom to form bottom
-                prAnc.update(dict( a_t=None      , sp_t=trg_h-prOld['y']                # a_t=(aid, ']') - API bug
+                pass;          #log('+T +B') if logb else 0
+                prAnc.update(dict( a_t=None      #, sp_t=trg_h-prOld['y']                # a_t=(aid, ']') - API bug
                                   ,a_b=(aid, ']'), sp_b=trg_h-prOld['y']-prOld['h']))
             elif 'T' in anc and 'B' not in anc:
                 # Top to form bottom
+                pass;          #log('+T -B') if logb else 0
                 prAnc.update(dict( a_t=(aid, ']'), sp_t=trg_h-prOld['y']                # a_t=(aid, ']') - API bug
                                   ,a_b=None))
             if 't' in anc and 'B' in anc:
                 # Top to form top. Bottom to form bottom.
+                pass;          #log('+t +B') if logb else 0
                 prAnc.update(dict( a_t=(aid, '['), sp_t=      prOld['y']
                                   ,a_b=(aid, ']'), sp_b=trg_h-prOld['y']-prOld['h']))
             if prAnc:
-#               pass;           log('aid,prAnc={}',(cid, prAnc))
+                pass;          #log('aid,prAnc={}',(cid, prAnc)) if logb else 0
                 cnt.update(prAnc)
                 dlg_proc_wpr(self.id_dlg, app.DLG_CTL_PROP_SET, name=cid, prop=prAnc)
 #               pass;           pr_   = dlg_proc_wpr(self.id_dlg, app.DLG_CTL_PROP_GET, name=cid)

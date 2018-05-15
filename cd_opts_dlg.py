@@ -728,6 +728,8 @@ class OptEdD:
                 m.do_file('locate_to', m.locate_on_exit)
            #def when_exit
 
+        repro_py    = apx.get_opt('dlg_cuda_options.repro_py')  # 'repro_dlg_opted.py'
+
         m.dlg_min_w = 10 + sum(M.COL_MWS) + M.COL_N + M.SCROLL_W
         m.dlg_w     = 10 + sum(m.col_ws)  + M.COL_N + M.SCROLL_W
         m.dlg_h     = 270 + m.h_cmnt    +10 + M.STBR_H
@@ -741,9 +743,9 @@ class OptEdD:
         ,   ctrls=m.get_cnts()
         ,   vals =m.get_vals()
         ,   fid  ='cond'
-                                ,options = {
-                                   #'gen_repro_to_file':'repro_dlg_opted.py',    #NOTE: repro
-                                }
+                                ,options = ({
+                                    'gen_repro_to_file':repro_py,    #NOTE: repro
+                                } if repro_py else {})
         )
 #       m.bte_mn= app.dlg_proc(m.ag.id_dlg, app.DLG_CTL_HANDLE, name='men_')
 #       app.button_proc(m.bte_mn, app.BTN_SET_FLAT, True)
@@ -1817,11 +1819,13 @@ class Command:
         pass;                  #LOG and log('ok',())
         pass;                  #dlg_opt_editor('CudaText options', '')
         pass;                  #return 
+        defs_json   = apx.get_opt('dlg_cuda_options.defs_json', 'default.json')
+        defs_json   = defs_json if os.sep in defs_json else apx.get_def_setting_dir()+os.sep+defs_json
         OptEdD(
                                 #path_keys_info=r'c:\Programs\CudaText\py\cuda_find_in_files\fif_opts_def.json'
                                #,subset='fif-df.'
                                 #path_keys_info=apx.get_def_setting_dir()          +os.sep+'kv-default.json'   #NOTE: srcs
-          path_keys_info=apx.get_def_setting_dir()          +os.sep+'default.json'
+          path_keys_info=defs_json  # apx.get_def_setting_dir()          +os.sep+'default.json'
         , subset='df.'
         ).show(_('CudaText options'))
        #def dlg_cuda_options
