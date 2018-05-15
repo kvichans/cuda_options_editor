@@ -413,6 +413,8 @@ class OptEdD:
                   '\rto edit the current option.'
                   '\rSee also menu command'
                   '\r   {}'), f(LOCD_C, '<option>'))
+    LIFL_C  = _('Instant filtering')
+    FULL_C  = _('&All options from User/Lexer')
 
     
     def __init__(self
@@ -855,7 +857,6 @@ class OptEdD:
                      #,         [ (sc+' '+fm    ,k         ,w    ,dv           ,uv         ,lv          ,fv)    # for debug
                       ,         [ (sc           ,k         ,w    ,dv           ,uv         ,lv          ,fv)    # for user
                         for  n,(   sc           ,k         ,w    ,dv           ,uv         ,lv          ,fv, fm) in enumerate(SKWULFs) ]
-#                       for  (     sc           ,k         ,w    ,dv           ,uv         ,lv          ,fv, fm) in SKWULFs ]
                       )
             return SKWULFs, cols, itms
            #def get_tbl_data
@@ -916,6 +917,7 @@ class OptEdD:
         # Full dlg controls info    #NOTE: cnts
         cmnt_t  = m.dlg_h-m.h_cmnt-5-M.STBR_H
         tofi_c  = m.ed.get_prop(app.PROP_TAB_TITLE)
+        co_tp   = 'ed' if m.live_fltr else 'cb'
         cnts    = [0                                                                                                                        #
     # Hidden buttons                                                                                                                    
  ,('flt-',d(tp='bt' ,cap='&l'   ,sto=False              ,t=0,l=0,w=0))  # &l
@@ -940,7 +942,8 @@ class OptEdD:
     # Filter                                                                                                                    
  ,('chps',d(tp='bt' ,tid='cond' ,l=-270 ,r=-180 ,p='ptop'   ,cap=_('+&Section…')    ,hint=M.CHPS_H                  ,a='LR'     ))  # &s
  ,('flt_',d(tp='lb' ,tid='cond' ,l=   5 ,w=  70 ,p='ptop'   ,cap='>'+M.FILTER_C+':' ,hint=M.FLTR_H                              ))  # &f
- ,('cond',d(tp='cb' ,t=  5      ,l=  78 ,r=-270 ,p='ptop'   ,items=m.cond_hl                                        ,a='lR'     ))  #
+ ,('cond',d(tp=co_tp,t=  5      ,l=  78 ,r=-270 ,p='ptop'   ,items=m.cond_hl                                        ,a='lR'     ))  #
+#,('cond',d(tp='cb' ,t=  5      ,l=  78 ,r=-270 ,p='ptop'   ,items=m.cond_hl                                        ,a='lR'     ))  #
     # Table of keys+values                                                                                                  
  ,('lvls',d(tp='lvw',t= 35,h=160,l=   5 ,r=  -5 ,p='ptop'   ,items=m.itms,cols=m.cols   ,grid='1'                   ,a='tBlR'   ))  #
     # Editors for value                                                                                                         
@@ -1315,7 +1318,8 @@ class OptEdD:
             full_en = not m.how.get('only_with_def', False) # Forbid to switch fo User+Lexer ops
             pass;              #lts_l   = [d(nm='Nm1'), d(nm='Nm2')]
             mn_its  = \
-    [ d(    tag='full'          ,cap=_('&All options from User/Lexer')      ,ch=m.all_ops   ,en=full_en
+    [ d(tag='lifl'              ,cap=M.LIFL_C                               ,ch=m.live_fltr
+    ),d(tag='cpnm'              ,cap=_('&Copy option name')                                     ,key='Alt+C'
     ),d(                         cap='-'
     ),d(                         cap=_('&Layout')           ,sub=
         [ d(tag='svlt'              ,cap=_('&Save current layout...')
@@ -1338,7 +1342,7 @@ class OptEdD:
         [ d(                         cap='-'
         ),d(tag='srt-'              ,cap=_('Clear sorting')                 ,en=(m.sort[0]!=-1)
         )]
-    ),d(                         cap=_('More..&.')          ,sub=
+    ),d(                         cap=_('M&ore')             ,sub=
         [ d(tag='locv'              ,cap=locv_c                             ,en=bool(m.cur_op)
         ),d(tag='locd'              ,cap=locd_c                             ,en=bool(m.cur_op)
         ),d(                         cap='-'
@@ -1347,10 +1351,7 @@ class OptEdD:
         ),d(tag='apnw'              ,cap=_('Appl&y changes now')            ,en=m.apply_need    ,key='Alt+Y'
         ),d(tag='aufi'              ,cap=_('Auto-update FILE options')      ,ch=m.auto4file
         ),d(                         cap='-'
-        ),d(tag='lifl'              ,cap=_('Directly filter (w/o Enter, no History)')
-                                                                            ,ch=m.live_fltr
-        ),d(                         cap='-'
-        ),d(tag='cpnm'              ,cap=_('&Copy option name')                                 ,key='Alt+C'
+        ),d(tag='full'              ,cap=M.FULL_C                           ,ch=m.all_ops   ,en=full_en
         )]
     ),d(                         cap='-'
     ),d(    tag='rprt'          ,cap=_('Create HTML &report')
@@ -1749,8 +1750,8 @@ class OptEdD:
         m.stbr_act(M.STBR_MSG, '')
         pass;                  #LOG and log('',())
         dlg_wrapper('Help'
-        ,   510, 510 
-        ,   [d(cid='body', tp='me', l=5, t=5, w=500, h=500, ro_mono_brd='1,1,0')]
+        ,   600+10, 500+10 
+        ,   [d(cid='body', tp='me', l=5, t=5, w=600, h=500, ro_mono_brd='1,1,0')]
         ,   d(      body=   #NOTE: help
                  f(
   _(  'About "{fltr}"'
@@ -1768,12 +1769,28 @@ class OptEdD:
     '\r • Use double click on any cell in column'
     '\r     "{c_def}"'
     '\r   to put focus on "{reset}".'
-    '\r • Click on "{reset}" will ask to confirm for User and Lexer options.'
-    '\r   Hold Ctrl to skip confirmation.'
-    '\r • If currrent options is not visible see its name in tooltip'
-    '\r   when cursor over label User/Lexer/File'
-    '\r • See name of file (or name of tag) in tooltip'
-    '\r   when cursor over checkbutton File'
+    '\r • Clicking "{reset}" will ask for confirmation, for user/lexer options.'
+    '\r   Hold Ctrl key to skip this confirmation.'
+#   '\r • Click on "{reset}" will ask to confirm for User and Lexer options.'
+#   '\r   Hold Ctrl to skip confirmation.'
+    '\r • Use option "{lifl}" to see instant update of the list after'
+    '\r   each changing in the filter field'
+    '\r   (otherwise you need to press Enter after changing).'
+    '\r   With this option, no history of the filter is kept'
+    '\r   (filter combobox has empty dropdown list).'
+#   '\r • Use setting "Instant filtering" to see results on typing filter text.'
+#   '\r   No history of filter values in the case.'
+    '\r • If current list line is scrolled out of view, '
+    '\r   you can still see the option name - in the tooltip'
+    '\r   of "User" (Lexer/File) label near the value field.'
+#   '\r • If currrent options is not visible see its name in tooltip'
+#   '\r   when cursor over label User/Lexer/File'
+    '\r • Tooltip shows file name (or tag name), when cursor hovers the checkbox "{tofi}".'
+#   '\r • See name of file (or name of tag) in tooltip'
+#   '\r   when cursor over checkbutton File'
+    '\r • Some plugins store their settings into user.json.'
+    '\r   So after a while, user.json contains options not present in default.json.'
+    '\r   To see all these keys, use option "{full}".'
    )             , c_usr=M.COL_NMS[M.COL_USR]
                  , c_lxr=M.COL_NMS[M.COL_LXR]
                  , c_fil=M.COL_NMS[M.COL_FIL]
@@ -1781,6 +1798,9 @@ class OptEdD:
                  , fltr = ag.cattr('flt_', 'cap', live=False).replace('&', '').strip(':')
                  , in_lxr=ag.cattr('tolx', 'cap', live=False).replace('&', '')
                  , reset= ag.cattr('setd', 'cap', live=False).replace('&', '')
+                 , tofi = ag.cattr('tofi', 'cap', live=False).replace('&', '')
+                 , lifl = M.LIFL_C.replace('&', '')
+                 , full = M.FULL_C.replace('&', '')
                  ))
         )
         return []
@@ -2764,5 +2784,5 @@ ToDo
 [+][kv-kv][06may18] Rework Sort
 [ ][kv-kv][14may18] Scale def col widths
 [ ][at-kv][14may18] DClick over 1-2-3 is bad
-[ ][at-kv][14may18] Allow to refresh table on each changong of filter 
+[+][at-kv][14may18] Allow to refresh table on each changing of filter 
 '''
