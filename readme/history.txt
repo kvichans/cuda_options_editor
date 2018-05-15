@@ -1,5 +1,5 @@
 2.2.02 (2018-05-14)
-added: Menu item "=/Instant filtering", which activates instant updating of list, on typing filter text
+added: Menu item "=/More/Instant filtering", which activates instant updating of list, on typing filter text
 fixed: Help content
 fixed: Layout for scaled OS
 

@@ -1214,12 +1214,12 @@ class OptEdD:
                 m.stores[m.subset+'auto4file']  = m.auto4file
         
             if tag=='lifl':
-                m.live_fltr = not m.live_fltr
-                m.stores[m.subset+'live_fltr']  = m.live_fltr
-                m.cond_hl   = [s for s in m.stores.get(m.subset+'h.cond', []) if s] if not m.live_fltr else []
-                return d(ctrls=m.get_cnts()
-                        ,form =d(fid='cond')
-                        )
+#               m.live_fltr = not m.live_fltr
+                m.stores[m.subset+'live_fltr']  = not m.stores[m.subset+'live_fltr']
+#               m.cond_hl   = [s for s in m.stores.get(m.subset+'h.cond', []) if s] if not m.live_fltr else []
+#               return d(ctrls=m.get_cnts()
+#                       ,form =d(fid='cond')
+#                       )
         
             elif tag=='cpnm':
                 app.app_proc(app.PROC_SET_CLIP, m.cur_op)
@@ -1316,10 +1316,10 @@ class OptEdD:
             locd_c  = f(M.LOCD_C, m.cur_op)
             lts_l   = m.stores.get(m.subset+'layouts', [])  # [{nm:Nm, dlg_h:H, dlg_w:W, ...}]
             full_en = not m.how.get('only_with_def', False) # Forbid to switch fo User+Lexer ops
+            live_fltr=m.stores[m.subset+'live_fltr']
             pass;              #lts_l   = [d(nm='Nm1'), d(nm='Nm2')]
             mn_its  = \
-    [ d(tag='lifl'              ,cap=M.LIFL_C                               ,ch=m.live_fltr
-    ),d(tag='cpnm'              ,cap=_('&Copy option name')                                     ,key='Alt+C'
+    [ d(tag='cpnm'              ,cap=_('&Copy option name')                                     ,key='Alt+C'
     ),d(                         cap='-'
     ),d(                         cap=_('&Layout')           ,sub=
         [ d(tag='svlt'              ,cap=_('&Save current layout...')
@@ -1350,6 +1350,8 @@ class OptEdD:
         ),d(tag='apex'              ,cap=_('Apply changes on exit')         ,ch=m.apply_one
         ),d(tag='apnw'              ,cap=_('Appl&y changes now')            ,en=m.apply_need    ,key='Alt+Y'
         ),d(tag='aufi'              ,cap=_('Auto-update FILE options')      ,ch=m.auto4file
+        ),d(                         cap='-'
+        ),d(tag='lifl'              ,cap=M.LIFL_C + _(' (need restart)')    ,ch=live_fltr
         ),d(                         cap='-'
         ),d(tag='full'              ,cap=M.FULL_C                           ,ch=m.all_ops   ,en=full_en
         )]
