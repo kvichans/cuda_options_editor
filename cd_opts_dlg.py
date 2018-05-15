@@ -1215,7 +1215,7 @@ class OptEdD:
         
             if tag=='lifl':
 #               m.live_fltr = not m.live_fltr
-                m.stores[m.subset+'live_fltr']  = not m.stores[m.subset+'live_fltr']
+                m.stores[m.subset+'live_fltr']  = not m.stores.get(m.subset+'live_fltr' , False)
 #               m.cond_hl   = [s for s in m.stores.get(m.subset+'h.cond', []) if s] if not m.live_fltr else []
 #               return d(ctrls=m.get_cnts()
 #                       ,form =d(fid='cond')
@@ -1316,7 +1316,7 @@ class OptEdD:
             locd_c  = f(M.LOCD_C, m.cur_op)
             lts_l   = m.stores.get(m.subset+'layouts', [])  # [{nm:Nm, dlg_h:H, dlg_w:W, ...}]
             full_en = not m.how.get('only_with_def', False) # Forbid to switch fo User+Lexer ops
-            live_fltr=m.stores[m.subset+'live_fltr']
+            live_fltr=m.stores.get(m.subset+'live_fltr' , False)
             pass;              #lts_l   = [d(nm='Nm1'), d(nm='Nm2')]
             mn_its  = \
     [ d(tag='cpnm'              ,cap=_('&Copy option name')                                     ,key='Alt+C'
@@ -2787,4 +2787,5 @@ ToDo
 [ ][kv-kv][14may18] Scale def col widths
 [ ][at-kv][14may18] DClick over 1-2-3 is bad
 [+][at-kv][14may18] Allow to refresh table on each changing of filter 
+[ ][at-kv][15may18] Allow to extra sort cols with Ctrl+Click
 '''
