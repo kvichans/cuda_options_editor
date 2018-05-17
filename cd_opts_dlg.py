@@ -2,7 +2,7 @@
 Authors:
     Andrey Kvichansky    (kvichans on github.com)
 Version:
-    '2.2.02 2018-05-14'
+    '2.2.03 2018-05-17'
 ToDo: (see end of file)
 '''
 
@@ -964,7 +964,7 @@ class OptEdD:
 #,('to__',d(tp='lb' ,tid='ed_s' ,l=-170 ,w=  30 ,p='ptop'   ,cap=_('>For:')                                         ,a='TBLR'   ))  # 
  ,('to__',d(tp='lb' ,tid='ed_s' ,l=-165 ,w=  30 ,p='ptop'   ,cap=_('For:')                                          ,a='TBLR'   ))  # 
  ,('tolx',d(tp='ch' ,tid='ed_s' ,l=-140 ,w=  70 ,p='ptop'   ,cap=_('Le&xer')                                        ,a='TBLR'   ))  # &x
- ,('tofi',d(tp='ch' ,tid='ed_s' ,l=- 85 ,w=  70 ,p='ptop'   ,cap=_('F&ile')         ,hint=tofi_c    ,en=tofi_en     ,a='TBLR'   ))  # &i
+ ,('tofi',d(tp='ch' ,tid='ed_s' ,l=- 90 ,w=  70 ,p='ptop'   ,cap=_('F&ile')         ,hint=tofi_c    ,en=tofi_en     ,a='TBLR'   ))  # &i
  ,('lexr',d(tp='cbr',tid='dfvl' ,l=-165 ,w= 160 ,p='ptop'   ,items=m.lexr_w_l                                       ,a='TBLR'   ))
     # Comment                                                                                                               
  ,('cmsp',d(tp='sp' ,y=cmnt_t-5                         ,ali=ALI_BT,sp_lr=5                                                     ))
@@ -2775,7 +2775,7 @@ ToDo
 [?][kv-kv][21mar18] ? Allow to meta keys in user.json: 
                         "_fif_LOG__comment":"Comment for fif_LOG"
 [+][kv-kv][22mar18] Set conrol's tab_order to always work Alt+E for "Valu&e"
-[ ][kv-kv][26mar18] Use editor for comment
+[ ][kv-kv][26mar18] Use 'editor' for comment
 [+][kv-kv][26mar18] Increase w for one col when user increases w of dlg (if no h-scroll)
 [+][kv-kv][13apr18] DClick on Def-col - focus to Reset
 [-][kv-kv][16apr18] Open in tag for fmt=json
@@ -2788,7 +2788,7 @@ ToDo
 [+][kv-kv][06may18] Menu command "Show changes"
 [+][kv-kv][06may18] Show all file opt value. !!! only if val!=over-val
 [+][kv-kv][06may18] Rework Sort
-[ ][kv-kv][14may18] Scale def col widths
+[+][kv-kv][14may18] Scale def col widths
 [ ][at-kv][14may18] DClick over 1-2-3 is bad
 [+][at-kv][14may18] Allow to refresh table on each changing of filter 
 [ ][at-kv][15may18] Allow to extra sort cols with Ctrl+Click

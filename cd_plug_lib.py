@@ -344,7 +344,7 @@ def fit_top_by_env(what_tp, base_tp='label'):
     if base_tp=='label':
         fit = apx.get_opt('dlg_wrapper_fit_va_for_'+what_tp, fit4lb.get(what_tp, 0))
         pass;                  #fit_o=fit
-        fit = _os_scale(0, app.DLG_PROP_GET, {'y':fit})['y']
+        fit = _os_scale(app.DLG_PROP_GET, {'y':fit})['y']
         pass;                  #log('what_tp,fit_o,fit,h={}',(what_tp,fit_o,fit,get_gui_height(what_tp)))
     else:
         fit = fit_top_by_env(what_tp) - fit_top_by_env(base_tp)
@@ -650,7 +650,7 @@ _SCALED_KEYS = ('x', 'y', 'w', 'h'
             ,  'w_min', 'w_max', 'h_min', 'h_max'
             ,  'sp_l', 'sp_r', 'sp_t', 'sp_b', 'sp_a'
             )
-def _os_scale(id_dialog, id_action, prop=None, index=-1, index2=-1, name=''):
+def _os_scale(id_action, prop=None, index=-1, index2=-1, name=''):
     pass;                      #return prop
     pass;                      #log('prop={}',({k:prop[k] for k in prop if k in ('x','y')}))
     pass;                      #logb=name in ('tolx', 'tofi') and id_action==app.DLG_CTL_PROP_GET
@@ -731,6 +731,16 @@ def get_gui_height(ctrl_type):
             app.dlg_proc(       idd,    app.DLG_CTL_PROP_SET, index=idc, prop=prc)
         app.dlg_proc(           idd,    app.DLG_PROP_SET, prop={'x':-1000, 'y':-1000, 'w':100, 'h':100})
         app.dlg_proc(           idd,    app.DLG_SHOW_NONMODAL)
+
+        ppi     = app.app_proc(app.PROC_GET_SYSTEM_PPI, '')
+        if ppi!=96:
+            # Try to scale height of controls
+            scale   = ppi/96
+            for tpc in gui_height_cache:
+                prc     = app.dlg_proc( idd,    app.DLG_CTL_PROP_GET, name=tpc)
+                sc_h    = round(prc['h'] * scale)
+                app.dlg_proc( idd,    app.DLG_CTL_PROP_SET, name=tpc, prop=dict(h=sc_h))
+
         for tpc in gui_height_cache:
             prc = app.dlg_proc( idd,    app.DLG_CTL_PROP_GET, name=tpc)
             pass;              #log('prc={}',(prc))
@@ -767,14 +777,14 @@ def dlg_proc_wpr(id_dialog, id_action, prop='', index=-1, index2=-1, name=''):
         app.dlg_proc(id_dialog, app.DLG_CTL_ADD, name, -1, -1, '')       # type in name
 #       if name in ('label', 'button', 'checkbutton') and 'h' not in prop:
 #           prop['h'] = app.dlg_proc(id_dialog, app.DLG_CTL_PROP_GET, index=ctl_ind)['h']
-        _os_scale(   id_dialog, app.DLG_CTL_PROP_SET, prop, ctl_ind, -1, '')
+        _os_scale(              app.DLG_CTL_PROP_SET, prop, ctl_ind, -1, '')
         app.dlg_proc(id_dialog, app.DLG_CTL_PROP_SET, prop, ctl_ind, -1, '')
     else:
-        _os_scale(         id_dialog, id_action, prop, index, index2, name) if scale_on_set else 0
+        _os_scale(                    id_action, prop, index, index2, name) if scale_on_set else 0
         res = app.dlg_proc(id_dialog, id_action, prop, index, index2, name)
         pass;                  #log('res={}',({k:res[k] for k in res if k in ('x','y')})) if id_action==app.DLG_PROP_GET else 0
     
-    _os_scale(id_dialog, id_action, res, index, index2, name)               if scale_on_get else 0
+    _os_scale(id_action, res, index, index2, name)               if scale_on_get else 0
     return res
    #def dlg_proc_wpr
 
@@ -1070,12 +1080,16 @@ class BaseDlgAgent:
             new_val= [ci.split('\r')      for ci in new_val.split('\t')]
 #           new_val= [ci.split('\r')[:-1] for ci in new_val.split('\t')[:-1]]   # API bug
             pass;              #log('new_val={}',repr(new_val))
-            new_val= [dict(nm=     ci[0]
-                          ,wd=int( ci[1])
-                          ,mi=int( ci[2])
-                          ,ma=int( ci[3])
-                          ,au='1'==ci[4]
-                          ,vi='1'==ci[5]
+            int_sc = lambda s: _os_scale('unscale', {'w':int(s)})['w']
+            new_val= [dict(nm=       ci[0]
+#                         ,wd=int( ci[1])
+#                         ,mi=int( ci[2])
+#                         ,ma=int( ci[3])
+                          ,wd=int_sc(ci[1])
+                          ,mi=int_sc(ci[2])
+                          ,ma=int_sc(ci[3])
+                          ,au='1'==  ci[4]
+                          ,vi='1'==  ci[5]
                           ) for ci in new_val]
             pass;              #log('new_val={}',(new_val))
         
@@ -1131,10 +1145,14 @@ class BaseDlgAgent:
                 #       "\r"-separated 
                 #           Name, Width, Min Width, Max Width, Alignment (str), Autosize('0'/'1'), Visible('0'/'1')
                 pass;          #log('cols={}',(cols))
+                str_sc = lambda n: str(_os_scale('scale', {'w':n})['w'])
                 cols   = '\t'.join(['\r'.join([       cd[    'nm']
-                                              ,str(   cd[    'wd']   )
-                                              ,str(   cd.get('mi' ,0))
-                                              ,str(   cd.get('ma' ,0))
+#                                             ,str(   cd[    'wd']   )
+#                                             ,str(   cd.get('mi' ,0))
+#                                             ,str(   cd.get('ma' ,0))
+                                              ,str_sc(cd[    'wd']   )
+                                              ,str_sc(cd.get('mi' ,0))
+                                              ,str_sc(cd.get('ma' ,0))
                                               ,       cd.get('al','')
                                               ,'1' if cd.get('au',False) else '0'
                                               ,'1' if cd.get('vi',True) else '0'
@@ -1650,7 +1668,7 @@ class DlgAgent(BaseDlgAgent):
         x, y    = pr['x']+(pr['w'] if '+w' in where else 0) \
                 , pr['y']+(pr['h'] if '+h' in where else 0)
         pass;                  #log('x, y={}',(x, y))
-        prXY    = _os_scale(0, 'scale', {'x':x, 'y':y})
+        prXY    = _os_scale('scale', {'x':x, 'y':y})
         x, y    = prXY['x'], prXY['y']
         pass;                  #log('x, y={}',(x, y))
         x, y    = app.dlg_proc(self.id_dlg, app.DLG_COORD_LOCAL_TO_SCREEN, index=x, index2=y)
