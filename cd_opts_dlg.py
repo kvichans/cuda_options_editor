@@ -2,7 +2,7 @@
 Authors:
     Andrey Kvichansky    (kvichans on github.com)
 Version:
-    '2.2.03 2018-05-17'
+    '2.3.01 2018-06-21'
 ToDo: (see end of file)
 '''
 
@@ -26,9 +26,8 @@ class odict(collections.OrderedDict):
         return '{%s}' % (', '.join("'%s':%r" % (k,v) for k,v in self.items()))
     def __repr__(self):
         return self.__str__()
-#odict = collections.OrderedDict
 
-pass;                           LOG     = (-1==-1)          # Do or dont logging.
+pass;                           LOG     = (-1== 1) or apx.get_opt('_opts_dlg_log',False)    # Do or dont logging.
 pass;                           from pprint import pformat
 pass;                           pf=lambda d:pformat(d,width=150)
 pass;                           pf80=lambda d:pformat(d,width=80)
@@ -102,18 +101,6 @@ def load_definitions(defn_path:Path)->list:
             mt      = reTags.search(cmnt)
         dctN= [[int(m.group(1)), m.group(2).rstrip(', ')] for m in reN2S.finditer(cmnt+l)]
         dctS= [[    m.group(1) , m.group(2).rstrip(', ')] for m in reS2S.finditer(cmnt+l)]
-#       frmK,\
-#       dctK= frm, None
-#       mt  = reLike.search(cmnt)
-#       if mt:
-#           ref_knm = mt.group(1)
-#           ref_kinf= [kinf for kinf in kinfs if kinf['key']==ref_knm]
-#           if not ref_kinf:
-#               log('Error on parse {}. No ref-key {} from comment\n{}',(path_to_raw, ref_knm, cmnt))
-#           else:
-#               ref_kinf = ref_kinf[0]
-#               frmK= ref_kinf['format']    if 'format' in ref_kinf else    frmK
-#               dctK= ref_kinf['dct']       if 'dct'    in ref_kinf else    dctK
         lstF= None
         mt  = reFldFr.search(cmnt)
         if mt:
@@ -133,8 +120,6 @@ def load_definitions(defn_path:Path)->list:
         dct = ('int2s', dctN)    if dctN else \
               ('str2s', dctS)    if dctS else \
               (frm    , []  )
-#             (frmK   , dctK)    if dctK else 
-#             ('str2s', dctF)    if dctF else 
         return cmnt, frm, dct, lst, list(tags)
        #def parse_cmnt
     def jsstr(s):
@@ -209,7 +194,6 @@ def load_definitions(defn_path:Path)->list:
             if dfrm=='font':
                 kinf['lst']     = FONT_LST
             if dfrm=='font-e':
-#               kinf['lst']     = FONT_LST + ['']
                 kinf['lst']     = [''] + FONT_LST
             if chap:
                 kinf['chp']     = chap
@@ -263,7 +247,6 @@ def load_vals(opt_dfns:list, lexr_json='', ed_=None, full=False)->odict:
         lexr_vals   = apx._json_loads(open(lexr_json, encoding='utf8').read(), object_pairs_hook=odict)
     else:
         pass;                  #LOG and log('no lexr_json={}',(lexr_json))
-#   edit_vals       = get_ovrd_ed_opts(ed)
     pass;                      #LOG and log('lexr_vals={}',(lexr_vals))
 
     # Fill vals for defined opt
@@ -276,10 +259,7 @@ def load_vals(opt_dfns:list, lexr_json='', ed_=None, full=False)->odict:
             oinf['lval']    = lexr_vals[opt]
         if ed_ and opt in apx.OPT2PROP:     # Found file-val for defined opt
             fval            = ed_.get_prop(apx.OPT2PROP[opt])
-#           if fval == oinf.get('lval', oinf.get('uval', oinf.get('def'))): continue    # No overwrite
             oinf['fval']    =fval
-#       if opt in edit_vals:        # Found file-val for defined opt
-#           oinf['fval']    = edit_vals[opt]
 
     if full:
         # Append item for non-defined opt
@@ -414,7 +394,7 @@ class OptEdD:
                   '\rSee also menu command'
                   '\r   {}'), f(LOCD_C, '<option>'))
     LIFL_C  = _('Instant filtering')
-    FULL_C  = _('&All options from User/Lexer')
+    FULL_C  = _('Show &all keys in user/lexer configs')
 
     
     def __init__(self
@@ -429,9 +409,9 @@ class OptEdD:
         
         m.defn_path = Path(path_keys_info)
         m.subset    = subset
-        m.stores    = json.loads(open(CFG_JSON).read(), object_pairs_hook=odict) \
-                        if os.path.exists(CFG_JSON) and os.path.getsize(CFG_JSON) != 0 else \
-                      odict()
+        m.stores    = get_hist('dlg'
+                        , json.loads(open(CFG_JSON).read(), object_pairs_hook=odict)
+                            if os.path.exists(CFG_JSON) else odict())
         pass;                  #LOG and log('ok',())
 #       m.bk_sets   = m.stores.get(m.subset+'bk_sets'    , False)
         m.lexr_l    = app.lexer_proc(app.LEXER_GET_LEXERS, False)
@@ -447,7 +427,7 @@ class OptEdD:
         m.sort      = m.stores.get(m.subset+'sort'      , (-1, True))   # Def sort is no sort
         m.live_fltr = m.stores.get(m.subset+'live_fltr' , False)        # To filter after each change and no History
         m.cond_hl   = [s for s in m.stores.get(m.subset+'h.cond', []) if s] if not m.live_fltr else []
-        m.cond_s    = ''        # String filter
+        m.cond_s    = '' if M.restart_cond is None else M.restart_cond  # String filter
         m.ops_only  = []        # Subset to show (future)
         
         m.lexr      = m.ed.get_prop(app.PROP_LEXER_CARET)
@@ -470,7 +450,6 @@ class OptEdD:
         
         m.for_ulf   = 'u'       # 'u' for User, 'l' for Lexer, 'f' for File
         m.cur_op    = m.cur_op if m.cur_op in m.opts_full else ''           # First at start
-#       m.cur_op    = list(m.opts_full.keys())[0] if m.opts_full else ''    # First at start
         m.cur_in    = 0 if m.cur_op else -1
         
         m.stbr      = None      # Handle for statusbar_proc
@@ -530,15 +509,13 @@ class OptEdD:
             to_open = data['path']
             find_s  = data['find']
             app.file_open(to_open)      ##!!
-            pass;               log('to_open={}',(to_open))
-            pass;               log('ed.get_filename()={}',(ed.get_filename()))
+            pass;              #log('to_open={}',(to_open))
+            pass;              #log('ed.get_filename()={}',(ed.get_filename()))
             m.ag.opts['on_exit_focus_to_ed'] = ed
-#           ed_to_fcs   = m.ag.opts['on_exit_focus_to_ed'] = ed_of_file_open(to_open)
-#           ed_to_fcs.focus()
             # Locate
             user_opt= app.app_proc(app.PROC_GET_FIND_OPTIONS, '')
-#           pass;               log('ed_to_fcs.get_filename()={}',(ed_to_fcs.get_filename()))
-#           pass;               log('ed.get_filename()={}',(ed.get_filename()))
+            pass;              #log('ed_to_fcs.get_filename()={}',(ed_to_fcs.get_filename()))
+            pass;              #log('ed.get_filename()={}',(ed.get_filename()))
             pass;              #LOG and log('find_s={!r}',(find_s))
             ed.cmd(cmds.cmd_FinderAction, chr(1).join(['findnext', find_s, '', 'fa']))    # f - From-caret,  a - Wrap
             app.app_proc(app.PROC_SET_FIND_OPTIONS, user_opt)
@@ -693,7 +670,6 @@ class OptEdD:
                 vas['edcb'] = index_1([k for (k,v) in oi['dct']], ulfvl_va, -1)
                 pass;          #LOG and log('ulfvl_va, vas[edcb]={}',(ulfvl_va,vas['edcb']))
             elif frm in ('strs','font','font-e'):
-#           elif frm in ('strs',):
                 vis['edcb'] = True
                 ens['edcb'] = True
                 its['edcb'] = oi['lst']
@@ -711,7 +687,6 @@ class OptEdD:
         , title                     # For cap of dlg
         ):
         M,m = OptEdD,self
-#       pass;                   return
 
         def when_exit(ag):
             pass;              #LOG and log('',())
@@ -747,8 +722,6 @@ class OptEdD:
                                     'gen_repro_to_file':repro_py,    #NOTE: repro
                                 } if repro_py else {})
         )
-#       m.bte_mn= app.dlg_proc(m.ag.id_dlg, app.DLG_CTL_HANDLE, name='men_')
-#       app.button_proc(m.bte_mn, app.BTN_SET_FLAT, True)
 
         m.stbr  = app.dlg_proc(m.ag.id_dlg, app.DLG_CTL_HANDLE, name='stbr')
         app.statusbar_proc(m.stbr, app.STATUSBAR_ADD_CELL               , tag=M.STBR_ALL)
@@ -774,7 +747,7 @@ class OptEdD:
         if not m.live_fltr:
             m.stores[m.subset+'h.cond'] = m.cond_hl
         m.stores[m.subset+'all_ops']    = m.all_ops
-        open(CFG_JSON, 'w').write(json.dumps(m.stores, indent=4))
+        set_hist('dlg', m.stores)
        #def show
     
     def get_cnts(self, what=''):
@@ -1216,19 +1189,16 @@ class OptEdD:
                 m.stores[m.subset+'auto4file']  = m.auto4file
         
             if tag=='lifl':
-#               m.live_fltr = not m.live_fltr
                 m.stores[m.subset+'live_fltr']  = not m.stores.get(m.subset+'live_fltr' , False)
-#               m.cond_hl   = [s for s in m.stores.get(m.subset+'h.cond', []) if s] if not m.live_fltr else []
-#               return d(ctrls=m.get_cnts()
-#                       ,form =d(fid='cond')
-#                       )
+                M.restart       = True
+                M.restart_cond  = ag.cval('cond')
+                return None         # Close dlg
         
             elif tag=='cpnm':
                 app.app_proc(app.PROC_SET_CLIP, m.cur_op)
             elif tag=='erpt':
                 body    = '\n'.join(m.chng_rpt)
-#               app.msg_box('\n'.join(m.chng_rpt), app.MB_OK)
-                dlg_wrapper(_('Сhanging steps')       ,500+10     ,400+10, 
+                dlg_wrapper(_('Сhange log')       ,  500+10     ,400+10, 
                     [ dict(cid='body',tp='me' ,l=5,w=500  ,t=5,h=400, ro_mono_brd='1,0,0')]
                     , dict(body=body), focus_cid='body')
             elif tag=='locv':
@@ -1353,7 +1323,7 @@ class OptEdD:
         ),d(tag='apnw'              ,cap=_('Appl&y changes now')            ,en=m.apply_need    ,key='Alt+Y'
         ),d(tag='aufi'              ,cap=_('Auto-update FILE options')      ,ch=m.auto4file
         ),d(                         cap='-'
-        ),d(tag='lifl'              ,cap=M.LIFL_C + _(' (need restart)')    ,ch=live_fltr
+        ),d(tag='lifl'              ,cap=M.LIFL_C                           ,ch=live_fltr
         ),d(                         cap='-'
         ),d(tag='full'              ,cap=M.FULL_C                           ,ch=m.all_ops   ,en=full_en
         )]
@@ -1391,7 +1361,6 @@ class OptEdD:
             pass;              #LOG and log('ag.cval(cond)={}',(ag.cval('cond')))
             m.cond_s    = ag.cval('cond')
             fid         = '' if m.live_fltr else 'lvls'
-#           fid         = 'lvls'
         if aid=='fltr':
             m.cond_s    = ag.cval('cond')
             m.cond_hl   = add_to_history(m.cond_s, m.cond_hl)       if m.cond_s and not m.live_fltr else m.cond_hl
@@ -1425,7 +1394,8 @@ class OptEdD:
        #def do_fltr
     
     def do_sort(self, aid, ag, col=-1):
-        pass;                  #LOG and log('col={}',(col))
+        scam    = app.app_proc(app.PROC_GET_KEYSTATE, '')
+        pass;                   LOG and log('col,scam={}',(col,scam))
         pass;                  #return []
         M,m = OptEdD,self
         m.stbr_act(M.STBR_MSG, '')
@@ -1671,7 +1641,7 @@ class OptEdD:
             
         # Use new value to change dlg data
         pass;                  #LOG and log('?? oi={}',(oi))
-#       pass;                   LOG and log('?? m.opts_full={}',pf(m.opts_full))
+        pass;                  #LOG and log('?? m.opts_full={}',pf(m.opts_full))
         if False:pass
         elif aid=='setd':
             oi.pop(key4v, None)     if m.for_ulf!='f' else 0
@@ -1685,7 +1655,7 @@ class OptEdD:
         jnewv   = oi['jlvl']   if m.for_ulf=='l' else oi['juvl']    if m.for_ulf=='u' else oi['jfvl']
         m.do_erpt(erpt_s, jnewv, jval)
         pass;                  #LOG and log('ok oi={}',(oi))
-#       pass;                   LOG and log('ok m.opts_full={}',pf(m.opts_full))
+        pass;                  #LOG and log('ok m.opts_full={}',pf(m.opts_full))
         
         pass;                  #LOG and log('?? get_cnts',())
         
@@ -1713,11 +1683,11 @@ class OptEdD:
         
         if 0==len(m.chng_rpt):
             rpt = f('Starting to change options at {:%Y-%m-%d %H:%M:%S}', datetime.datetime.now())
-#           print(rpt)
             m.chng_rpt += [rpt]
         
         oi  = m.opts_full[m.cur_op]
         oldv= None
+        rpt = ''
         if 0:pass
         elif what=='reset-f':
             rpt     = f(_('Set FILE option to overridden value {!r}')       ,jnewv)
@@ -1775,23 +1745,15 @@ class OptEdD:
     '\r   to put focus on "{reset}".'
     '\r • Clicking "{reset}" will ask for confirmation, for user/lexer options.'
     '\r   Hold Ctrl key to skip this confirmation.'
-#   '\r • Click on "{reset}" will ask to confirm for User and Lexer options.'
-#   '\r   Hold Ctrl to skip confirmation.'
     '\r • Use option "{lifl}" to see instant update of the list after'
     '\r   each changing in the filter field'
     '\r   (otherwise you need to press Enter after changing).'
     '\r   With this option, no history of the filter is kept'
     '\r   (filter combobox has empty dropdown list).'
-#   '\r • Use setting "Instant filtering" to see results on typing filter text.'
-#   '\r   No history of filter values in the case.'
     '\r • If current list line is scrolled out of view, '
     '\r   you can still see the option name - in the tooltip'
     '\r   of "User" (Lexer/File) label near the value field.'
-#   '\r • If currrent options is not visible see its name in tooltip'
-#   '\r   when cursor over label User/Lexer/File'
     '\r • Tooltip shows file name (or tag name), when cursor hovers the checkbox "{tofi}".'
-#   '\r • See name of file (or name of tag) in tooltip'
-#   '\r   when cursor over checkbutton File'
     '\r • Some plugins store their settings into user.json.'
     '\r   So after a while, user.json contains options not present in default.json.'
     '\r   To see all these keys, use option "{full}".'
@@ -1810,499 +1772,29 @@ class OptEdD:
         return []
        #def do_help
     
+    restart     = False
+    restart_cond= None
    #class OptEdD
 
 
 class Command:
     def dlg_cuda_options(self):
-        if app.app_api_version()<MIN_API_VER:   return app.msg_status(_('Need update CudaText'))
-        pass;                  #LOG and log('ok',())
-        pass;                  #dlg_opt_editor('CudaText options', '')
-        pass;                  #return 
-        defs_json   = apx.get_opt('dlg_cuda_options.defs_json', 'default.json')
-        defs_json   = defs_json if os.sep in defs_json else apx.get_def_setting_dir()+os.sep+defs_json
-        OptEdD(
-                                #path_keys_info=r'c:\Programs\CudaText\py\cuda_find_in_files\fif_opts_def.json'
-                               #,subset='fif-df.'
-                                #path_keys_info=apx.get_def_setting_dir()          +os.sep+'kv-default.json'   #NOTE: srcs
-          path_keys_info=defs_json  # apx.get_def_setting_dir()          +os.sep+'default.json'
-        , subset='df.'
-        ).show(_('CudaText options'))
+        while True:
+            OptEdD.restart    = False
+            self._dlg_opt()
+            if not OptEdD.restart:    break
        #def dlg_cuda_options
 
-    def dlg_cuda_opts_deprecated(self):
-        pass;                  #LOG and log('ok',())
-        pass;                  #dlg_opt_editor('CudaText options', '')
-        pass;                  #return 
-#       cuda_opts   = apx.get_def_setting_dir()+os.sep+'default_options.json'
-#       cuda_opts   = os.path.dirname(__file__)+os.sep+'default_options.json'
-#       dlg_opt_editor('CudaText options', json.loads(open(cuda_opts).read()))
-        dlg_opt_editor('CudaText options'
-        , keys_info=None
-        , path_raw_keys_info=apx.get_def_setting_dir()          +os.sep+'default.json'
-        , path_svd_keys_info=app.app_path(app.APP_DIR_SETTINGS) +os.sep+'_default_keys_info.json'
-        , subset='def.'
-        )
-       #def dlg_cuda_opts_deprecated
+    def _dlg_opt(self):
+        if app.app_api_version()<MIN_API_VER:   return app.msg_status(_('Need update CudaText'))
+        defs_json   = apx.get_opt('dlg_cuda_options.defs_json', 'default.json')
+        defs_json   = defs_json     if os.sep in defs_json else     apx.get_def_setting_dir()+os.sep+defs_json
+        OptEdD(
+          path_keys_info=defs_json
+        , subset='df.'
+        ).show(_('CudaText options'))
+       #def _dlg_opt
    #class Command
-
-def dlg_opt_editor(title, keys_info=None
-        , path_raw_keys_info=''
-        , path_svd_keys_info=''
-        , subset=''
-        ):
-    dlg_opt_editor_wr(title, keys_info, path_raw_keys_info, path_svd_keys_info, subset)
-   #def dlg_opt_editor
-
-def dlg_opt_editor_wr(title, keys_info=None
-        , path_raw_keys_info=''
-        , path_svd_keys_info=''
-        , subset=''
-        ):
-    """ Editor for any json data.
-        Params 
-            title       (str)   Dialog title
-            keys_info   (list)  Info for each key as dict
-                                    key:    (str)
-                                    format: (str)   bool|int|str|float|enum_i|enum_s|json
-                                    comment:(str)
-                                            (str list)
-                                    def_val: 
-                                    dct:    (dict)
-                                            (pairs list)
-    """
-    if app.app_api_version()<MIN_API_VER_4WR: return app.msg_status(_('Need update CudaText'))
-    if not keys_info:
-        if not os.path.isfile(path_raw_keys_info):
-            return app.msg_status(_('No source for key-info'))
-        # If ready json exists - use ready
-        # Else - parse raw (and save as ready)
-
-        mtime_raw   = os.path.getmtime(path_raw_keys_info)
-        mtime_svd   = os.path.getmtime(path_svd_keys_info) if os.path.exists(path_svd_keys_info) else 0
-        if 'use ready'!='use ready' and mtime_raw < mtime_svd:
-            # Use ready
-            keys_info   = json.loads(open(path_svd_keys_info, encoding='utf8').read(), object_pairs_hook=odict)
-            app.msg_status(f(_('Load key-info ({}) from "{}"'),len(keys_info),path_svd_keys_info))
-        else:
-            # Parse raw
-            keys_info   = parse_raw_keys_info(path_raw_keys_info)
-            if not keys_info:
-                return app.msg_status(_('Bad source for key-info'))
-            if path_svd_keys_info:
-                # Save as ready
-                open(path_svd_keys_info,'w').write(json.dumps(keys_info, indent=4))
-                app.msg_status(_('Update key-info at '+path_svd_keys_info))
-        pass;                  #return
-            
-#   if -1== 1:  # Test data
-#       keys_info = [dict(key='key-bool',format='bool'  ,def_val=False           ,comment= 'smth')
-#                   ,dict(key='key-int' ,format='int'   ,def_val=123             ,comment= 'smth\nsmth')
-#                   ,dict(key='key-aint'                ,def_val=123             ,comment= 'smth\nsmth')
-#                   ,dict(key='key-str' ,format='str'   ,def_val='xyz'           ,comment= 'smth')
-#                   ,dict(key='key-flo' ,format='float' ,def_val=1.23            ,comment= 'smth')
-#                   ,dict(key='key-aflo'                ,def_val=1.23            ,comment= 'smth')
-#                   ,dict(key='key-font',format='font'  ,def_val=''              ,comment= 'smth')
-#                   ,dict(key='key-file',format='file'  ,def_val=''              ,comment= 'smth')
-#                   ,dict(key='key-en_i',format='enum_i',def_val=1               ,comment= 'smth',   dct={0:'000', 1:'111', 2:'222'})
-#                   ,dict(key='key-en_s',format='enum_s',def_val='b'             ,comment= 'smth',   dct=[('a','AA'), ('b','BB'), ('c','CC')])
-#                   ,dict(key='key-json',format='json'  ,def_val={'x':{'a':1}}   ,comment= 'Style')
-#                   ]
-#       path_to_json=os.path.dirname(__file__)+os.sep+'test.json'
-
-    if 0==len(keys_info):
-        return app.msg_status(_('Empty keys_info'))
-
-    # Start COMMON STATIC data
-    fltr_h  = _('Suitable keys will contain all specified words.'
-              '\rTips:'
-              '\r • Start with "*" to view only changed values.'
-              '\r • Use "<" or ">" for word boundary.'
-              '\r     size> <tab'
-              '\r   selects "tab_size" but not "ui_tab_size" or "tab_size_x".'
-              '\rAlt+L - Clear filter')
-    chap_h  = _('Only in selected chapter.'
-              '\rAlt+E - In all Chapters')
-    t1st_c  = _('Conf&igured first')
-    t1st_h  = _('Show user keys on top of entire list.'
-              '\rThe order of keys will be the same as in user file.')
-    trgt_h  = _('Set storage for values')
-    rprt_h  = _('Create HTML report and open it in browser')
-
-    font_l  = [] if app.app_api_version()<'1.0.174' else \
-              [font 
-                for font in app.app_proc(app.PROC_ENUM_FONTS, '')
-                if not font.startswith('@')] 
-    font_l  = ['default'] + font_l
-    # Finish COMMON STATIC data
-
-    # Start COMMON DINAMIC data
-    stores  = json.loads(open(CFG_JSON).read(), object_pairs_hook=odict) \
-                if os.path.exists(CFG_JSON) and os.path.getsize(CFG_JSON) != 0 else \
-              odict()
-
-    chap_l  = list({kinfo.get('chapter', '') for  kinfo in keys_info if kinfo.get('chapter', '')})
-    chap_l  = [' '] + sorted(chap_l)
-    chap_vl = [len(['' for kinfo in keys_info if chp==kinfo.get('chapter', '')]) for chp in chap_l if chp!=' ']
-    chap_vl = [''] + [f(' ({})', str(chp)) for chp in chap_vl]
-    tag_set = set()
-    for  kinfo in keys_info:
-        tag_set.update({t for t in kinfo.get('tags', [])})
-    tags_l  = sorted(list(tag_set))
-    tags_vl = [len(['' for kinfo in keys_info if tag in kinfo.get('tags', [])]) for tag in tags_l]
-    tags_vl = [f(' ({})', str(tag)) for tag in tags_vl]
-    pass;                      #LOG and log('chap_l={}',(chap_l))
-    pass;                      #LOG and log('chap_vl={}',(chap_vl))
-    pass;                      #LOG and log('tags_l={}',(tags_l))
-    pass;                      #LOG and log('tags_vl={}',(tags_vl))
-
-    t1st_b  = stores.get('t1st', False)
-    k2fdcvt = get_main_data(keys_info, trgt_1st=t1st_b)
-    pass;                      #LOG and log('k2fdcvt={}',(k2fdcvt))
-
-    trgt_s  = 'user.json'
-    key_sel = keys_info[0]['key']
-    cond_s  = ''
-    chap_s  = stores.get(subset+'chap')
-    chap_n  = index_1(chap_l, chap_s, 0)
-    tags_set= {tag for tag in stores.get(subset+'tags', []) if tag in tags_l}
-    tags_s  = '#'+', #'.join(tags_set)  if tags_set else ''
-    stores[subset+'h.tags']= add_to_history(tags_s, stores.get(subset+'h.tags', []), MAX_HIST, unicase=False)
-    tags_hl = [s for s in stores.get(subset+'h.tags', []) if s ]
-    tags_n  = 0 if tags_s and tags_hl else -1
-    fid     = 'lvls'
-    # Finish COMMON DINAMIC data
-    while True: #NOTE: json_props
-        COL_WS      = [                 stores.get(subset+'cust.wd_k', 250)
-#                     ,                 stores.get(subset+'cust.wd_f',  50)
-                      ,                 stores.get(subset+'cust.wd_s',  20)
-                      ,                 stores.get(subset+'cust.wd_v', 250)]         # Widths of listview columns 
-        CMNT_H      =                   stores.get(subset+'cust.ht_c', 100)          # Height of Comment memo
-        LST_W, LST_H= sum(COL_WS)+20,   stores.get(subset+'cust.ht_t', 300)-5        # Listview sizes
-        DLG_W, DLG_H= 5+LST_W+5+80+5 \
-                    , 5+20+30+LST_H+5+30+5+30+5+CMNT_H+5     # Dialog sizes
-        l_val   = DLG_W-10-80-20-COL_WS[-1]
-        
-        # Filter with 
-        #   cond_s
-        #   chap_n, chap_s
-        #   tags_set
-        chap_s  = chap_l[chap_n]
-        pass;                  #LOG and log('chap_n,chap_s={}',(chap_n,chap_s))
-        only_chd= cond_s.startswith('*')
-        cond_4f = (cond_s if not only_chd else cond_s[1:]).upper()
-        fl_kfsvt= [ (knm
-                    ,fdcv['f']
-                    ,'*' if fdcv['d']!=fdcv['v'] else ''
-#                   ,fdcv['v']
-                    ,fdcv['v'] if type(fdcv['v'])!=bool else str(fdcv['v']).lower()
-                    ,fdcv['t']
-                    ,f('{}: ',fdcv['a'])                if chap_l and chap_n==0 and fdcv['a'] else ''
-                    ,f(' (#{})',', #'.join(fdcv['g']))  if tags_l and               fdcv['g'] else ''
-                    )
-                    for (knm, fdcv) in k2fdcvt.items()
-                    if  (not only_chd   or fdcv['d']!=fdcv['v'])            and
-                        (cond_4f==''    or test_cond(cond_4f, knm))  and
-                        (chap_n==0      or chap_s==fdcv['a'])               and
-                        (not tags_set   or (tags_set & fdcv['g']))
-                 ]
-        fl_k2i  = {knm:ikey for (ikey, (knm,kf,kset,kv,kdct,kch,ktg)) in enumerate(fl_kfsvt)}
-        ind_sel = fl_k2i[key_sel]       if key_sel in fl_k2i                else \
-                  0                     if fl_k2i                           else \
-                  -1
-        key_sel = fl_kfsvt[ind_sel][0]  if ind_sel!=-1                      else ''
-        frm_sel = k2fdcvt[key_sel]['f'] if key_sel                          else ''
-        dct_sel = k2fdcvt[key_sel]['t'] if key_sel                          else None
-        dvl_sel = k2fdcvt[key_sel]['d'] if key_sel                          else None
-        val_sel = k2fdcvt[key_sel]['v'] if key_sel                          else None
-        cmt_sel = k2fdcvt[key_sel]['c'] if key_sel                          else ''
-        var_sel = [f('{}: {}', k, v) for (k,v) in dct_sel.items()] \
-                                        if frm_sel in ('enum_i', 'enum_s')  else \
-                  font_l + ([] if val_sel in font_l else [val_sel])              \
-                                        if frm_sel=='font' and     font_l   else \
-                  []
-        sel_sel = index_1(list(dct_sel.keys()), val_sel) \
-                                        if frm_sel in ('enum_i', 'enum_s')  else \
-                  index_1(font_l,               val_sel, len(font_l))            \
-                                        if frm_sel=='font' and     font_l   else \
-                  -1
-        pass;                  #LOG and log('sel_sel,var_sel={}',(sel_sel,var_sel))
-
-        stat    = f(' ({}/{})', len(fl_kfsvt), len(k2fdcvt))
-        col_aws = [p+cw for (p,cw) in zip(('',      'C', ''), map(str, COL_WS))]
-        itms    = (zip([_('Key')+stat,              _(' '), f(_('Value from "{}"'), trgt_s)], col_aws)
-                  ,    [ ( kch+knm+ktg,                kset,   to_str(kv, kf, kdct)) for
-                         (     knm,       kf,          kset,          kv,     kdct, kch, ktg ) in fl_kfsvt]
-                  )
-        pass;                  #LOG and log('cond_s={}',(cond_s))
-        pass;                  #LOG and log('fl_kfsvt={}',(fl_kfsvt))
-        pass;                  #LOG and log('fl_k2i={}',(fl_k2i))
-        pass;                  #LOG and log('key_sel,ind_sel={}',(key_sel, ind_sel))
-        cond_hl = [s for s in stores.get(subset+'h.cond', []) if s ]
-        
-        chap_v  = [chp+chp_vl for (chp,chp_vl) in zip(chap_l, chap_vl)]
-        tags_hl = [s for s in stores.get(subset+'h.tags', []) if s ]
-        
-        as_bool = key_sel and  frm_sel in ('bool')
-        as_char = key_sel and (frm_sel in ('int', 'float', 'str', 'json')   or frm_sel=='font' and not bool(font_l))
-        as_enum = key_sel and (frm_sel in ('enum_i', 'enum_s')              or frm_sel=='font' and     bool(font_l))
-        as_file = key_sel and  frm_sel in ('file')
-        as_hotk = key_sel and  frm_sel in ('hotk')
-        font_nm4sz  = key_sel.replace('font_size', 'font_name')
-        font_sz4nm  = key_sel.replace('font_name', 'font_size')
-        pvw_font_ns = None \
-                    if not font_l                                                              else \
-                  (val_sel,                 k2fdcvt[font_sz4nm]['v'])                               \
-                    if frm_sel=='font' and val_sel!='default'       and font_sz4nm in k2fdcvt  else \
-                  (k2fdcvt[font_nm4sz]['v'], val_sel                )                               \
-                    if frm_sel=='int' and 'font_size' in key_sel    and font_nm4sz in k2fdcvt  else \
-                  None
-        pass;                  #LOG and log('pvw_font_ns={}',(pvw_font_ns))
-        w_chap  = len(chap_l)>1
-        w_tags  = bool(tags_l)
-        pass;                  #LOG and log('(w_chap,w_tags),(as_bool,as_char,as_enum,as_file)={}',((w_chap,w_tags),(as_bool,as_char,as_enum,as_file)))
-        cnts    =[                                                                                                                                              # bdgkmopqswxyz
-    # Chapters
-      dict(            tp='lb'  ,t=5        ,l=15+COL_WS[0] ,w=140          ,cap=_('Se&ction:') ,hint=chap_h            ,vis=w_chap             )   # &c
-     ,dict( cid='chap',tp='cb-r',t=25       ,l=15+COL_WS[0] ,w=140          ,items=chap_v                       ,act='1',vis=w_chap             )   #
-     ,dict( cid='-cha',tp='bt'  ,t=0        ,l=0            ,w=0            ,cap='&e'                                   ,vis=w_chap             )   # &e
-    # Tags
-     ,dict(            tp='lb'  ,t=5        ,l=COL_WS[0]+160,r=DLG_W-10-80  ,cap=_('T&ags:')                            ,vis=w_tags             )   # &a
-     ,dict( cid='tags',tp='cb-r',t=25       ,l=COL_WS[0]+160,r=DLG_W-10-80  ,items=tags_hl                      ,act='1',vis=w_tags             )   #
-     ,dict( cid='?tgs',tp='bt'  ,tid='tags' ,l=DLG_W-5-80   ,w=80           ,cap=_('Tag&s…')    ,hint=_('Choose tags')  ,vis=w_tags             )   # &s
-     ,dict( cid='-tgs',tp='bt'  ,t=57       ,l=DLG_W-5-80   ,w=80           ,cap=_('Clea&r')    ,hint=_('Clear tags')   ,vis=w_tags             )   # &r
-    # Filter
-     ,dict( cid='-flt',tp='bt'  ,t=0        ,l=0            ,w=0            ,cap='&l'                                                           )   # &l
-     ,dict( cid='fltr',tp='bt'  ,t=0        ,l=0            ,w=0            ,cap=''                 ,def_bt='1'                                 )   # 
-     ,dict(            tp='lb'  ,t=5        ,l=5+2          ,w=COL_WS[0]    ,cap=_('&Filter:')  ,hint=fltr_h                                    )   # &f
-     ,dict( cid='cond',tp='cb'  ,t=25       ,l=5+2          ,w=COL_WS[0]    ,items=cond_hl                                                      )   #
-    # Table of keys+values
-     ,dict( cid='lvls',tp='lvw' ,t=57       ,l=5 ,h=LST_H   ,w=LST_W        ,items=itms             ,grid='1'   ,act='1'                        )   #
-    # Editors for value
-     ,dict(            tp='lb'  ,tid='t1st' ,l=l_val-100-5  ,w=100          ,cap=_('>&Value:')                                                  )   # &v 
-     ,dict( cid='edch',tp='ch'  ,tid='t1st' ,l=l_val+5      ,w=COL_WS[-1]+15,cap=_('O&n')                       ,act='1',vis=as_bool            )   # &n
-     ,dict( cid='eded',tp='ed'  ,tid='t1st' ,l=l_val+5      ,w=COL_WS[-1]+15-(30 if as_file or as_hotk else 0)          ,vis=as_char or as_file or as_hotk 
-                                                                                                ,en=as_char or as_file)   #
-     ,dict( cid='brow',tp='bt'  ,tid='t1st' ,l=DLG_W-5-80-35,w=30           ,cap=_('&...') ,hint=_('Choose')            ,vis=as_file or as_hotk )   # &.
-     ,dict( cid='setv',tp='bt'  ,tid='t1st' ,l=DLG_W-5-80   ,w=80           ,cap=_('Cha&nge')   ,en=(frm_sel!='json')   ,vis=as_char or as_file )   # &n
-     ,dict( cid='edcb',tp='cb-r',tid='t1st' ,l=l_val+5      ,w=COL_WS[-1]+15,items=var_sel                      ,act='1',vis=as_enum            )   #
-    # View def-value
-     ,dict(            tp='lb'  ,tid='dfvl' ,l=l_val-100-5  ,w=100          ,cap=_('>Default value:')                                           )   # 
-     ,dict( cid='dfvl',tp='ed'  ,t=93+LST_H ,l=l_val+5      ,w=COL_WS[-1]+15                        ,ro_mono_brd='1,0,1'                        )   #
-     ,dict( cid='setd',tp='bt'  ,tid='dfvl' ,l=DLG_W-5-80   ,w=80           ,cap=_('Reset')     ,en=(dvl_sel!=val_sel and  frm_sel!='json')     )   # 
-    # Comment
-     ,dict( cid='cmnt',tp='memo',t=125+LST_H,l=5 ,h=CMNT_H-3,w=LST_W                                ,ro_mono_brd='1,1,1'                        )   #
-    # Target json
-     ,dict( cid='trgt',tp='bt'  ,t=120      ,l=DLG_W-5-80   ,w=80           ,cap=_('&Target…')  ,hint=trgt_h                                    )   # &t
-     ,dict( cid='cust',tp='bt'  ,t=150      ,l=DLG_W-5-80   ,w=80           ,cap=_('Ad&just…')                                                  )   # &j
-     ,dict( cid='rprt',tp='bt'  ,t=DLG_H-65 ,l=DLG_W-5-80   ,w=80           ,cap=_('Report…')   ,hint=rprt_h                                    )   # &h
-     ,dict( cid='-'   ,tp='bt'  ,t=DLG_H-35 ,l=DLG_W-5-80   ,w=80           ,cap=_('Close')                                                     )   #
-     ,dict( cid='t1st',tp='ch'  ,t=65+LST_H ,l=5            ,w=100          ,cap=t1st_c         ,hint=t1st_h    ,act='1'                        )   # &i
-                 ]
-        if pvw_font_ns: # View commnent with tested font
-            [cnt for cnt in cnts if cnt.get('cid')=='cmnt'][0].update(
-                dict(font_name=pvw_font_ns[0], font_size=pvw_font_ns[1] ,ro_mono_brd='1,0,1'))
-        vals    =       dict(cond=cond_s
-                            ,lvls=ind_sel
-                            ,t1st=t1st_b
-                            ,dfvl=to_str(dvl_sel, frm_sel, dct_sel)     if key_sel else ''
-                            ,cmnt=cmt_sel.replace('\r', '\n')           if key_sel else ''
-                            )
-        if 1<len(chap_l):
-            vals.update(dict(chap=chap_n))
-        if tags_l:
-            vals.update(dict(tags=tags_n))
-        if as_bool:
-            vals.update(dict(edch=val_sel                               if key_sel else False))
-        if as_char or as_file or as_hotk:
-            vals.update(dict(eded=to_str(val_sel, frm_sel, dct_sel)     if key_sel else ''  ))
-        if as_enum:
-            vals.update(dict(edcb=sel_sel                               if key_sel else False))
-
-        pass;                  #LOG and log('cnts={}',(cnts))
-        aid, vals, fid, chds = dlg_wrapper(f('{} ({})', title, VERSION_V), DLG_W, DLG_H, cnts, vals, focus_cid=fid)
-        if aid is None or aid=='-':  return
-
-        if aid=='-flt':
-            vals['cond']    = ''
-        if aid=='-cha':
-            vals['chap']    = 0
-        if aid=='fltr' and fid=='eded':     # Подмена умолчательной кнопки по активному редактору
-            aid = 'setv'
-
-        pass;                  #LOG and log('aid={}',(aid))
-
-        fid     = 'lvls'
-        cond_s  = vals['cond']
-        chap_n  = vals['chap']  if 1<len(chap_l)    else chap_n
-        ind_sel = vals['lvls']
-        t1st_b  = vals['t1st']
-
-        stores[subset+'h.cond'] = add_to_history(cond_s, stores.get(subset+'h.cond', []), MAX_HIST, unicase=False)
-        stores[subset+'chap']   = chap_l[chap_n]
-        stores['t1st']          = t1st_b
-        open(CFG_JSON, 'w').write(json.dumps(stores, indent=4))
-
-        if aid=='cust':
-            custs   = app.dlg_input_ex(5, _('Adjust')
-                  , _(  'Height of Table (min 125)')  , str(stores.get(subset+'cust.ht_t', 300))
-                  , _(     'Width of Key (min 250)')  , str(stores.get(subset+'cust.wd_k', 250))
-                  , _(       'Width of * (min  20)')  , str(stores.get(subset+'cust.wd_s',  20))
-                  , _(   'Width of Value (min 250)')  , str(stores.get(subset+'cust.wd_v', 250))
-                  , _('Height of Comment (min  55)')  , str(stores.get(subset+'cust.ht_c', 100))
-                    )
-            if custs is None:   continue#while
-            stores[subset+'cust.ht_t']  = max(125, int(custs[0]))
-            stores[subset+'cust.wd_k']  = max(250, int(custs[1]))
-            stores[subset+'cust.wd_s']  = max( 20, int(custs[2]))
-            stores[subset+'cust.wd_v']  = max(250, int(custs[3]))
-            stores[subset+'cust.ht_c']  = max( 55, int(custs[4]))
-            open(CFG_JSON, 'w').write(json.dumps(stores, indent=4))
-            continue#while
-            
-        if aid=='t1st':     # Show user key first
-            k2fdcvt = get_main_data(keys_info, trgt_s, t1st_b)
-        if aid=='tags':     # Use prev tag set
-            ind     = vals['tags']
-            tags_s  = tags_hl[ind]
-            tags_set= set(tags_s.replace('#', '').replace(' ', '').split(','))
-            tags_n  = 0
-            stores[subset+'h.tags']= add_to_history(tags_s, stores.get(subset+'h.tags', []), MAX_HIST, unicase=False)
-            stores[subset+'tags']  = list(tags_set)
-            open(CFG_JSON, 'w').write(json.dumps(stores, indent=4))
-        if aid=='-tgs':     # Clear tags
-            tags_s  = ''
-            tags_set= set()
-            tags_n  = -1
-            stores[subset+'h.tags']= add_to_history(tags_s, stores.get(subset+'h.tags', []), MAX_HIST, unicase=False)
-            stores[subset+'tags']  = list(tags_set)
-            open(CFG_JSON, 'w').write(json.dumps(stores, indent=4))
-        if aid=='?tgs':     # Choose any tags
-            sels    = ['1' if tag in tags_set else '0' for tag in tags_l]
-            crt     = str(sels.index('1') if '1' in sels else 0)
-            tags_v  = [tag+tag_v for (tag,tag_v) in zip(tags_l, tags_vl)]
-            tg_aid, \
-            tg_vals,\
-            *_t     = dlg_wrapper(f(_('Tags ({})'), len(tags_l)), GAP+200+GAP, GAP+400+GAP+24+GAP, 
-                    [ dict(cid='tgs',tp='ch-lbx',t=5,h=400  ,l=5            ,w=200  ,items=tags_v           ) #
-                     ,dict(cid='!'  ,tp='bt'    ,t=5+400+5  ,l=    200-140  ,w=70   ,cap=_('OK'),props='1'  ) #  default
-                     ,dict(cid='-'  ,tp='bt'    ,t=5+400+5  ,l=5  +200- 70  ,w=70   ,cap=_('Cancel')        ) #  
-                    ]
-                    , dict(tgs=(crt,sels)), focus_cid='tgs')
-            if tg_aid=='!':
-                crt,sels= tg_vals['tgs']
-                tags    = [tag for (ind,tag) in enumerate(tags_l) if sels[ind]=='1']
-                tags_set= set(tags)
-                tags_s  = '#'+', #'.join(tags)  if tags else ''
-                tags_n  = 0                     if tags else -1
-                stores[subset+'h.tags']= add_to_history(tags_s, stores.get(subset+'h.tags', []), MAX_HIST, unicase=False)
-                stores[subset+'tags']  = list(tags_set)
-                open(CFG_JSON, 'w').write(json.dumps(stores, indent=4))
-        
-        if ind_sel==-1:  continue#while
-        key_sel = fl_kfsvt[ind_sel][0]
-        pass;                  #LOG and log('cond_s={}',(cond_s))
-
-        if aid=='setd' and dvl_sel!=val_sel:
-            # Reset def value
-            k2fdcvt[key_sel]['v'] = dvl_sel
-            # Update json file
-            apx.set_opt(key_sel, dvl_sel)
-            ed.cmd(cmds.cmd_OpsReloadAndApply)
-            dvl_sel_s = repr(dvl_sel) if type(dvl_sel)!=bool else str(dvl_sel).lower()
-            app.msg_status( f(_('Change in {}: "{}": {} (default value)'), trgt_s, key_sel, dvl_sel_s))
-            print(          f(_('Change in {}: "{}": {} (default value)'), trgt_s, key_sel, dvl_sel_s))
-        if aid in ('edch', 'eded', 'edcb', 'setv', 'brow'): #NOTE: if aid in ('edch', 'eded', 'edcb', 'setv', 'brow'):
-            # Changed value
-            old_val = k2fdcvt[key_sel]['v']
-            
-            if as_bool and aid=='edch':
-                k2fdcvt[key_sel]['v'] = not k2fdcvt[key_sel]['v']
-            if aid=='setv':
-                new_val = vals['eded']
-                good    = False
-                while not good:
-                    try:
-                        k2fdcvt[key_sel]['v'] = from_str(new_val, k2fdcvt[key_sel]['f'])
-                        good    = True
-                    except Exception as ex:
-                        good    = False
-                        app.msg_status(_('Uncorrect value'))
-                    if not good:
-                        new_val = app.dlg_input(f(_('Value of "{}" (type "{}")'), key_sel, k2fdcvt[key_sel]['f']), new_val)
-                        if new_val is None:
-                            break#while not good
-                    #while not good
-            if as_enum and aid=='edcb' and vals['edcb']!=-1:
-                ind     = vals['edcb']
-                val_l   = font_l    if frm_sel=='font' else     list(dct_sel.keys())
-#               val_l   = font_l    if frm_sel=='font' else     list(var_sel.keys())
-                k2fdcvt[key_sel]['v'] = val_l[ind]
-            if aid=='brow' and as_file:
-                path    = app.dlg_file(True, '', os.path.expanduser(k2fdcvt[key_sel]['v']), '')
-                if not path:  continue#while
-                k2fdcvt[key_sel]['v'] = path
-            if aid=='brow' and as_hotk:
-                hotk    = app.dlg_hotkey(f('{}: {}', key_sel, k2fdcvt[key_sel]['v']))
-                if not hotk:  continue#while
-                k2fdcvt[key_sel]['v'] = hotk
-
-            new_val = k2fdcvt[key_sel]['v']
-            if old_val != new_val:
-                # Update json file
-                if trgt_s=='user.json':
-                    apx.set_opt(key_sel, new_val)
-                else:
-                    opts_json   = app.app_path(app.APP_DIR_SETTINGS)+os.sep+trgt_s
-                    opts        = apx._get_file_opts(opts_json)
-                    if new_val==opts.get(key_sel, dvl_sel): continue#while
-                    if new_val==dvl_sel:
-                        opts.pop(key_sel, None)
-                    else:
-                        opts[key_sel]   = new_val
-                    open(opts_json,'w').write(json.dumps(opts, indent=2))
-                ed.cmd(cmds.cmd_OpsReloadAndApply)
-                new_val_s = repr(new_val) if type(new_val)!=bool else str(new_val).lower()
-                app.msg_status( f(_('Change in {}: "{}": {}'), trgt_s, key_sel, new_val_s))
-                print(          f(_('Change in {}: "{}": {}'), trgt_s, key_sel, new_val_s))
-            
-        if aid=='rprt':
-            htm_file = os.path.join(tempfile.gettempdir(), 'CudaText_option_report.html')
-            if not do_report(htm_file, '' if trgt_s=='user.json' else trgt_s): continue#while
-            webbrowser.open_new_tab('file://'+htm_file)
-            app.msg_status('Opened browser with file '+htm_file)
-
-        if aid=='trgt':
-            trgt_l  = []
-            trgt_n  = None
-            for all_b in (False, True):
-#               trgt_l  = ['lexer '+lxr+'.json' 
-#                           for lxr in app.lexer_proc(app.LEXER_GET_LIST, '').splitlines() 
-#                           if app.lexer_proc(app.LEXER_GET_ENABLED, lxr) and 
-#                           (all_b or os.path.isfile(app.app_path(app.APP_DIR_SETTINGS)+os.sep+'lexer '+lxr+'.json'))
-#                         ]
-                trgt_l  = ['lexer '+lxr+'.json' 
-                            for lxr in app.lexer_proc(app.LEXER_GET_LEXERS, False) #only shown lexers
-                            if (all_b or os.path.isfile(app.app_path(app.APP_DIR_SETTINGS)+os.sep+'lexer '+lxr+'.json'))
-                          ]
-                trgt_l  = ['user.json'] + trgt_l
-                trgt_n  = app.dlg_menu(app.MENU_LIST
-                                      ,'\n'.join(trgt_l+([] if all_b else [_('[Show all lexers]')]))
-                                      ,index_1(trgt_l, trgt_s, 0)
-                                      )
-                if trgt_n is None:          break#for
-                pass;          #LOG and log('trgt_n={}',(trgt_n))
-                if trgt_n == len(trgt_l):   continue#for with all_b=True
-                break#for
-               #for all_b
-            if trgt_n is None:              continue#while
-            new_trgt_s  = trgt_l[trgt_n]
-            pass;              #LOG and log('new_trgt_s={}',(new_trgt_s))
-            if new_trgt_s!=trgt_s:
-                k2fdcvt = get_main_data(keys_info, new_trgt_s, t1st_b)
-                trgt_s  = new_trgt_s
-       #while
-   #def dlg_opt_editor_wr
 
 def add_to_history(val:str, lst:list, max_len=MAX_HIST, unicase=False)->list:
     """ Add/Move val to list head. """
@@ -2317,223 +1809,6 @@ def add_to_history(val:str, lst:list, max_len=MAX_HIST, unicase=False)->list:
     return lst
    #def add_to_history
     
-def frm_of_val(val):
-    if isinstance(val, bool):   return 'bool'
-    if isinstance(val, int):    return 'int'
-    if isinstance(val, float):  return 'float'
-    if isinstance(val, str):    return 'str'
-    pass;                       return ''
-   #def frm_of_val
-    
-def to_str(kv, kformat, dct=None):
-    'Convert a value of key to string to show (in listview cell, in edit)'
-    if kformat=='json' \
-    or isinstance(kv, dict) or isinstance(kv, list):
-        return json.dumps(kv)
-    if kformat=='enum_i' and dct is not None:
-        return dct.get(kv, str(kv))
-    if kformat=='enum_s' and dct is not None:
-        return dct.get(str(kv), str(kv))
-    return str(kv)
-   #def to_str
-    
-def from_str(strv, kformat, dct=None):
-    'Convert a value of key to string to show (in listview cell, in edit)'
-    if kformat in ('bool'):
-        return bool(strv)
-    if kformat in ('int'):
-        return int(strv)
-    if kformat in ('float'):
-        return float(strv)
-    if kformat in ('str'):
-        return strv
-    if kformat=='json' \
-    or isinstance(strv, dict) or isinstance(strv, list):
-        return json.loads(strv, object_pairs_hook=odict)
-    if kformat in ('enum_i', 'enum_s') and dct is not None:
-        ind = list(dct.values()).index(strv)
-        ans = list(dct.keys())[ind]
-        return int(ans) if kformat=='enum_i' else ans 
-    return strv
-   #def from_str
-    
-reNotWdChar = re.compile(r'\W')
-def test_cond(cnd_s, text):
-    if not cnd_s:       return True
-    text    = text.upper()
-    if '<' in cnd_s or '>' in cnd_s:
-        text    = '·' + reNotWdChar.sub('·', text)    + '·'
-        cnd_s   = ' ' + cnd_s + ' '
-        cnd_s   = cnd_s.replace(' <', ' ·').replace('> ', '· ')
-    pass;                  #LOG and log('cnd_s, text={}',(cnd_s, text))
-    return all(map(lambda c:c in text, cnd_s.split()))
-   #def test_cond
-
-def get_main_data(keys_info, trgt_json='user.json', trgt_1st=False):
-    opts_json   = app.app_path(app.APP_DIR_SETTINGS)+os.sep+trgt_json
-    trgt_opts   = apx._json_loads(open(opts_json, encoding='utf8').read(), object_pairs_hook=odict) \
-                    if os.path.isfile(opts_json) else {}
-#   trgt_opts   = apx._get_file_opts(opts_json, object_pairs_hook=odict)
-#   nonlocal keys_info
-    keys_info_  = keys_info.copy()
-    if trgt_1st:
-        keys_d      = odict([(ki['key'],ki) for ki in keys_info])
-        keys_info_  = [keys_d[k] for k  in trgt_opts if k             in keys_d] \
-                    + [ki        for ki in keys_info if ki['key'] not in trgt_opts]
-    return odict([
-        (       kinfo['key'],
-           {'f':kinfo.get('format', frm_of_val(kinfo['def_val']))
-           ,'t':kinfo.get('dct')            if ('dct' not in kinfo or   isinstance(kinfo.get('dct'), dict)) else 
-                odict(kinfo.get('dct'))
-           ,'d':kinfo['def_val']
-           ,'c':kinfo['comment']            if                          isinstance(kinfo['comment'], str) else
-                '\n'.join(kinfo['comment'])
-           ,'v':trgt_opts.get(kinfo['key'], kinfo['def_val'])
-           ,'a':kinfo.get('chapter', '')
-           ,'g':set(kinfo.get('tags', []))
-           }
-        )  for  kinfo in keys_info_
-        ])
-   #def get_main_data
-
-
-def parse_raw_keys_info(path_to_raw):
-    pass;                      #LOG and log('path_to_raw={}',(path_to_raw))
-    #NOTE: parse_raw
-    kinfs    = []
-    lines   = open(path_to_raw, encoding='utf8').readlines()
-#   if 'debug'=='debug':        lines = ['  //[FindHotkeys]'
-#                                       ,'  //Hotkeys in Find/Replace dialog'
-#                                       ,'  "find_hotkey_find_first": "Alt+Enter",'
-#                                       ,'  "find_hotkey_replace": "Alt+Z",'
-#                                       ,'  "find_hotkey_find_dlg": "Ctrl+F",'
-#                                       ,'  '
-#                                       ,'  //UI elements font name [has suffix]'
-#                                       ,'  "ui_font_name": "default",'
-#                                       ]
-
-    l       = '\n'
-    
-    reTags  = re.compile(r' *\((#\w+,?)+\)')
-#   reN2S   = re.compile(r'\s+(\d+): *(.+)')
-#   reS2S   = re.compile(r'\s+"(\w*)": *(.+)')
-    reN2S   = re.compile(r'^\s*(\d+): *(.+)'    , re.M)
-    reS2S   = re.compile(r'^\s*"(\w*)": *(.+)'  , re.M)
-    reLike  = re.compile(r' *\(like (\w+)\)')
-    reFldFr = re.compile(r'\s*Folders from: (.+)')
-    def parse_cmnt(cmnt, frm, kinfs):  
-        tags= set()
-        mt  = reTags.search(cmnt)
-        while mt:
-            tags_s  = mt.group(0)
-            tags   |= set(tags_s.strip(' ()').replace('#', '').split(','))
-            cmnt    = cmnt.replace(tags_s, '')
-            mt      = reTags.search(cmnt)
-        dctN= [[int(m.group(1)), m.group(2).rstrip(', ')] for m in reN2S.finditer(cmnt+l)]
-        dctS= [[    m.group(1) , m.group(2).rstrip(', ')] for m in reS2S.finditer(cmnt+l)]
-        frmK,\
-        dctK= frm, None
-        mt  = reLike.search(cmnt)
-        if mt:
-            ref_knm = mt.group(1)
-            ref_kinf= [kinf for kinf in kinfs if kinf['key']==ref_knm]
-            if not ref_kinf:
-                log('Error on parse {}. No ref-key {} from comment\n{}',(path_to_raw, ref_knm, cmnt))
-            else:
-                ref_kinf = ref_kinf[0]
-                frmK= ref_kinf['format']    if 'format' in ref_kinf else    frmK
-                dctK= ref_kinf['dct']       if 'dct'    in ref_kinf else    dctK
-        dctF= None
-        mt  = reFldFr.search(cmnt)
-        if mt:
-            from_short  = mt.group(1)
-            from_dir    = from_short if os.path.isabs(from_short) else os.path.join(app.app_path(app.APP_DIR_DATA), from_short)
-            pass;              #LOG and log('from_dir={}',(from_dir))
-            if not os.path.isdir(from_dir):
-                log(_('No folder "{}" from\n{}'), from_short, cmnt)
-            else:
-                dirs    = [d for d in os.listdir(from_dir) if os.path.isdir(from_dir+os.sep+d) and d.strip()]
-                dirs    = sorted(dirs)
-                dctF    = odict([(d,d) for d in dirs])
-#               dctF    = {d:d for d in os.listdir(from_dir) if os.path.isdir(from_dir+os.sep+d)}
-                pass;          #LOG and log('dctF={}',(dctF))
-        frm,\
-        dct = ('enum_i', dctN)    if dctN else \
-              ('enum_s', dctS)    if dctS else \
-              (frmK,     dctK)    if dctK else \
-              ('enum_s', dctF)    if dctF else \
-              (frm     , []  )
-        return cmnt, frm, dct, list(tags)
-       #def parse_cmnt
-    def jsstr(s):
-        return s[1:-1].replace(r'\"','"').replace(r'\\','\\')
-    
-    reChap1 = re.compile(r' *//\[Section: +(.+)\]')
-    reChap2 = re.compile(r' *//\[(.+)\]')
-    reCmnt  = re.compile(r' *//(.+)')
-    reKeyDV = re.compile(r' *"(\w+)" *: *(.+)')
-    reInt   = re.compile(r' *(-?\d+)')
-    reFloat = re.compile(r' *(-?\d+\.\d+)')
-    reFontNm= re.compile(r'font\w*_name')
-    reHotkey= re.compile(r'_hotkey_')
-    chap    = ''
-    ref_cmnt= ''    # Full comment to add to '... smth'
-    pre_cmnt= ''
-    cmnt    = ''
-    for line in lines:
-        if False:pass
-        elif    reChap1.match(line):
-            mt= reChap1.match(line)
-            chap    = mt.group(1)
-            cmnt    = ''
-        elif    reChap2.match(line):
-            mt= reChap2.match(line)
-            chap    = mt.group(1)
-            cmnt    = ''
-        elif    reCmnt.match(line):
-            mt= reCmnt.match(line)
-            cmnt   += l+mt.group(1)
-        elif    reKeyDV.match(line):
-            mt= reKeyDV.match(line)
-            key     = mt.group(1)
-            dval_s  = mt.group(2).rstrip(', ')
-            cmnt    = cmnt.strip(l)     if cmnt else pre_cmnt
-            frm,dval= \
-                      ('bool', True         )   if dval_s=='true'                       else \
-                      ('bool', False        )   if dval_s=='false'                      else \
-                      ('float',float(dval_s))   if reFloat.match(dval_s)                else \
-                      ('int',  int(  dval_s))   if reInt.match(dval_s)                  else \
-                      ('font', dval_s[1:-1] )   if reFontNm.search(key)                 else \
-                      ('hotk', dval_s[1:-1] )   if reHotkey.search(key)                 else \
-                      ('str',  jsstr(dval_s))   if dval_s[0]=='"' and dval_s[-1]=='"'   else \
-                      ('unk',  dval_s       )
-            pass;              #LOG and log('key,dval_s,frm,dval={}',(key,dval_s,frm,dval))
-            
-            ref_cmnt= ref_cmnt                                      if cmnt.startswith('...') else cmnt
-            kinf    = odict()
-            kinfs  += [kinf]
-            kinf['key']             = key
-            kinf['def_val']         = dval
-            kinf['comment']         = cmnt
-            kinf['format']          = frm
-            if frm in ('int','str'):
-                cmnt,frm,dct,tags   = parse_cmnt(ref_cmnt+l+cmnt[3:]    if cmnt.startswith('...') else cmnt, frm, kinfs)
-                kinf['comment']     = cmnt
-                if frm in ('enum_i','enum_s'):
-                    kinf['format']  = frm
-                if dct:
-                   #log('Too few variants ({}) for key {}',len(dct), key) if len(dct)<2 else None
-                    kinf['dct']     = dct
-                if tags:
-                    kinf['tags']    = tags
-            if chap:
-                kinf['chapter']     = chap
-            pre_cmnt= cmnt              if cmnt else pre_cmnt
-            cmnt    = ''
-       #for line
-    return kinfs
-   #def parse_raw_keys_info
-
 RPT_HEAD = '''
 <html>
 <head>
@@ -2721,18 +1996,6 @@ def do_report(fn, lex='', ed_=ed):
         return True
    #def do_report(fn):
 
-#def get_ovrd_ed_opts(ed):
-#   ans     = collections.OrderedDict()
-#   ans['tab_size']             = ed.get_prop(app.PROP_TAB_SIZE)
-#   ans['tab_spaces']           = ed.get_prop(app.PROP_TAB_SPACES)
-#   ans['wrap_mode']            = ed.get_prop(app.PROP_WRAP)
-#   ans['unprinted_show']       = ed.get_prop(app.PROP_UNPRINTED_SHOW)
-#   ans['unprinted_spaces']     = ed.get_prop(app.PROP_UNPRINTED_SPACES)
-#   ans['unprinted_ends']       = ed.get_prop(app.PROP_UNPRINTED_ENDS)
-#   ans['unprinted_end_details']= ed.get_prop(app.PROP_UNPRINTED_END_DETAILS)
-#   return ans
-#  #def get_ovrd_ed_opts(ed):
-
 def index_1(cllc, val, defans=-1):
     return cllc.index(val) if val in cllc else defans
 
@@ -2792,4 +2055,5 @@ ToDo
 [ ][at-kv][14may18] DClick over 1-2-3 is bad
 [+][at-kv][14may18] Allow to refresh table on each changing of filter 
 [ ][at-kv][15may18] Allow to extra sort cols with Ctrl+Click
+[ ][kv-kv][04jun18] Cannot select section @Ui after selected @Ui/Tabs
 '''
