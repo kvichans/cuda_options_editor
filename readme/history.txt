@@ -1,5 +1,6 @@
 2.3.02 (2018-07-17)
 added: sort many columns by Ctrl holding on click or menu
+added: Alt+9 to reset sorting
 
 2.3.01 (2018-06-21)
 fixed: data stores in "settings\plugin history.json"

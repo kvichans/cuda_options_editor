@@ -942,6 +942,7 @@ class OptEdD:
  ,('srt4',d(tp='bt' ,cap='&5'   ,sto=False              ,t=0,l=0,w=0))  # &5
  ,('srt5',d(tp='bt' ,cap='&6'   ,sto=False              ,t=0,l=0,w=0))  # &6
  ,('srt6',d(tp='bt' ,cap='&7'   ,sto=False              ,t=0,l=0,w=0))  # &7
+ ,('srt-',d(tp='bt' ,cap='&9'   ,sto=False              ,t=0,l=0,w=0))  # &9
  ,('cws-',d(tp='bt' ,cap='&W'   ,sto=False              ,t=0,l=0,w=0))  # &w
  ,('cpnm',d(tp='bt' ,cap='&C'   ,sto=False              ,t=0,l=0,w=0))  # &c
  ,('erpt',d(tp='bt' ,cap='&O'   ,sto=False              ,t=0,l=0,w=0))  # &o
@@ -1011,6 +1012,7 @@ class OptEdD:
         cnts['srt4']['call']            = m.do_sort
         cnts['srt5']['call']            = m.do_sort
         cnts['srt6']['call']            = m.do_sort
+        cnts['srt-']['call']            = m.do_sort
         cnts['cmsp']['call']            = m.do_cust
         cnts['cws-']['call']            = m.do_cust
         cnts['lvls']['on_click_dbl']    = m.do_dbcl   #lambda idd,idc,data:print('on dbl d=', data)
@@ -1352,7 +1354,7 @@ class OptEdD:
                                                             for cn, cs in enumerate(M.COL_NMS)
         ]+
         [ d(                         cap='-'
-        ),d(tag='srt-'              ,cap=_('Reset sorting')
+        ),d(tag='srt-'              ,cap=_('Reset sorting')                                     ,key='Alt+9'
         )]
     ),d(                         cap=_('M&ore')             ,sub=
         [ d(tag='locv'              ,cap=locv_c                             ,en=bool(m.cur_op)
@@ -1441,19 +1443,21 @@ class OptEdD:
         m.stbr_act(M.STBR_MSG, '')
         m.col_ws= [ci['wd'] for ci in m.ag.cattr('lvls', 'cols')]
         
-        col     = int(aid[3]) if aid[:3]=='srt' else col
-
-        pass;                  #LOG and log('?? m.sorts={}',(m.sorts))
-        free_num= max(tn[1] for tn in m.sorts) 
-        tn_col  = m.sorts[col]
-        if 'c'==scam:           # Add or switch col
-            tn_col[0]   = next_sort(tn_col[0])  if -1==tn_col[1] else reve_sort(tn_col[0])
-            tn_col[1]   = free_num+1            if -1==tn_col[1] else tn_col[1]
-        else:#not  scam:        # First col
-            for cl,tn in enumerate(m.sorts):  
-                tn[0]   = next_sort(tn_col[0])  if cl==col else SORTNO
-                tn[1]   = 0                     if cl==col else -1
-        pass;                  #LOG and log('ok m.sorts={}',(m.sorts))
+        if aid=='srt-' or col==-1:
+            m.sorts = M.prep_sorts([])
+        else:
+            col     = int(aid[3]) if aid[:3]=='srt' else col
+            pass;              #LOG and log('?? m.sorts={}',(m.sorts))
+            free_num= max(tn[1] for tn in m.sorts) 
+            tn_col  = m.sorts[col]
+            if 'c'==scam:           # Add or switch col
+                tn_col[0]   = next_sort(tn_col[0])  if -1==tn_col[1] else reve_sort(tn_col[0])
+                tn_col[1]   = free_num+1            if -1==tn_col[1] else tn_col[1]
+            else:#not  scam:        # First col
+                for cl,tn in enumerate(m.sorts):  
+                    tn[0]   = next_sort(tn_col[0])  if cl==col else SORTNO
+                    tn[1]   = 0                     if cl==col else -1
+            pass;              #LOG and log('ok m.sorts={}',(m.sorts))
 
         old_in  = m._prep_opt('key2ind')
         ctrls   = m.get_cnts('+lvls')
@@ -1795,6 +1799,7 @@ class OptEdD:
     '\r   Hold Ctrl key to skip this confirmation.'
     '\r • Click on a column header sorts data in the column.'
     '\r     Alt+N sorts the N column.'
+    '\r     Alt+9 resets sorting.'
     '\r     Click with Ctrl sorts more then one columns.'
     '\r • Use option "{lifl}" to see instant update of the list after'
     '\r   each changing in the filter field'
