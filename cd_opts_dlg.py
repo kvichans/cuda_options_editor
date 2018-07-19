@@ -2,7 +2,7 @@
 Authors:
     Andrey Kvichansky    (kvichans on github.com)
 Version:
-    '2.3.02 2018-07-17'
+    '2.3.03 2018-07-19'
 ToDo: (see end of file)
 '''
 
@@ -352,7 +352,46 @@ def upd_cald_vals(ois, what=''):
 #      #def __init__
 #  
 #  #class OptDt
-   
+
+SORTNO = -1
+SORTDN = 0
+SORTUP = 1
+SORT_TSGN   = {SORTNO:'', SORTUP:'↑', SORTDN:'↓'}
+SORT_NSGN   = {-1:'', 0:'', 1:'²', 2:'³'}
+SORT_NSGN.update({n:str(1+n) for n in range(3,10)})
+SORT_PFX    = {(to,num):('' if to==SORTNO else SORT_TSGN[to]+SORT_NSGN[num]+' ') 
+                for to in (SORTNO, SORTUP, SORTDN) for num in range(-1, 10)}
+next_sort   = lambda to: ((1 + 1+to) % 3) - 1
+reve_sort   = lambda to: 1 - to
+def sort_tdata(tdata, sorts):
+    pass;                      #log('tdata={}',(tdata))
+    pass;                      #log('sorts={}',(sorts))
+    mx_n        = max(tn[1] for tn in sorts) 
+    if -1==mx_n:  return tdata
+
+    def push(lst, v):
+        lst.append(v)
+        return lst
+    prep_str    = lambda s,inv: (chr(0x10FFFF)                              # To move empty to bottom
+                                    if not s else 
+                                 s
+                                    if not inv else 
+                                 ''.join(chr(0x10FFFF - ord(c)) for c in s) # 0x10FFFF from chr() doc 
+                                )                                 
+
+    td_keys     = [[r] for r in tdata]
+    for srt_n in range(1+mx_n):
+        srt_ctn = first_true(((c,tn) for c,tn in enumerate(sorts)), None
+                            ,lambda ntn: ntn[1][1]==srt_n)
+        assert srt_ctn is not None
+        srt_c   = srt_ctn[0]
+        inv     = srt_ctn[1][0]==SORTUP
+        td_keys = [push(r, prep_str(r[0][srt_c], inv)) for r in td_keys]
+    td_keys.sort(key=lambda r: r[1:])
+    tdata       = [r[0] for r in td_keys]                                   # Remove appended cols
+    return tdata
+   #def sort_tdata
+
 class OptEdD:
     SCROLL_W= app.app_proc(app.PROC_GET_GUI_HEIGHT, 'scrollbar') if app.app_api_version()>='1.0.233' else 15
     COL_SEC = 0
@@ -396,7 +435,13 @@ class OptEdD:
     LIFL_C  = _('Instant filtering')
     FULL_C  = _('Show &all keys in user/lexer configs')
 
-    
+    @staticmethod
+    def prep_sorts(sorts):
+        M   = OptEdD
+        if len(sorts)==len(M.COL_NMS):
+            return sorts
+        return [[SORTNO, -1] for c in M.COL_NMS]
+
     def __init__(self
         , path_keys_info    =''             # default.json or parsed data
         , subset            =''             # To get/set from/to cuda_options_editor.json
@@ -424,11 +469,13 @@ class OptEdD:
         m.col_ws    = m.stores.get(m.subset+'col_ws'    , M.COL_MWS[:])
         m.col_ws    = m.col_ws if M.COL_N==len(m.col_ws) else M.COL_MWS[:]
         m.h_cmnt    = m.stores.get(m.subset+'cmnt_heght', M.CMNT_MHT)
-        m.sort      = m.stores.get(m.subset+'sort'      , (-1, True))   # Def sort is no sort
+        m.sorts     = m.stores.get(m.subset+'sorts'     , []        )   # Def sort is no sort
         m.live_fltr = m.stores.get(m.subset+'live_fltr' , False)        # To filter after each change and no History
         m.cond_hl   = [s for s in m.stores.get(m.subset+'h.cond', []) if s] if not m.live_fltr else []
         m.cond_s    = '' if M.restart_cond is None else M.restart_cond  # String filter
         m.ops_only  = []        # Subset to show (future)
+        
+        m.sorts     = M.prep_sorts(m.sorts)
         
         m.lexr      = m.ed.get_prop(app.PROP_LEXER_CARET)
         m.all_ops   = m.stores.get(m.subset+'all_ops'   , False)        # Show also options without definition
@@ -743,7 +790,7 @@ class OptEdD:
         # Save for next using
         m.stores[m.subset+'cur_op']     = m.cur_op
         m.stores[m.subset+'col_ws']     = m.col_ws
-        m.stores[m.subset+'sort']       = m.sort
+        m.stores[m.subset+'sorts']      = m.sorts
         if not m.live_fltr:
             m.stores[m.subset+'h.cond'] = m.cond_hl
         m.stores[m.subset+'all_ops']    = m.all_ops
@@ -774,22 +821,18 @@ class OptEdD:
             return all(map(lambda c:c in text, fltr_s.split()))
            #def test_fltr
 
-        def get_tbl_cols(opts_full, SKWULFs, sort, col_ws):
+        def get_tbl_cols(sorts, col_ws):
             cnms    = list(M.COL_NMS)
             cnms[M.COL_FIL] = f(cnms[M.COL_FIL], m.ed.get_prop(app.PROP_TAB_TITLE))
-            sort_cs = ['' if c!=sort[0] else '↑ ' if sort[1] else '↓ ' for c in range(M.COL_N)] # ▲ ▼ ?
-            cols    = [  d(nm=sort_cs[0]+cnms[0], wd=col_ws[0] ,mi=M.COL_MWS[0])
-                        ,d(nm=sort_cs[1]+cnms[1], wd=col_ws[1] ,mi=M.COL_MWS[1])
-                        ,d(nm=sort_cs[2]+cnms[2], wd=col_ws[2] ,mi=M.COL_MWS[2]   ,al='C')
-                        ,d(nm=sort_cs[3]+cnms[3], wd=col_ws[3] ,mi=M.COL_MWS[3])
-                        ,d(nm=sort_cs[4]+cnms[4], wd=col_ws[4] ,mi=M.COL_MWS[4])
-                        ,d(nm=sort_cs[5]+cnms[5], wd=col_ws[5] ,mi=M.COL_MWS[5])
-                        ,d(nm=sort_cs[6]+cnms[6], wd=col_ws[6] ,mi=M.COL_MWS[6])
-                        ]
+            cols    = [d(nm=SORT_PFX[(sorts[c][0], sorts[c][1])] + cnms[c]
+                        ,wd=col_ws[c]
+                        ,mi=M.COL_MWS[c]
+                        )   for c in range(M.COL_N)]
+            cols[M.COL_OVR]['al']   = 'C'
             return cols
            #def get_tbl_cols
         
-        def get_tbl_data(opts_full, cond_s, ops_only, sort, col_ws):
+        def get_tbl_data(opts_full, cond_s, ops_only, sorts, col_ws):
             # Filter table data
             pass;              #LOG and log('cond_s={}',(cond_s))
             chp_cond    = ''
@@ -817,15 +860,10 @@ class OptEdD:
                             and (not ops_only   or op in ops_only)
                       ]
             # Sort table data
-            if -1 != sort[0]:     # With sort col
-                prfx0       = '0' if sort[1] else '1'
-                prfx1       = '1' if sort[1] else '0'
-                SKWULFs     = sorted(SKWULFs
-                               ,key=lambda it:((prfx1 if it[sort[0]] else prfx0)+it[sort[0]])   # To show empty in bottom
-                               ,reverse=sort[1])
+            SKWULFs     = sort_tdata(SKWULFs, sorts)
             # Fill table
             pass;              #LOG and log('M.COL_NMS,col_ws,M.COL_MWS={}',(len(M.COL_NMS),len(col_ws),len(M.COL_MWS)))
-            cols    = get_tbl_cols(opts_full, SKWULFs, sort, col_ws)
+            cols    = get_tbl_cols(sorts, col_ws)
 
             itms    = (list(zip([_('Section'),_('Option'), '', _('Default'), _('User'), _('Lexer'), _('File')], map(str, col_ws)))
                      #,         [ (str(n)+':'+sc,k         ,w    ,dv           ,uv         ,lv          ,fv)    # for debug
@@ -839,13 +877,13 @@ class OptEdD:
         if not what or '+lvls' in what:
             m.SKWULFs,\
             m.cols  ,\
-            m.itms  = get_tbl_data(m.opts_full, m.cond_s, m.ops_only, m.sort, m.col_ws)
+            m.itms  = get_tbl_data(m.opts_full, m.cond_s, m.ops_only, m.sorts, m.col_ws)
             if 'stbr' in dir(m):
                 m.stbr_act(M.STBR_FLT, len(m.SKWULFs))
 
         if '+cols' in what:
             pass;              #LOG and log('m.col_ws={}',(m.col_ws))
-            m.cols  = get_tbl_cols(m.opts_full, m.SKWULFs, m.sort, m.col_ws)
+            m.cols  = get_tbl_cols(m.sorts, m.col_ws)
             pass;              #LOG and log('m.cols={}',(m.cols))
         
         # Prepare [Def]Val data by m.cur_op
@@ -1308,11 +1346,13 @@ class OptEdD:
         ),d(tag='cws-'              ,cap=_('Set default columns &widths')                       ,key='Alt+W'
         )]
     ),d(                         cap=_('&Table')            ,sub=
-        [ d(tag='srt'+str(cn)       ,cap=f(_('Sort by column "{}"'), cs)    ,ch=m.sort[0]==cn   ,key='Alt+'+str(1+cn))
+        [ d(tag='srt'+str(cn)       ,cap=f(_('Sort by column "{}"'), cs.split()[0])
+                                                                            ,ch=m.sorts[cn][0]!=SORTNO
+                                                                                                ,key='Alt+'+str(1+cn))
                                                             for cn, cs in enumerate(M.COL_NMS)
         ]+
         [ d(                         cap='-'
-        ),d(tag='srt-'              ,cap=_('Clear sorting')                 ,en=(m.sort[0]!=-1)
+        ),d(tag='srt-'              ,cap=_('Reset sorting')
         )]
     ),d(                         cap=_('M&ore')             ,sub=
         [ d(tag='locv'              ,cap=locv_c                             ,en=bool(m.cur_op)
@@ -1395,19 +1435,26 @@ class OptEdD:
     
     def do_sort(self, aid, ag, col=-1):
         scam    = app.app_proc(app.PROC_GET_KEYSTATE, '')
-        pass;                   LOG and log('col,scam={}',(col,scam))
+        pass;                  #LOG and log('col,scam={}',(col,scam))
         pass;                  #return []
         M,m = OptEdD,self
         m.stbr_act(M.STBR_MSG, '')
         m.col_ws= [ci['wd'] for ci in m.ag.cattr('lvls', 'cols')]
         
         col     = int(aid[3]) if aid[:3]=='srt' else col
-        col_pre = m.sort[0]
-        m.sort  = (-1 , True)       if col    ==-1                      else  \
-                  (col, False)      if col_pre==-1                      else  \
-                  (col, False)      if col_pre!=col                     else  \
-                  (col, True)       if col_pre==col and not m.sort[1]   else  \
-                  (-1 , True)
+
+        pass;                  #LOG and log('?? m.sorts={}',(m.sorts))
+        free_num= max(tn[1] for tn in m.sorts) 
+        tn_col  = m.sorts[col]
+        if 'c'==scam:           # Add or switch col
+            tn_col[0]   = next_sort(tn_col[0])  if -1==tn_col[1] else reve_sort(tn_col[0])
+            tn_col[1]   = free_num+1            if -1==tn_col[1] else tn_col[1]
+        else:#not  scam:        # First col
+            for cl,tn in enumerate(m.sorts):  
+                tn[0]   = next_sort(tn_col[0])  if cl==col else SORTNO
+                tn[1]   = 0                     if cl==col else -1
+        pass;                  #LOG and log('ok m.sorts={}',(m.sorts))
+
         old_in  = m._prep_opt('key2ind')
         ctrls   = m.get_cnts('+lvls')
         if old_in==0:
@@ -1746,6 +1793,9 @@ class OptEdD:
     '\r   to put focus on "{reset}".'
     '\r • Clicking "{reset}" will ask for confirmation, for user/lexer options.'
     '\r   Hold Ctrl key to skip this confirmation.'
+    '\r • Click on a column header sorts data in the column.'
+    '\r     Alt+N sorts the N column.'
+    '\r     Click with Ctrl sorts more then one columns.'
     '\r • Use option "{lifl}" to see instant update of the list after'
     '\r   each changing in the filter field'
     '\r   (otherwise you need to press Enter after changing).'
@@ -2057,4 +2107,6 @@ ToDo
 [+][at-kv][14may18] Allow to refresh table on each changing of filter 
 [ ][at-kv][15may18] Allow to extra sort cols with Ctrl+Click
 [ ][kv-kv][04jun18] Cannot select section @Ui after selected @Ui/Tabs
+[ ][kv-kv][16jun18] Have 2 filter control to instant and history. Switch by vis
+[ ][kv-kv][18jun18] More then one chap in filter. Append from menu if Ctrl holds
 '''
