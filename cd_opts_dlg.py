@@ -442,6 +442,8 @@ class OptEdD:
               '\r Tips and tricks:'
               '\r • Add "#" to search the words also in comments.'
               '\r • Add "@sec" to show options from section with "sec" in name.'
+              '\r   Several sections are allowed.'
+              '\r   Click item in menu "Section..." with Ctrl to add it.'
               '\r • To show only overridden options:'
               '\r   - Add "!"   to show only User+Lexer+File.'
               '\r   - Add "!!"  to show only Lexer+File'
@@ -1821,6 +1823,9 @@ class OptEdD:
     '\r     Alt+N sorts the N column.'
     '\r     Alt+9 resets sorting.'
     '\r     Click with Ctrl allows to sort by several columns.'
+    '\r     Clicking with Ctrl on already sorted column does 2-state loop (down, up).'
+    '\r     Clicking with Ctrl on already sorted column with maximal sorting index, '
+    '\r     does 3-state loop (down, up, off).'
     '\r • Use option "{lifl}" to see instant update of the list after'
     '\r   each changing in the filter field'
     '\r   (otherwise you need to press Enter after changing).'
@@ -1835,7 +1840,7 @@ class OptEdD:
     '\r   To see all these keys, use option "{full}".'
    )             , c_usr=M.COL_NMS[M.COL_USR]
                  , c_lxr=M.COL_NMS[M.COL_LXR]
-                 , c_fil=M.COL_NMS[M.COL_FIL]
+                 , c_fil=M.COL_NMS[M.COL_FIL].split()[0]
                  , c_def=M.COL_NMS[M.COL_DEF]
                  , fltr = ag.cattr('flt_', 'cap', live=False).replace('&', '').strip(':')
                  , in_lxr=ag.cattr('tolx', 'cap', live=False).replace('&', '')
