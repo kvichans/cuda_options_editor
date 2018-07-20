@@ -353,21 +353,44 @@ def upd_cald_vals(ois, what=''):
 #  
 #  #class OptDt
 
-SORTNO = -1
-SORTDN = 0
-SORTUP = 1
-SORT_TSGN   = {SORTNO:'', SORTUP:'↑', SORTDN:'↓'}
-SORT_NSGN   = {-1:'', 0:'', 1:'²', 2:'³'}
-SORT_NSGN.update({n:str(1+n) for n in range(3,10)})
-SORT_PFX    = {(to,num):('' if to==SORTNO else SORT_TSGN[to]+SORT_NSGN[num]+' ') 
-                for to in (SORTNO, SORTUP, SORTDN) for num in range(-1, 10)}
-next_sort   = lambda to: ((1 + 1+to) % 3) - 1
-reve_sort   = lambda to: 1 - to
-def sort_tdata(tdata, sorts):
+_SORT_NO    = -1
+_SORT_DN    = 0
+_SORT_UP    = 1
+_SORT_TSGN  = {_SORT_NO:'', _SORT_UP:'↑', _SORT_DN:'↓'}
+_SORT_NSGN  = {-1:'', 0:'', 1:'²', 2:'³'}
+_SORT_NSGN.update({n:str(1+n) for n in range(3,10)})
+_sort_pfx   = lambda to,num: '' if to==_SORT_NO else _SORT_TSGN[to]+_SORT_NSGN[num]+' '
+_next_sort  = lambda to: ((1 + 1+to) % 3) - 1
+_inve_sort  = lambda to: 1 - to
+
+sorts_dflt  = lambda cols: [[_SORT_NO, -1] for c in range(cols)]
+sorts_sign  = lambda sorts, col: _sort_pfx(sorts[col][0], sorts[col][1])
+sorts_on    = lambda sorts, col: sorts[col][0] != _SORT_NO
+
+def sorts_turn(sorts, col, scam=''):
+    """ Switch one of sorts """
+    max_num = max(tn[1] for tn in sorts) 
+    tn_col  = sorts[col]
+    if 0:pass
+    elif 'c'==scam and tn_col[1]==max_num:          # Turn col with max number
+        tn_col[0]   = _next_sort(tn_col[0])
+        tn_col[1]   = -1 if tn_col[0]==_SORT_NO else tn_col[1]
+    elif 'c'==scam:                                 # Add new or turn other col
+        tn_col[0]   = _next_sort(tn_col[0]) if -1==tn_col[1] else _inve_sort(tn_col[0])
+        tn_col[1]   = max_num+1             if -1==tn_col[1] else tn_col[1]
+    else:#not  scam:                                # Only col
+        for cl,tn in enumerate(sorts):  
+            tn[0]   = _next_sort(tn_col[0]) if cl==col else _SORT_NO
+            tn[1]   = 0                     if cl==col else -1
+    return sorts
+   #def sorts_turn
+
+def sorts_sort(sorts, tdata):
+    """ Sort tdata (must contain only str) by sorts """
     pass;                      #log('tdata={}',(tdata))
     pass;                      #log('sorts={}',(sorts))
-    mx_n        = max(tn[1] for tn in sorts) 
-    if -1==mx_n:  return tdata
+    max_num     = max(tn[1] for tn in sorts) 
+    if -1==max_num:  return tdata
 
     def push(lst, v):
         lst.append(v)
@@ -380,17 +403,17 @@ def sort_tdata(tdata, sorts):
                                 )                                 
 
     td_keys     = [[r] for r in tdata]
-    for srt_n in range(1+mx_n):
+    for srt_n in range(1+max_num):
         srt_ctn = first_true(((c,tn) for c,tn in enumerate(sorts)), None
                             ,lambda ntn: ntn[1][1]==srt_n)
         assert srt_ctn is not None
         srt_c   = srt_ctn[0]
-        inv     = srt_ctn[1][0]==SORTUP
+        inv     = srt_ctn[1][0]==_SORT_UP
         td_keys = [push(r, prep_str(r[0][srt_c], inv)) for r in td_keys]
     td_keys.sort(key=lambda r: r[1:])
     tdata       = [r[0] for r in td_keys]                                   # Remove appended cols
     return tdata
-   #def sort_tdata
+   #def sorts_sort
 
 class OptEdD:
     SCROLL_W= app.app_proc(app.PROC_GET_GUI_HEIGHT, 'scrollbar') if app.app_api_version()>='1.0.233' else 15
@@ -412,7 +435,9 @@ class OptEdD:
 
     FILTER_C= _('&Filter')
     NO_CHAP = _('_no_')
-    CHPS_H  = f(_('Choose section to append in "{}"'), FILTER_C).replace('&', '')
+    CHPS_H  = f(_('Choose section to append in "{}".'
+                '\rHold Ctrl to add several sections.'
+               ), FILTER_C).replace('&', '')
     FLTR_H  = _('Suitable options will contain all specified words.'
               '\r Tips and tricks:'
               '\r • Add "#" to search the words also in comments.'
@@ -440,7 +465,7 @@ class OptEdD:
         M   = OptEdD
         if len(sorts)==len(M.COL_NMS):
             return sorts
-        return [[SORTNO, -1] for c in M.COL_NMS]
+        return sorts_dflt(len(M.COL_NMS))
 
     def __init__(self
         , path_keys_info    =''             # default.json or parsed data
@@ -469,7 +494,7 @@ class OptEdD:
         m.col_ws    = m.stores.get(m.subset+'col_ws'    , M.COL_MWS[:])
         m.col_ws    = m.col_ws if M.COL_N==len(m.col_ws) else M.COL_MWS[:]
         m.h_cmnt    = m.stores.get(m.subset+'cmnt_heght', M.CMNT_MHT)
-        m.sorts     = m.stores.get(m.subset+'sorts'     , []        )   # Def sort is no sort
+        m.sorts     = m.stores.get(m.subset+'sorts'     , []        )   # Def sorts is no sorts
         m.live_fltr = m.stores.get(m.subset+'live_fltr' , False)        # To filter after each change and no History
         m.cond_hl   = [s for s in m.stores.get(m.subset+'h.cond', []) if s] if not m.live_fltr else []
         m.cond_s    = '' if M.restart_cond is None else M.restart_cond  # String filter
@@ -824,7 +849,7 @@ class OptEdD:
         def get_tbl_cols(sorts, col_ws):
             cnms    = list(M.COL_NMS)
             cnms[M.COL_FIL] = f(cnms[M.COL_FIL], m.ed.get_prop(app.PROP_TAB_TITLE))
-            cols    = [d(nm=SORT_PFX[(sorts[c][0], sorts[c][1])] + cnms[c]
+            cols    = [d(nm=sorts_sign(sorts, c) + cnms[c]
                         ,wd=col_ws[c]
                         ,mi=M.COL_MWS[c]
                         )   for c in range(M.COL_N)]
@@ -843,8 +868,8 @@ class OptEdD:
                 chp_cond    = chp_cond.replace(M.NO_CHAP.upper(), '').strip()
                 chp_no_c    = '@'+M.NO_CHAP in cond_s
                 cond_s      =                                 re.sub(     r'@([\w/]*)', '', cond_s)             # @s* clear @ and cph
-            pass;              #LOG and log('chp_cond, chp_no_c, cond_s={}',(chp_cond, chp_no_c, cond_s))
-            SKWULFs  = [  (oi.get('chp','') 
+            pass;              #log('chp_cond, chp_no_c, cond_s={}',(chp_cond, chp_no_c, cond_s))
+            SKWULFs = [  (oi.get('chp','') 
                          ,op
                          ,oi['!']
                          ,str(oi.get('jdf' ,'')).replace('True', 'true').replace('False', 'false')
@@ -854,13 +879,14 @@ class OptEdD:
                          ,oi['frm']
                          )
                             for op,oi in opts_full.items()
-                            if  (not chp_cond   or chp_cond in oi.get('chp', '').upper())
+#                           if  (not chp_cond   or      chp_cond in oi.get('chp', '').upper())
+                            if  (not chp_cond   or any((chp_cond in oi.get('chp', '').upper()) for chp_cond in chp_cond.split()))
                             and (not chp_no_c   or not oi.get('chp', ''))
                             and (not cond_s     or test_fltr(cond_s, op, oi))
                             and (not ops_only   or op in ops_only)
                       ]
             # Sort table data
-            SKWULFs     = sort_tdata(SKWULFs, sorts)
+            SKWULFs     = sorts_sort(sorts, SKWULFs)
             # Fill table
             pass;              #LOG and log('M.COL_NMS,col_ws,M.COL_MWS={}',(len(M.COL_NMS),len(col_ws),len(M.COL_MWS)))
             cols    = get_tbl_cols(sorts, col_ws)
@@ -1349,7 +1375,7 @@ class OptEdD:
         )]
     ),d(                         cap=_('&Table')            ,sub=
         [ d(tag='srt'+str(cn)       ,cap=f(_('Sort by column "{}"'), cs.split()[0])
-                                                                            ,ch=m.sorts[cn][0]!=SORTNO
+                                                                            ,ch=sorts_on(m.sorts, cn)
                                                                                                 ,key='Alt+'+str(1+cn))
                                                             for cn, cs in enumerate(M.COL_NMS)
         ]+
@@ -1413,9 +1439,11 @@ class OptEdD:
 
         if aid=='chps':
             # Append selected chapter as filter value
+            scam        = app.app_proc(app.PROC_GET_KEYSTATE, '')
             path        = '@'+data
             if path not in m.cond_s:
-                m.cond_s    = re.sub(r'@([\w/]*)', '', m.cond_s).strip()    # del old 
+                if scam!='c':
+                    m.cond_s= re.sub(r'@([\w/]*)', '', m.cond_s).strip()    # del old 
                 m.cond_s    = (m.cond_s+' '+path).strip()                   # add new
                 m.cond_hl   = add_to_history(m.cond_s, m.cond_hl)   if not m.live_fltr else m.cond_hl
             fid         = 'cond'
@@ -1444,19 +1472,11 @@ class OptEdD:
         m.col_ws= [ci['wd'] for ci in m.ag.cattr('lvls', 'cols')]
         
         if aid=='srt-' or col==-1:
-            m.sorts = M.prep_sorts([])
+            m.sorts = sorts_dflt(len(M.COL_NMS))
         else:
             col     = int(aid[3]) if aid[:3]=='srt' else col
             pass;              #LOG and log('?? m.sorts={}',(m.sorts))
-            free_num= max(tn[1] for tn in m.sorts) 
-            tn_col  = m.sorts[col]
-            if 'c'==scam:           # Add or switch col
-                tn_col[0]   = next_sort(tn_col[0])  if -1==tn_col[1] else reve_sort(tn_col[0])
-                tn_col[1]   = free_num+1            if -1==tn_col[1] else tn_col[1]
-            else:#not  scam:        # First col
-                for cl,tn in enumerate(m.sorts):  
-                    tn[0]   = next_sort(tn_col[0])  if cl==col else SORTNO
-                    tn[1]   = 0                     if cl==col else -1
+            m.sorts = sorts_turn(m.sorts, col, scam)
             pass;              #LOG and log('ok m.sorts={}',(m.sorts))
 
         old_in  = m._prep_opt('key2ind')
@@ -1800,7 +1820,7 @@ class OptEdD:
     '\r • Click on a column header sorts data in the column.'
     '\r     Alt+N sorts the N column.'
     '\r     Alt+9 resets sorting.'
-    '\r     Click with Ctrl sorts more then one columns.'
+    '\r     Click with Ctrl allows to sort by several columns.'
     '\r • Use option "{lifl}" to see instant update of the list after'
     '\r   each changing in the filter field'
     '\r   (otherwise you need to press Enter after changing).'
@@ -2110,8 +2130,8 @@ ToDo
 [+][kv-kv][14may18] Scale def col widths
 [ ][at-kv][14may18] DClick over 1-2-3 is bad
 [+][at-kv][14may18] Allow to refresh table on each changing of filter 
-[ ][at-kv][15may18] Allow to extra sort cols with Ctrl+Click
+[+][at-kv][15may18] Allow to extra sort cols with Ctrl+Click
 [ ][kv-kv][04jun18] Cannot select section @Ui after selected @Ui/Tabs
 [ ][kv-kv][16jun18] Have 2 filter control to instant and history. Switch by vis
-[ ][kv-kv][18jun18] More then one chap in filter. Append from menu if Ctrl holds
+[+][kv-kv][18jun18] More then one chap in filter. Append from menu if Ctrl holds
 '''
