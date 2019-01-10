@@ -1022,6 +1022,8 @@ class OptEdD:
  ,('stbr',d(tp='sb' ,y=-M.STBR_H                                                                                                
                     ,h= M.STBR_H                        ,ali=ALI_BT                                                             ))
                 ][1:]
+        if 'mac'==get_desktop_environment():
+            cnts    = [(cid,cnt) for cid,cnt in cnts if cnt.get('cap', '')[:3]!='srt']
         cnts    = odict(cnts)
         for cnt in cnts.values():
             if 'l' in cnt:  cnt['l']    = m.dlg_w+cnt['l'] if cnt['l']<0 else cnt['l']
