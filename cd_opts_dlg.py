@@ -434,7 +434,9 @@ class OptEdD:
     COL_USR = 4
     COL_LXR = 5
     COL_FIL = 6
-    COL_NMS = (_('Section'), _('Option'), '!', _('Default'), ('User'), _('Lexer'), _('File "{}"'))
+    COL_LEXR= _('Lexer')
+    COL_FILE= _('File "{}"')
+    COL_NMS = (_('Section'), _('Option'), '!', _('Default'), ('User'), COL_LEXR, COL_FILE)
     COL_MWS = [   70,           210,       25,    120,         120,       70,         50]   # Min col widths
 #   COL_MWS = [   70,           150,       25,    120,         120,       70,         50]   # Min col widths
     COL_N   = len(COL_MWS)
@@ -894,9 +896,12 @@ class OptEdD:
                         ,mi=M.COL_MWS[c]
                         )   for c in range(M.COL_N)]
             cols[M.COL_OVR]['al']   = 'C'
+            if m.how.get('hide_fil', False):
+                pos_fil = M.COL_NMS.index(M.COL_FILE)
+                cols[pos_fil]['vi'] = False
             if m.how.get('hide_lex_fil', False):
-                pos_lex = M.COL_NMS.index(_('Lexer'))
-                pos_fil = M.COL_NMS.index(_('File "{}"'))
+                pos_lex = M.COL_NMS.index(M.COL_LEXR)
+                pos_fil = M.COL_NMS.index(M.COL_FILE)
                 cols[pos_lex]['vi'] = False
                 cols[pos_fil]['vi'] = False
             return cols
@@ -1071,8 +1076,11 @@ class OptEdD:
         if 'mac'==get_desktop_environment():
             cnts    = [(cid,cnt) for cid,cnt in cnts if cnt.get('cap', '')[:3]!='srt']
         cnts    = odict(cnts)
+        if m.how.get('hide_fil', False):
+            for cid in ('tofi',):
+                cnts[cid]['vis'] = False
         if m.how.get('hide_lex_fil', False):
-            for cid in ('to__', 'tolx', 'tofi', 'lexr'):
+            for cid in ('to__', 'tolx', 'lexr', 'tofi'):
                 cnts[cid]['vis'] = False
         for cnt in cnts.values():
             if 'l' in cnt:  cnt['l']    = m.dlg_w+cnt['l'] if cnt['l']<0 else cnt['l']
