@@ -9,6 +9,31 @@ subset ='tests.' # Key for isolated storage on plugin settings
 class TestOptEdD(unittest.TestCase):
 
     ##############################
+    def test_no_meta_file(self):
+        meta    = [
+        {   "opt": "my_color_with_empty",
+            "cmt": ["Comment"],
+            "def": '',
+            "frm": "#rgb-e",
+        },
+        {   "opt": "my_color_not_empty",
+            "cmt": ["Comment"],
+            "def": '#aaccff',
+            "frm": "#rgb",
+        },
+        ]
+
+        title = 'Test no meta-file' # Dialog caption
+        op_ed.OptEdD(path_keys_info=meta, subset=subset
+                    ,how=dict(stor_json='oped_test.json',
+                              hide_lex_fil=True,
+                              )
+                    ).show(title)
+        
+        self.assertTrue(True)
+
+
+    ##############################
     def test_rgb(self):
         info_file = os.path.dirname(__file__)+os.sep+'test_rgb.json'
 
@@ -27,7 +52,9 @@ class TestOptEdD(unittest.TestCase):
 
         title = 'Test to store into "oped_test.json"' # Dialog caption
         op_ed.OptEdD(path_keys_info=info_file, subset=subset
-                    ,how=dict(hide_lex_fil=True, stor_json='oped_test.json')
+                    ,how=dict(stor_json='oped_test.json',
+                              hide_fil=True,
+                              )
                     ).show(title)
         
         self.assertTrue(True)

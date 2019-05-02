@@ -2,7 +2,7 @@
 Authors:
     Andrey Kvichansky    (kvichans on github.com)
 Version:
-    '2.3.09 2019-04-29'
+    '2.3.10 2019-05-02'
 ToDo: (see end of file)
 '''
 
@@ -53,7 +53,7 @@ FONT_LST    = ['default'] \
                 if not font.startswith('@')] 
 pass;                          #FONT_LST=FONT_LST[:3]
 
-def load_definitions(defn_path:Path)->list:
+def load_definitions(defn_path_or_json)->list:
     """ Return  
             [{  opt:'opt name'
             ,   def:<def val>
@@ -71,12 +71,17 @@ def load_definitions(defn_path:Path)->list:
             ,   tgs:['tag',]
             }]
     """
-    pass;                      #LOG and log('defn_path={}',(defn_path))
+    pass;                      #LOG and log('defn_path_or_json={}',(defn_path_or_json))
     kinfs   = []
-    lines   = defn_path.open(encoding='utf8').readlines()
+    lines   = defn_path_or_json \
+                if str==type(defn_path_or_json) else \
+              defn_path_or_json.open(encoding='utf8').readlines()
     if lines[0][0]=='[':
         # Data is ready - SKIP parsing
-        kinfs   = json.loads(defn_path.open(encoding='utf8').read(), object_pairs_hook=odict)
+        json_bd = defn_path_or_json \
+                    if str==type(defn_path_or_json) else \
+                  defn_path_or_json.open(encoding='utf8').read()
+        kinfs   = json.loads(json_bd, object_pairs_hook=odict)
         for kinf in kinfs:
             pass;              #LOG and log('opt in kinf={}',('opt' in kinf))
             if isinstance(kinf['cmt'], list):
@@ -219,7 +224,7 @@ def load_definitions(defn_path:Path)->list:
             pre_kinf= kinf.copy()
             cmnt    = ''
        #for line
-    pass;                      #open(str(defn_path)+'.p.json', 'w').write(json.dumps(kinfs,indent=2))
+    pass;                      #open(str(defn_path_or_json)+'.p.json', 'w').write(json.dumps(kinfs,indent=2))
     upd_cald_vals(kinfs, '+def')
     for kinf in kinfs:
         kinf['jdc'] = kinf.get('jdc', kinf.get('dct', []))
@@ -483,7 +488,7 @@ class OptEdD:
         return sorts_dflt(len(M.COL_NMS))
 
     def __init__(self
-        , path_keys_info    =''             # default.json or parsed data
+        , path_keys_info    =''             # default.json or parsed data (file or list_of_dicts)
         , subset            =''             # To get/set from/to cuda_options_editor.json
         , how               ={}             # Details to work
         ):
@@ -492,7 +497,8 @@ class OptEdD:
         m.ed        = ed
         m.how       = how
         
-        m.defn_path = Path(path_keys_info)
+        m.defn_path = Path(path_keys_info)  if str==type(path_keys_info) else json.dumps(path_keys_info)
+
         m.subset    = subset
         m.stores    = get_hist('dlg'
                         , json.loads(open(CFG_JSON).read(), object_pairs_hook=odict)
