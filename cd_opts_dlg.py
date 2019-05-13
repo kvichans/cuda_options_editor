@@ -1977,7 +1977,7 @@ def edit_json_as_dict(op, uval, dval, cmnt4v):
             mejs    = ag.cval('meme')
             pass;              #log("mejs={!r}",(mejs))
             try:
-                jsvl    = json.loads(mejs)
+                jsvl    = json.loads(mejs, object_pairs_hook=odict)
             except Exception as ex:
                 warn    = str(ex) + c10 + (c10.join('{:>3}|{}'.format(n+1, s.replace(' ','·')) 
                                                     for n,s in enumerate(mejs.split(c10))))
@@ -2004,8 +2004,8 @@ def edit_json_as_dict(op, uval, dval, cmnt4v):
         ,('defv',d(tp='bt'  ,l=  5  ,w=110  ,t=370  ,cap=_('Set &default')  ,a='TB'     ,call=acts  ,en=(dval is not None)))
         ,('undo',d(tp='bt'  ,l=120  ,w=110  ,t=370  ,cap=_('&Undo changes') ,a='TB'     ,call=acts))
         ,('test',d(tp='bt'  ,l=285  ,w= 70  ,t=370  ,cap=_('Chec&k')        ,a='TBLR'   ,call=acts))
-        ,('okok',d(tp='bt'  ,l=360  ,w= 70  ,t=370  ,cap=_('OK')            ,a='TBLR'   ,call=acts  ,def_bt=True))
-        ,('cans',d(tp='bt'  ,l=435  ,w= 70  ,t=370  ,cap=_('Cancel')        ,a='TBLR'   ,call=acts))
+        ,('cans',d(tp='bt'  ,l=360  ,w= 70  ,t=370  ,cap=_('Cancel')        ,a='TBLR'   ,call=acts))
+        ,('okok',d(tp='bt'  ,l=435  ,w= 70  ,t=370  ,cap=_('OK')            ,a='TBLR'   ,call=acts  ,def_bt=True))
                 ][1:]
     ,   vals =dict(meme=json.dumps(uval, indent=2)
                   ,cmnt=cmnt4v)
