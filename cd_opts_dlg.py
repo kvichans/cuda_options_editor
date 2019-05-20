@@ -2,7 +2,7 @@
 Authors:
     Andrey Kvichansky    (kvichans on github.com)
 Version:
-    '2.3.11 2019-05-13'
+    '2.3.12 2019-05-20'
 ToDo: (see end of file)
 '''
 
@@ -254,25 +254,29 @@ def load_vals(opt_dfns:list, lexr_json='', ed_=None, full=False, user_json='user
             }}
     """
     user_json       = app.app_path(app.APP_DIR_SETTINGS)+os.sep+user_json
-    user_vals       = apx._json_loads(open(user_json, encoding='utf8').read(), object_pairs_hook=odict) \
-                        if os.path.isfile(user_json) else {}
-    lexr_vals       = {}
+    lexr_def_json   = apx.get_def_setting_dir()         +os.sep+lexr_json
     lexr_json       = app.app_path(app.APP_DIR_SETTINGS)+os.sep+lexr_json
-    if lexr_json and os.path.isfile(lexr_json):
-        lexr_vals   = apx._json_loads(open(lexr_json, encoding='utf8').read(), object_pairs_hook=odict)
-    else:
-        pass;                  #LOG and log('no lexr_json={}',(lexr_json))
+    user_vals       = apx._json_loads(open(user_json    , encoding='utf8').read(), object_pairs_hook=odict) \
+                        if  os.path.isfile(user_json)     else {}
+    lexr_def_vals   = apx._json_loads(open(lexr_def_json, encoding='utf8').read(), object_pairs_hook=odict) \
+                        if  os.path.isfile(lexr_def_json) else {}
+    lexr_vals       = apx._json_loads(open(lexr_json    , encoding='utf8').read(), object_pairs_hook=odict) \
+                        if  os.path.isfile(lexr_json)     else {}
     pass;                      #LOG and log('lexr_vals={}',(lexr_vals))
+    pass;                       LOG and log('lexr_def_vals={}',(lexr_def_vals))
 
     # Fill vals for defined opt
     pass;                      #LOG and log('no opt={}',([oi for oi in opt_dfns if 'opt' not in oi]))
     oinf_valed  = odict([(oi['opt'], oi) for oi in opt_dfns])
     for opt, oinf in oinf_valed.items():
-        if opt in user_vals:                # Found user-val for defined opt
+        if opt in lexr_def_vals:                                # Correct def-vals for lexer
+            oinf['def']     = lexr_def_vals[opt]
+            oinf['jdf']     = oinf['def']
+        if opt in user_vals:                                    # Found user-val for defined opt
             oinf['uval']    = user_vals[opt]
-        if opt in lexr_vals:                # Found lexer-val for defined opt
+        if opt in lexr_vals:                                    # Found lexer-val for defined opt
             oinf['lval']    = lexr_vals[opt]
-        if ed_ and opt in apx.OPT2PROP:     # Found file-val for defined opt
+        if ed_ and opt in apx.OPT2PROP:                         # Found file-val for defined opt
             fval            = ed_.get_prop(apx.OPT2PROP[opt])
             oinf['fval']    =fval
 
@@ -307,6 +311,7 @@ def load_vals(opt_dfns:list, lexr_json='', ed_=None, full=False, user_json='user
                 ])
     
     upd_cald_vals(oinf_valed)
+    upd_cald_vals(oinf_valed, '+def') if lexr_def_vals else None    # To update oi['jdf'] by oi['def']
 
     return oinf_valed
    #def load_vals
@@ -920,6 +925,7 @@ class OptEdD:
         def get_tbl_data(opts_full, cond_s, ops_only, sorts, col_ws):
             # Filter table data
             pass;              #LOG and log('cond_s={}',(cond_s))
+            pass;              #log('opts_full/tab_s={}',({o:oi for o,oi in opts_full.items() if o.startswith('tab_s')}))
             chp_cond    = ''
             chp_no_c    = False
             if  '@' in cond_s:
