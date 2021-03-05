@@ -2,7 +2,7 @@
 Authors:
     Andrey Kvichansky    (kvichans on github.com)
 Version:
-    '2.3.13 2019-05-24'
+    '2.3.14 2021-01-24'
 ToDo: (see end of file)
 '''
 
@@ -18,14 +18,15 @@ import  cudax_lib           as apx
 from    .cd_plug_lib    import *
 
 d   = dict
-class odict(collections.OrderedDict):
-    def __init__(self, *args, **kwargs):
-        if     args:super().__init__(*args)
-        elif kwargs:super().__init__(kwargs.items())
-    def __str__(self):
-        return '{%s}' % (', '.join("'%s':%r" % (k,v) for k,v in self.items()))
-    def __repr__(self):
-        return self.__str__()
+odict = collections.OrderedDict
+#class odict(collections.OrderedDict):  py3.9 conflict
+#   def __init__(self, *args, **kwargs):
+#       if     args:super().__init__(*args)
+#       elif kwargs:super().__init__(kwargs.items())
+#   def __str__(self):
+#       return '{%s}' % (', '.join("'%s':%r" % (k,v) for k,v in self.items()))
+#   def __repr__(self):
+#       return self.__str__()
 
 pass;                           LOG     = (-1== 1) or apx.get_opt('_opts_dlg_log',False)    # Do or dont logging.
 pass;                           from pprint import pformat
@@ -185,7 +186,7 @@ def load_definitions(defn_path_or_json)->list:
             pass;              #LOG and log('ref_frm,pre_cmnt,cmnt={}',(ref_frm,pre_cmnt,cmnt))
             cmnt    = cmnt.lstrip('.'+l)
 
-            dfrm    = 'font-e' if dfrm=='font' and 'Empty string is allowed' in cmnt   else dfrm
+            dfrm    = 'font-e' if dfrm=='font' and _('Empty string is allowed') in cmnt   else dfrm
             
             kinf    = odict()
             kinfs  += [kinf]
@@ -289,8 +290,7 @@ def load_vals(opt_dfns:list, lexr_json='', ed_=None, full=False, user_json='user
             return  ('bool'     if isinstance(val, bool)    else
                      'int'      if isinstance(val, int)     else
                      'float'    if isinstance(val, float)   else
-                     'json'     if isinstance(val, list)    or
-                                   isinstance(val, dict)    else
+                     'json'     if isinstance(val, (list, dict))    else
                      'hotk'     if '_hotkey_' in val        else
                      'font'     if isinstance(val, str)     and 
                                    reFontNm.search(val)     else
@@ -450,7 +450,7 @@ class OptEdD:
     COL_FIL = 6
     COL_LEXR= _('Lexer')
     COL_FILE= _('File "{}"')
-    COL_NMS = (_('Section'), _('Option'), '!', _('Default'), ('User'), COL_LEXR, COL_FILE)
+    COL_NMS = (_('Section'), _('Option'), '!', _('Default'), _('User'), COL_LEXR, COL_FILE)
     COL_MWS = [   70,           210,       25,    120,         120,       70,         50]   # Min col widths
 #   COL_MWS = [   70,           150,       25,    120,         120,       70,         50]   # Min col widths
     COL_N   = len(COL_MWS)
@@ -678,7 +678,7 @@ class OptEdD:
         elif what=='out-rprt':
             if do_report(HTM_RPT_FILE, 'lexer '+m.lexr+'.json', m.ed):
                 webbrowser.open_new_tab('file://'         +HTM_RPT_FILE)
-                app.msg_status('Opened browser with file '+HTM_RPT_FILE)
+                app.msg_status(_('Opened browser with file ')+HTM_RPT_FILE)
 
         return []
        #def do_file
@@ -783,8 +783,8 @@ class OptEdD:
             elif frm in ('bool',):
                 vis['edrf'] = True
                 vis['edrt'] = True
-                vas['edrf'] = ulfvl_va==False
-                vas['edrt'] = ulfvl_va==True
+                vas['edrf'] = ulfvl_va is False
+                vas['edrt'] = ulfvl_va is True
             elif frm in ('int2s', 'str2s'):
                 vis['edcb'] = True
                 ens['edcb'] = True
@@ -2234,7 +2234,7 @@ def do_report(fn, lex='', ed_=ed):
             f.write(    '<td><pre>{}</pre></td>\n'.format(cmt_opts.get(opt, '')))
             f.write(    '</tr>\n')
             lex_opts.pop(opt, None)                                                                                     if lex else None
-        for opt in lex_opts.keys():
+        for opt in lex_opts:
             winner  = 'lex'
             f.write(    '<tr>\n')
             f.write(    '<td>{}</td>\n'.format(opt))
