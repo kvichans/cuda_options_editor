@@ -1,3 +1,6 @@
+2.3.15 (2021-04-02)
+fixed: skip "readme" folder for ui_* options
+
 2.3.14 (2021-01-24)
 fixed: i18n
 fixed: py3.4
